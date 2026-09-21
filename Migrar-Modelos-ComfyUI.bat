@@ -46,7 +46,7 @@ echo   Debe contener python_embeded\python.exe
 echo.
 
 set "PORTABLE="
-for /f "delims=" %%I in ('powershell -NoProfile -Sta -Command "$s=New-Object -ComObject Shell.Application; $f=$s.BrowseForFolder(0,''Selecciona la carpeta raiz de ComfyUI portable'',0,0); if($f){$f.Self.Path}"') do set "PORTABLE=%%I"
+for /f "delims=" %%I in ('powershell -NoProfile -Sta -Command "$s=New-Object -ComObject Shell.Application; $f=$s.BrowseForFolder(0,'Selecciona la carpeta raiz de ComfyUI portable',0,0); if($f){$f.Self.Path}"') do set "PORTABLE=%%I"
 
 if not defined PORTABLE (
     echo   [X] No se selecciono ninguna carpeta.
