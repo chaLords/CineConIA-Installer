@@ -1,0 +1,6 @@
+__pycache__/
+*.pyc
+7zr.exe
+*.7z
+ComfyUI/
+ComfyUI_windows_portable/
