@@ -132,3 +132,87 @@ El objetivo es que un extra opcional nunca rompa una instalacion base funcional.
 
 El instalador es MIT. ComfyUI y todos los componentes externos conservan sus
 propias licencias. Consulta THIRD_PARTY_NOTICES.md.
+
+
+## Migrar modelos de un ComfyUI que ya existe
+
+Si ya tienes ComfyUI y acumulaste muchos modelos, usa **Migrar-Modelos-ComfyUI.bat**.
+Sirve para consolidar una o varias bibliotecas antiguas en un disco grande sin
+sobrescribir archivos ni borrar originales antes de verificar.
+
+### Orden recomendado
+
+1. **Cierra ComfyUI.**
+2. Ejecuta **Migrar-Modelos-ComfyUI.bat**.
+3. El migrador puede buscar bibliotecas existentes o puedes seleccionar manualmente
+   una carpeta ComfyUI, una carpeta models o una biblioteca.
+4. Puedes agregar varias instalaciones para consolidarlas en una sola.
+5. Selecciona la carpeta padre del disco grande. Ejemplo:
+   D:\IA\Modelos\ComfyUI
+6. El resultado se organiza dentro de:
+   D:\IA\Modelos\ComfyUI\models
+7. Elige:
+   - **Copiar:** deja intactos todos los originales.
+   - **Mover seguro:** copia cada archivo, verifica SHA-256 y solo entonces elimina
+     el original.
+8. Primero aparece una **SIMULACION**. Muestra archivos, tamaño, duplicados,
+   conflictos y elementos sin clasificar.
+9. Nada cambia hasta escribir exactamente **MIGRAR**.
+10. Al terminar puede actualizar extra_model_paths.yaml de los ComfyUI detectados.
+
+### Estructura creada
+
+La biblioteca usa las carpetas habituales de ComfyUI:
+
+    models\
+        checkpoints\
+        diffusion_models\
+        unet\
+        text_encoders\
+        clip\
+        clip_vision\
+        vae\
+        loras\
+        controlnet\
+        upscale_models\
+        embeddings\
+        hypernetworks\
+        style_models\
+        gligen\
+        latent_upscale_models\
+        frame_interpolation\
+        vae_approx\
+        _sin_clasificar\
+
+Si un archivo ya estaba dentro de una categoria conocida, conserva su categoria
+y sus subcarpetas. Si no se puede clasificar con seguridad, va a
+**_sin_clasificar**. El migrador no adivina tipos por el nombre del archivo.
+
+### Duplicados y conflictos
+
+- Un posible duplicado se confirma por **SHA-256**.
+- Si el mismo nombre tiene contenido diferente, no se sobrescribe: se conserva
+  con un nombre como __conflicto_2.
+- En modo mover, el original se elimina solo despues de verificar la copia.
+- Si aparece un error, ese original no se borra.
+
+### extra_model_paths.yaml
+
+Cuando el origen pertenece a un ComfyUI reconocible, el migrador ofrece enlazar
+la nueva biblioteca. Si ya existe extra_model_paths.yaml:
+
+- crea una copia .bak con fecha y hora;
+- modifica solo el bloque administrado por CineConIA;
+- conserva el resto del archivo.
+
+Asi varias instalaciones de ComfyUI pueden compartir una unica biblioteca en
+otro SSD/HDD sin duplicar cientos de gigabytes.
+
+### Reporte
+
+Cada ejecucion confirmada guarda un reporte JSON en:
+
+    <biblioteca>\_cineconia_migracion\
+
+Incluye origenes, destino, modo, duplicados, conflictos, errores y configuraciones
+extra_model_paths.yaml actualizadas.

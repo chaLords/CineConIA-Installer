@@ -37,3 +37,14 @@
 - Recuperacion de carpetas de instalacion incompletas.
 - Deteccion/instalacion opcional de Git mediante winget.
 - Busqueda de modelos con limites y calculo recursivo de tamano.
+
+
+### Migrador seguro de modelos existentes
+- Añadido Migrar-Modelos-ComfyUI.bat y src/migrar_modelos.py.
+- Puede consolidar una o varias bibliotecas.
+- Simula todo antes de modificar archivos y exige la confirmacion MIGRAR.
+- Ofrece copiar o mover mediante copia + SHA-256 + borrado posterior.
+- Detecta duplicados exactos y conserva conflictos sin sobrescribir.
+- Mueve elementos no clasificables a _sin_clasificar.
+- Puede actualizar extra_model_paths.yaml creando antes una copia de seguridad.
+- Genera un reporte JSON de cada migracion.
