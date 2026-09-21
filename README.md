@@ -1,106 +1,134 @@
-<p align="center">
-  <strong>Español</strong>
-</p>
+# CineConIA Installer — instalador adaptativo de ComfyUI
 
-<h1 align="center">Instalador de Cine con IA</h1>
+Esta rama contiene la nueva arquitectura del instalador. La meta es que una
+persona pueda ejecutar un solo BAT y que la instalacion se adapte al equipo
+real, sin tener que conocer CUDA, ROCm, XPU, PyTorch o wheels.
 
-<p align="center">
-  <strong>ComfyUI instalado y listo para vídeo, en dos clics.</strong><br>
-  Sin descargar modelos · Sin marcas ajenas · Todo explicado antes de hacerlo
-</p>
+## Inicio rapido
 
-<p align="center">
-  <a href="LICENSE"><img alt="Licencia MIT" src="https://img.shields.io/badge/licencia-MIT-blue?style=flat-square"></a>
-  <img alt="Windows" src="https://img.shields.io/badge/Windows-10%20%2F%2011-0078d4?style=flat-square">
-  <a href="https://www.youtube.com/@cineconia.oficial"><img alt="Canal de YouTube" src="https://img.shields.io/badge/youtube-Cine%20con%20IA-red?style=flat-square&logo=youtube&logoColor=white"></a>
-</p>
+1. Descarga/descomprime el repositorio.
+2. Ejecuta **Instalar-ComfyUI.bat**.
+3. Usa la configuracion automatica recomendada o entra al modo avanzado.
 
----
+Al terminar queda un unico acceso directo llamado **ComfyUI** en el escritorio.
+No se crean accesos al canal, launchers promocionales ni branding de Cine con IA.
 
-## Qué hace
+## Como decide la instalacion
 
-1. Descarga **ComfyUI portable** del release oficial de Comfy-Org
-2. Mira tu equipo y te **recomienda** la rama de CUDA, explicándote por qué
-3. Intenta instalar los aceleradores que te convienen, y **sigue sin ellos** si no existen para tu combinación
-4. Instala los **nodos Cine con IA**
-5. Comprueba que todo lo instalado **de verdad funciona**
-6. Si ya tenías modelos en el disco, te los **enlaza** en vez de duplicarlos
+### Antes de descargar
 
-## Qué NO hace
+- Detecta NVIDIA, AMD o Intel.
+- NVIDIA moderno usa el portable oficial NVIDIA por defecto.
+- NVIDIA antiguo/driver previo a CUDA 13 usa el portable oficial nvidia_cu126.
+- AMD usa el portable AMD/ROCm oficial.
+- Intel usa el portable Intel XPU oficial.
+- Comprueba espacio libre, curl y PowerShell.
 
-**No descarga modelos.** Ni uno. Son decenas de gigas y la elección es tuya: los bajas cuando quieras desde el nodo **Cine con IA · Modelos**, dentro de ComfyUI.
+### Descarga robusta
 
-**No pone su marca en tu ComfyUI.** Ni iconos, ni avisos al arrancar, ni parches en su interfaz. El acceso directo se llama «ComfyUI» y lleva el icono de ComfyUI.
+- curl --fail para no confundir un 404/500 con una descarga correcta.
+- Reintentos automaticos.
+- Archivos grandes se descargan primero como .part.
+- El .7z de ComfyUI se compara con el SHA-256 que publica GitHub cuando existe.
+- Si GitHub no entrega digest, se hace al menos una prueba de integridad con 7-Zip.
+- Una instalacion parcial previa se conserva como respaldo antes de reinstalar.
 
-**No instala lo que no encaja.** Si no existe una versión compilada para tu combinación exacta de PyTorch y CUDA, te lo dice y sigue sin ella. Forzar una que no corresponde es como se rompen las instalaciones.
+### Despues de instalar ComfyUI
 
-## Cómo se usa
+El instalador ejecuta el **python_embeded del portable** y detecta lo que
+realmente quedo instalado:
 
-1. Descarga este repositorio como ZIP y descomprímelo donde quieras
-2. Doble clic en **`Instalar-ComfyUI.bat`**
-3. Pulsa Enter
+- Python.
+- PyTorch.
+- CUDA real / ROCm-HIP / Intel XPU.
+- GPU que PyTorch reconoce.
+- VRAM.
+- Compute capability cuando corresponde.
 
-Eso es todo. Unos 2 GB de descarga y unos 10 minutos.
+Desde ese momento no se “elige CUDA” por intuicion. Los aceleradores se
+resuelven contra la combinacion que **realmente quedo instalada**.
 
-> **Ojo con dónde lo pones.** No lo descomprimas en `Archivos de programa`, en la raíz de `C:\` ni en carpetas del sistema: Windows te dará problemas de permisos.
+## Aceleradores
 
-## Lo que decide por ti, y por qué
+### Configuracion automatica
 
-### La rama de CUDA
+En NVIDIA intenta SageAttention solo cuando encuentra una wheel que coincide con
+la rama real de PyTorch, CUDA y Python. Triton se instala solo si existe una
+regla conocida para esa rama de PyTorch.
 
-Lo habitual es elegir CUDA por la versión del driver. Eso está mal: **CUDA no es un acelerador**, no hace tu tarjeta más rápida. Es la caja de herramientas contra la que se compila el binario.
+En AMD e Intel se conserva el backend oficial del portable y no se entra en la
+logica CUDA de NVIDIA.
 
-Lo que sí cambia entre ramas es **cuántas ruedas compiladas existen**. Medido el 2026-09-20 en Windows:
+### Modo avanzado
 
-| Proyecto | CUDA 12.8 | CUDA 13.0 |
-|---|---|---|
-| SageAttention | 12 | 6 |
-| Nunchaku | 64 | 47 |
+Permite seleccionar, cuando el equipo lo soporta:
 
-Así que salvo que tengas una **Blackwell (RTX 50xx)**, que necesita CUDA 13 porque las compilaciones de 12.8 no incluyen su arquitectura, te va a recomendar **12.8**. Puedes cambiarlo.
+- SageAttention.
+- FlashAttention.
+- Nunchaku.
+- InsightFace / ONNX Runtime.
 
-### El backend de atención
+Un pip install exitoso no basta: el modulo se importa en un proceso separado.
+Si el import falla, el componente no se considera operativo y no se crea su BAT.
 
-ComfyUI trae **Comfy Kitchen** incluido: es una dependencia fijada en su `requirements.txt`, así que ya está instalado. Se activa con `--use-ck-attention`.
+## Lanzadores generados
 
-Medimos SageAttention contra Kitchen en una RTX 4060 Ti con MiniMax H3, 124 fotogramas y 20 pasos:
+Dentro de la carpeta instalada de ComfyUI pueden aparecer:
 
-| Backend | s/paso |
-|---|---|
-| SageAttention | **56,16** |
-| Comfy Kitchen | ~57,5 |
+- Iniciar-ComfyUI.bat
+- Iniciar-ComfyUI-Kitchen.bat (si Comfy Kitchen esta disponible)
+- Iniciar-ComfyUI-SageAttention.bat (solo si Sage fue verificado)
+- Iniciar-ComfyUI-FlashAttention.bat (solo si Flash fue verificado)
+- Iniciar-ComfyUI-DynamicVRAM.bat (AMD)
+- Actualizar-ComfyUI.bat
+- Actualizar-ComfyUI-y-Nodos.bat
 
-SageAttention sale un **2-4% más rápido** — unos 35 segundos en un render de 19 minutos. Por eso el instalador **lo intenta**. Pero exige una rueda de terceros compilada por cada combinación de PyTorch y CUDA, y para algunas no existe: si falta, se sigue con Kitchen y no pasa nada.
+Los lanzadores comprueban el puerto 8188. Si ComfyUI ya esta abierto, se abre
+la interfaz existente en vez de iniciar otra instancia.
 
-*(Una tarjeta, un modelo, una resolución. En otras combinaciones habría que medir otra vez.)*
+## Acceso directo de escritorio
 
-## Qué instala exactamente
+Se crea **un solo acceso**: ComfyUI.
 
-| Pieza | Tamaño | Origen |
-|---|---|---|
-| ComfyUI portable | ~2,0 GB | Release oficial de Comfy-Org |
-| Triton | ~120 MB | PyPI · `triton-windows` |
-| SageAttention | ~50 MB | Releases de `woct0rdho/SageAttention` |
-| Nodos Cine con IA | ~2 MB | `chaLords/ComfyUI-Cine-con-IA` |
+Apunta al mejor lanzador verificado:
+1. SageAttention, si realmente funciona.
+2. Comfy Kitchen, si esta disponible.
+3. Lanzador base como fallback.
 
-Opcionales, si los marcas: Nunchaku (imagen en 4 bits), FlashAttention, InsightFace.
+El instalador intenta usar el favicon.ico del repositorio oficial
+Comfy-Org/docs. Si no puede descargarlo, no sustituye el icono por branding
+del canal.
 
-## Requisitos
+## Git y nodos
 
-- Windows 10 (1803 o superior) u 11
-- GPU NVIDIA, AMD o Intel — se descarga el portable de tu fabricante
-- `git`, para instalar los nodos
-- Unos 10 GB libres para empezar; los modelos aparte
+Git se comprueba antes de clonar nodos. Si falta y winget esta disponible,
+el instalador pregunta si quieres instalar Git for Windows.
+
+Luego ofrece instalar:
+https://github.com/chaLords/ComfyUI-Cine-con-IA
+
+## Modelos
+
+El instalador **no descarga modelos**.
+
+Opcionalmente puede buscar otra instalacion de ComfyUI y crear
+extra_model_paths.yaml para reutilizar modelos existentes sin copiarlos.
+
+La busqueda:
+- tiene limite de profundidad;
+- tiene limite de directorios recorridos;
+- tiene limite de resultados;
+- no sobrescribe un extra_model_paths.yaml que ya exista.
+
+## Filosofia de compatibilidad
+
+Compatible -> instalar y verificar.
+Dudoso -> omitir.
+No compatible -> usar fallback.
+
+El objetivo es que un extra opcional nunca rompa una instalacion base funcional.
 
 ## Licencia
 
-MIT. Úsalo, cámbialo, rómpelo.
-
-Este instalador **descarga** ComfyUI, no lo incluye. ComfyUI es GPL-3.0 y pertenece a Comfy-Org. Los aceleradores pertenecen a sus autores, con sus propias licencias: están todas en [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md), y el instalador te enseña cada una antes de instalar nada.
-
----
-
-<p align="center">
-  <a href="https://www.youtube.com/@cineconia.oficial">Tutoriales en YouTube</a> ·
-  <a href="https://github.com/chaLords/ComfyUI-Cine-con-IA">Los nodos</a>
-</p>
+El instalador es MIT. ComfyUI y todos los componentes externos conservan sus
+propias licencias. Consulta THIRD_PARTY_NOTICES.md.

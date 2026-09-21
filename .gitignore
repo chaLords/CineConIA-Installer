@@ -2,5 +2,8 @@ __pycache__/
 *.pyc
 7zr.exe
 *.7z
+*.part
 ComfyUI/
 ComfyUI_windows_portable/
+ComfyUI_incompleto_*/
+ComfyUI.ico
