@@ -28,7 +28,7 @@ def instalar_git():
         r = subprocess.run(cmd, timeout=900)
     except (OSError, subprocess.SubprocessError) as e:
         return False, str(e)
-    return (r.returncode == 0 and git_exe() is not None), f"winget devolvio {r.returncode}"
+    if r.returncode != 0:\n        return False, f"winget devolvio {r.returncode}"\n    return (git_exe() is not None), "Git instalado"
 
 def salud_comfyui(destino):
     faltan = []
