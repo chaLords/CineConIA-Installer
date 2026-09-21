@@ -37,7 +37,7 @@
 ## Cómo se usa
 
 1. Descarga este repositorio como ZIP y descomprímelo donde quieras
-2. Doble clic en **`Instalar-CineConIA.bat`**
+2. Doble clic en **`Instalar-ComfyUI.bat`**
 3. Pulsa Enter
 
 Eso es todo. Unos 2 GB de descarga y unos 10 minutos.
