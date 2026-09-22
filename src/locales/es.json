@@ -156,5 +156,7 @@
   "installer.searching_models": "Buscando carpetas de modelos en tus discos (con límites)...",
   "installer.models_found": "Encontré modelos que este ComfyUI puede usar sin copiarlos:",
   "installer.migrator_hint": "Para reunir varias bibliotecas en un disco usa ComfyUI-Model-Migrator.bat.",
-  "installer.ready": "Listo. Abre ComfyUI con el acceso directo del escritorio."
+  "installer.ready": "Listo. Abre ComfyUI con el acceso directo del escritorio.",
+  "catalog.no_python_headers": "triton-windows no publica include/libs para Python {version}; Triton no podrá compilar",
+  "catalog.python_headers_added": "Añadidas las carpetas include y libs de Python {version} que Triton necesita para compilar"
 }

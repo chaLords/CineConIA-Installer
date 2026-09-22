@@ -142,7 +142,7 @@ Optional accelerators are then matched against that real environment instead of 
 
 ### Automatic configuration
 
-On NVIDIA, SageAttention is attempted only when a wheel matches the actual PyTorch, CUDA, and Python combination, including wheels published for "this PyTorch version and higher". Triton follows the triton-windows table PyTorch 2.N → Triton 3.(N-4), and only when that branch is already published on PyPI.
+On NVIDIA, SageAttention is attempted only when a wheel matches the actual PyTorch, CUDA, and Python combination, including wheels published for "this PyTorch version and higher". Triton is installed at the same version PyTorch itself declares on PyPI, and only when triton-windows has already published it. Because the portable's embedded Python lacks the include and libs folders Triton needs to compile, the installer adds them (triton-windows publishes them for each Python version).
 
 AMD and Intel stay on their official portable backend and do not enter NVIDIA CUDA logic.
 

@@ -148,9 +148,11 @@ resuelven contra la combinación que **realmente quedó instalada**.
 
 En NVIDIA intenta SageAttention solo cuando encuentra una wheel que coincide con
 la rama real de PyTorch, CUDA y Python, incluidas las wheels publicadas para
-“esta versión de PyTorch y superiores”. Triton se instala siguiendo la tabla
-PyTorch 2.N → Triton 3.(N-4) de triton-windows, y solo si esa rama ya está
-publicada en PyPI.
+“esta versión de PyTorch y superiores”. Triton se instala en la misma versión
+que el propio PyTorch declara en PyPI, y solo si triton-windows ya la publicó.
+Como el Python embebido del portable no trae las carpetas include y libs que
+Triton necesita para compilar, el instalador las añade (las publica
+triton-windows para cada versión de Python).
 
 En AMD e Intel se conserva el backend oficial del portable y no se entra en la
 lógica CUDA de NVIDIA.

@@ -274,6 +274,11 @@ def main():
     # Se verifica todo lo que haya, instalado ahora o en una ejecucion anterior:
     # asi repetir el instalador nunca degrada el acceso directo.
     titulo(t("installer.real_verification"))
+    if _presente(py,"triton"):
+        # Este script corre con el python_embeded del portable: su version es la nuestra.
+        ok,msg=catalogo.cabeceras_python(os.path.dirname(py),sys.version_info)
+        if msg:
+            print(f"   {A if ok else R}{msg}{X}")
     verificados,_=verificar(list(catalogo.HERRAMIENTAS),py,solo_presentes=True)
     manager_ok=ofrecer_manager(destino,py)
     nodos_ok=instalar_nodos(destino)

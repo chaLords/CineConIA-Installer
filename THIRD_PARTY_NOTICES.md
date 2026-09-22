@@ -22,6 +22,11 @@ Este instalador es MIT y descarga componentes desde sus fuentes correspondientes
 - Licencia: MIT
 - PyPI; solo se instala con una regla conocida para la rama real de PyTorch.
 
+## Cabeceras de Python (include/libs)
+- Origen: https://github.com/woct0rdho/triton-windows/releases/tag/v3.0.0-windows.post1
+- Licencia: PSF License (Python)
+- Solo las carpetas include y libs, añadidas a python_embeded cuando se instala Triton.
+
 ## SageAttention
 - Origen: https://github.com/woct0rdho/SageAttention
 - Licencia: Apache-2.0

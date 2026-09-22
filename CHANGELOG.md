@@ -84,7 +84,8 @@
 
 #### Aceleradores
 - Se aceptan las wheels "torchX.Y.0andhigher" de SageAttention; antes no se encontraba ninguna wheel para PyTorch 2.11+.
-- Regla de Triton PyTorch 2.N → Triton 3.(N-4), aplicada solo si esa rama esta publicada en PyPI.
+- Triton se elige leyendo la version que el propio PyTorch declara en PyPI (2.11 → 3.6, 2.13 → 3.7...), con una tabla de respaldo. Una formula fija fallaba desde PyTorch 2.11.
+- El Python embebido del portable no trae include/ ni libs/: Triton se importaba pero no podia compilar ningun kernel, y SageAttention fallaba. El instalador las descarga de triton-windows cuando hay Triton.
 - SageAttention y FlashAttention se verifican ejecutando atencion real en la GPU, no solo con import.
 - Repetir el instalador vuelve a verificar lo ya instalado: el acceso directo no se degrada.
 - Se quitaron los perfiles H3/Wan/LTX del modo avanzado: no instalaban nada.

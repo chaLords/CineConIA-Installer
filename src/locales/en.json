@@ -156,5 +156,7 @@
   "installer.searching_models": "Searching your drives for model folders (bounded search)...",
   "installer.models_found": "Found models this ComfyUI can use without copying them:",
   "installer.migrator_hint": "To merge several libraries onto one drive, use ComfyUI-Model-Migrator.bat.",
-  "installer.ready": "Done. Open ComfyUI from the desktop shortcut."
+  "installer.ready": "Done. Open ComfyUI from the desktop shortcut.",
+  "catalog.no_python_headers": "triton-windows publishes no include/libs for Python {version}; Triton will not be able to compile",
+  "catalog.python_headers_added": "Added the Python {version} include and libs folders Triton needs to compile"
 }
