@@ -11,7 +11,8 @@ _CACHE = {}
 
 def normalize_language(value):
     value = (value or "").strip().lower().replace("_", "-")
-    return "es" if value.startswith("es") else "en"
+    # locale.getlocale() en Windows devuelve nombres como "Spanish_Chile".
+    return "es" if value.startswith(("es", "spanish")) else "en"
 
 def detect_language():
     forced = os.environ.get("CINECONIA_LANG")
@@ -35,7 +36,10 @@ def detect_language():
     return "en"
 
 def get_language():
-    return normalize_language(os.environ.get("CINECONIA_LANG") or detect_language())
+    # Se resuelve una vez: detectar puede lanzar PowerShell en cada t().
+    if not os.environ.get("CINECONIA_LANG"):
+        os.environ["CINECONIA_LANG"] = detect_language()
+    return normalize_language(os.environ["CINECONIA_LANG"])
 
 def _load(lang):
     lang = normalize_language(lang)

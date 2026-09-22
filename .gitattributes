@@ -1,0 +1,4 @@
+# cmd.exe falla con call :etiqueta / goto en .bat con saltos LF.
+# Forzar CRLF tambien en el ZIP que descarga GitHub.
+*.bat text eol=crlf
+*.cmd text eol=crlf

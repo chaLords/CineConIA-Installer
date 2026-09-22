@@ -1,7 +1,9 @@
 """Migrador seguro de bibliotecas de modelos de ComfyUI.
 
 Siempre simula antes de escribir. Nunca sobrescribe un archivo distinto.
-En modo mover: copia, verifica SHA-256 y solo entonces elimina el original.
+En modo mover: si origen y destino estan en el mismo disco se renombra
+(instantaneo, sin duplicar datos); si no, copia, verifica SHA-256 y solo
+entonces elimina el original.
 """
 from __future__ import annotations
 
@@ -26,9 +28,8 @@ t=i18n.t
 
 CATEGORIAS = list(modelos_enlace.CARPETAS)
 IGNORAR_ARCHIVOS = {"desktop.ini", "thumbs.db", ".ds_store"}
-MARCA_INICIO = "# BEGIN CINECONIA MODEL LIBRARY"
-MARCA_FIN = "# END CINECONIA MODEL LIBRARY"
-BLOQUE_NOMBRE = "cineconia_model_library"
+# Marcadores vacios que trae el portable oficial en cada carpeta de models.
+PATRON_MARCADOR = re.compile(r"^put_.*_here$", re.IGNORECASE)
 MARGEN_BYTES = 512 * 1024 * 1024
 
 
@@ -103,7 +104,7 @@ def normalizar_origen(ruta):
             continue
         if os.path.basename(os.path.normpath(c)).lower() == "models":
             return os.path.abspath(c)
-        if any(os.path.isdir(os.path.join(c, cat)) for cat in CATEGORIAS):
+        if modelos_enlace.mapa_categorias(c):
             return os.path.abspath(c)
     return None
 
@@ -235,7 +236,7 @@ def iterar_archivos(root):
     for base, dirs, files in os.walk(root):
         dirs[:] = [d for d in dirs if d.lower() != "__pycache__"]
         for nombre in files:
-            if nombre.lower() in IGNORAR_ARCHIVOS:
+            if nombre.lower() in IGNORAR_ARCHIVOS or PATRON_MARCADOR.match(nombre):
                 continue
             yield os.path.join(base, nombre)
 
@@ -244,17 +245,15 @@ def construir_plan(fuentes, destino):
     cache = {}
     ocupados = {}
     plan = []
-    categorias_lower = {c.lower(): c for c in CATEGORIAS}
 
     for fuente in fuentes:
         etiqueta = nombre_fuente(fuente)
         for origen in iterar_archivos(fuente):
             rel = os.path.relpath(origen, fuente)
             partes = Path(rel).parts
-            primer = partes[0].lower() if partes else ""
-            clasificado = primer in categorias_lower
+            categoria = modelos_enlace.categoria_de(partes[0]) if len(partes) > 1 else None
+            clasificado = categoria is not None
             if clasificado:
-                categoria = categorias_lower[primer]
                 objetivo = os.path.join(destino, categoria, *partes[1:])
             else:
                 categoria = "_sin_clasificar"
@@ -349,17 +348,9 @@ def espacio_requerido(plan, destino, modo):
     if modo == "copiar":
         return sum(x["tamano"] for x in nuevos) + MARGEN_BYTES
 
-    drive_dest = os.path.splitdrive(os.path.abspath(destino))[0].lower()
-    cruzan = 0
-    mismo_disco = []
-    for x in nuevos:
-        drive_src = os.path.splitdrive(os.path.abspath(x["origen"]))[0].lower()
-        if not drive_src or not drive_dest or drive_src != drive_dest:
-            cruzan += x["tamano"]
-        else:
-            mismo_disco.append(x["tamano"])
-    temporal = max(mismo_disco) if mismo_disco else 0
-    return cruzan + temporal + MARGEN_BYTES
+    # En el mismo disco se renombra: no ocupa espacio adicional.
+    cruzan = sum(x["tamano"] for x in nuevos if not mismo_volumen(x["origen"], destino))
+    return cruzan + MARGEN_BYTES
 
 
 def comprobar_espacio(plan, destino, modo):
@@ -406,6 +397,21 @@ def copiar_verificar(origen, destino, cache):
         raise
 
 
+def mismo_volumen(a, b):
+    unidad = lambda p: os.path.splitdrive(os.path.abspath(p))[0].lower()
+    return unidad(a) == unidad(ancestro_existente(b))
+
+
+def mover_directo(origen, destino):
+    """Mismo disco: renombrar es instantaneo y no duplica datos.
+
+    os.rename falla si el destino ya existe, asi que nunca sobrescribe.
+    """
+    os.makedirs(os.path.dirname(destino), exist_ok=True)
+    os.rename(origen, destino)
+    return destino, "copiado"
+
+
 def limpiar_vacios(root):
     for base, dirs, files in os.walk(root, topdown=False):
         if os.path.normcase(base) == os.path.normcase(root):
@@ -442,7 +448,11 @@ def ejecutar_plan(plan, modo, cache):
                 print("      "+t("migrator.duplicate_verified"))
                 continue
 
-            final, estado = copiar_verificar(origen, destino, cache)
+            directo = modo == "mover" and not os.path.exists(destino) and mismo_volumen(origen, destino)
+            if directo:
+                final, estado = mover_directo(origen, destino)
+            else:
+                final, estado = copiar_verificar(origen, destino, cache)
             if estado == "duplicado":
                 resultado["duplicados"] += 1
             else:
@@ -451,7 +461,8 @@ def ejecutar_plan(plan, modo, cache):
                     resultado["conflictos"] += 1
 
             if modo == "mover":
-                os.remove(origen)
+                if not directo:
+                    os.remove(origen)
                 resultado["eliminados_origen"] += 1
             print(f"      OK -> {final}")
 
@@ -464,46 +475,6 @@ def ejecutar_plan(plan, modo, cache):
             print(f"      [X] {type(e).__name__}: {e}")
 
     return resultado
-
-
-def bloque_yaml(destino):
-    base = json.dumps(destino.replace("\\", "/"), ensure_ascii=False)
-    lineas = [
-        MARCA_INICIO,
-        f"{BLOQUE_NOMBRE}:",
-        f"    base_path: {base}",
-    ]
-    for c in CATEGORIAS:
-        lineas.append(f"    {c}: {c}")
-    lineas.append(MARCA_FIN)
-    return "\n".join(lineas)
-
-
-def actualizar_yaml(comfy_root, destino):
-    ruta = os.path.join(comfy_root, "extra_model_paths.yaml")
-    previo = ""
-    backup = None
-    if os.path.isfile(ruta):
-        with open(ruta, "r", encoding="utf-8") as f:
-            previo = f.read()
-        marca = datetime.now().strftime("%Y%m%d-%H%M%S")
-        backup = ruta + f".bak-{marca}"
-        shutil.copy2(ruta, backup)
-
-    nuevo_bloque = bloque_yaml(destino)
-    patron = re.compile(
-        re.escape(MARCA_INICIO) + r".*?" + re.escape(MARCA_FIN),
-        flags=re.DOTALL,
-    )
-    if patron.search(previo):
-        nuevo = patron.sub(nuevo_bloque, previo)
-    else:
-        separador = "" if not previo else ("\n" if previo.endswith("\n") else "\n\n")
-        nuevo = previo + separador + nuevo_bloque + "\n"
-
-    with open(ruta, "w", encoding="utf-8", newline="\n") as f:
-        f.write(nuevo)
-    return ruta, backup
 
 
 def guardar_reporte(destino, fuentes, modo, plan, resultado, yaml_actualizados):
@@ -600,7 +571,7 @@ def main():
     ):
         for root in roots:
             try:
-                ruta, backup = actualizar_yaml(root, destino)
+                ruta, backup = modelos_enlace.actualizar_yaml(root, destino)
                 yaml_actualizados.append({"comfyui": root, "yaml": ruta, "backup": backup})
                 print(f"   OK {ruta}")
                 if backup:

@@ -49,7 +49,7 @@ def entorno_torch(python_exe=None):
     codigo = r'''
 import json,re
 d={"torch":None,"rama":"","cuda":None,"hip":None,"cuda_available":False,
-   "xpu_available":False,"gpu":None,"vram_gb":None,"cap":None,"error":None}
+   "xpu_available":False,"gpu":None,"vram_gb":None,"cap":None,"error":None,"gpu_error":None}
 try:
     import torch
     d["torch"]=torch.__version__
@@ -59,6 +59,9 @@ try:
     d["hip"]=getattr(torch.version,"hip",None)
     try: d["cuda_available"]=bool(torch.cuda.is_available())
     except Exception: pass
+    if (d["cuda"] or d["hip"]) and not d["cuda_available"]:
+        try: torch.cuda.init()
+        except Exception as e: d["gpu_error"]=str(e).strip().splitlines()[0][:160]
     if d["cuda_available"]:
         try:
             d["gpu"]=torch.cuda.get_device_name(0)
@@ -115,7 +118,13 @@ def informe(python_exe=None, ruta_destino=None, fabricante_hint=None, variante=N
         gpu, vram = nvidia["gpu"], nvidia["vram_gb"]
     if not gpu and adaptadores:
         gpu = " | ".join(str(x.get("Name","")) for x in adaptadores if x.get("Name"))
+    # PyTorch compilado para GPU que no puede usarla: casi siempre es un
+    # driver demasiado antiguo para la version de CUDA/ROCm del portable.
+    gpu_inutilizable = (bool(torch.get("torch")) and bool(torch.get("cuda") or torch.get("hip"))
+                        and not torch.get("cuda_available"))
     return {
+        "gpu_inutilizable": gpu_inutilizable,
+        "gpu_error": torch.get("gpu_error"),
         "so": f"{platform.system()} {platform.release()}",
         "python": platform.python_version(),
         "fabricante": fabricante or i18n.t("detection.unknown"),

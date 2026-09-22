@@ -1,23 +1,21 @@
-<p align="center">
-  <a href="README.md">🇪🇸 Español</a> · <strong>🇬🇧 English</strong>
-</p>
-
-<h1 align="center">Cine con IA Installer</h1>
+<h1 align="center">Clean ComfyUI Installation</h1>
 
 <p align="center">
-  <strong>Adaptive ComfyUI installation based on your real hardware.</strong><br>
-  NVIDIA · AMD · Intel · No model downloads · No third-party branding
+  <strong>Automatic, adaptive installer for Windows</strong><br>
+  NVIDIA · AMD · Intel
 </p>
 
 <p align="center">
-  <a href="LICENSE"><img alt="MIT License" src="https://img.shields.io/badge/license-MIT-blue?style=flat-square"></a>
-  <img alt="Windows" src="https://img.shields.io/badge/Windows-10%20%2F%2011-0078d4?style=flat-square&logo=windows&logoColor=white">
-  <img alt="Adaptive branch" src="https://img.shields.io/badge/branch-v2--adaptive--installer-7c3aed?style=flat-square">
-  <a href="https://www.youtube.com/@cineconia.oficial"><img alt="YouTube channel" src="https://img.shields.io/badge/youtube-Cine%20con%20IA-red?style=flat-square&logo=youtube&logoColor=white"></a>
+  <a href="README.md">Español</a> · <strong>English</strong>
 </p>
 
 <p align="center">
-  Detects the computer, installs the appropriate portable build, verifies optional accelerators, and creates a clean desktop shortcut named <strong>ComfyUI</strong>.
+  Installs ComfyUI from scratch, detects the computer's hardware and automatically configures a suitable installation.
+</p>
+
+<p align="center">
+  <sub>No sponsors · No promotional shortcuts · No unnecessary software · No required models</sub><br>
+  <sub>Made by <a href="https://www.youtube.com/@cineconia.oficial">Cine con IA</a></sub>
 </p>
 
 ---
@@ -47,7 +45,9 @@ For a new installation, the recommended order is:
    - Installs ComfyUI.
    - Detects the GPU and appropriate backend.
    - Configures compatible accelerators.
+   - Offers to enable ComfyUI-Manager.
    - Offers to install the Cine con IA custom nodes.
+   - Looks for models from previous installations and offers to use them without copying.
    - Creates launchers and a desktop shortcut named **ComfyUI**.
 
 2. **Test ComfyUI once**
@@ -55,7 +55,7 @@ For a new installation, the recommended order is:
    - Make sure the interface starts correctly.
    - Close ComfyUI before migrating models.
 
-3. **Only if you already have old models: ComfyUI-Model-Migrator.bat**
+3. **Only if you want to gather your models on another drive: ComfyUI-Model-Migrator.bat**
    - Finds or lets you select an existing model library.
    - Lets you choose another SSD/HDD for the models.
    - Shows a simulation first.
@@ -73,7 +73,7 @@ In short:
        Close ComfyUI
             |
             v
-    Already have models?
+    Gather models on another drive?
         /          \
       No            Yes
       |              |
@@ -86,7 +86,8 @@ If you already have ComfyUI and only want to reorganize or move its model librar
 
 ## Quick start
 
-1. Download or extract the repository.
+1. Download or extract the repository into a simple folder such as **C:\ComfyUI**.
+   Avoid OneDrive and paths with accents.
 2. Run **ComfyUI-Setup.bat**.
 3. Use the recommended automatic configuration, or choose Advanced mode.
 
@@ -98,24 +99,32 @@ The installer does not create promotional channel shortcuts or replace ComfyUI b
 ### Before downloading
 
 - Detects NVIDIA, AMD, or Intel.
-- Modern NVIDIA systems use the current official NVIDIA portable build.
-- Older NVIDIA hardware/drivers can use the official nvidia_cu126 fallback.
+- Modern NVIDIA systems use the current official NVIDIA portable build (CUDA 13).
+- NVIDIA GPUs below compute capability 7.5 (GTX 10xx, GTX 9xx, TITAN V...) or with a
+  driver older than 580 use the official nvidia_cu126 build. When the driver is the
+  reason, the installer says so, so you can update it.
 - AMD uses the official AMD/ROCm portable build.
 - Intel uses the official Intel XPU portable build.
-- Checks free space, curl, and PowerShell.
+- Checks free space (15 GB), curl, and PowerShell.
+- Warns when the folder is inside OneDrive or the path contains accents.
 
 ### Safer downloads
 
 - Uses curl --fail so HTTP errors are not mistaken for successful downloads.
 - Retries downloads.
 - Downloads large files as .part first.
+- If the download is interrupted, running the installer again resumes it.
 - Compares the ComfyUI archive with the SHA-256 digest published by GitHub when available.
 - Falls back to a 7-Zip integrity test if the release API does not provide a digest.
 - Preserves an incomplete previous installation as a backup before reinstalling.
+- Deletes the .7z archive after extraction to free ~2 GB.
 
 ### After ComfyUI is installed
 
-The installer runs the embedded Python that belongs to the downloaded portable build and reads the environment that actually exists:
+The installer first checks for the Microsoft Visual C++ Redistributable (without it
+PyTorch fails with a c10.dll error) and offers to install it with winget.
+
+It then runs the embedded Python that belongs to the downloaded portable build and reads the environment that actually exists:
 
 - Python.
 - PyTorch.
@@ -124,13 +133,16 @@ The installer runs the embedded Python that belongs to the downloaded portable b
 - VRAM.
 - Compute capability when applicable.
 
+If PyTorch cannot use the GPU (almost always an old driver), it warns before
+continuing instead of leaving an installation that would only use the CPU.
+
 Optional accelerators are then matched against that real environment instead of assuming a CUDA version.
 
 ## Accelerators
 
 ### Automatic configuration
 
-On NVIDIA, SageAttention is attempted only when a wheel matches the actual PyTorch, CUDA, and Python combination. Triton is installed only when there is a known safe rule for that PyTorch branch.
+On NVIDIA, SageAttention is attempted only when a wheel matches the actual PyTorch, CUDA, and Python combination, including wheels published for "this PyTorch version and higher". Triton follows the triton-windows table PyTorch 2.N → Triton 3.(N-4), and only when that branch is already published on PyPI.
 
 AMD and Intel stay on their official portable backend and do not enter NVIDIA CUDA logic.
 
@@ -143,7 +155,13 @@ When compatible, advanced mode can offer:
 - Nunchaku.
 - InsightFace / ONNX Runtime.
 
-A successful pip install is not enough. The module is imported in a separate process. If the import fails, the component is not marked as operational and its launcher is not created.
+A successful pip install is not enough. SageAttention and FlashAttention are tested by running a real attention operation on the GPU; everything else is imported in a separate process. If the test fails, the component is not marked as operational and its launcher is not created.
+
+Running the installer again re-verifies whatever already worked, so repeating the installation never downgrades the desktop shortcut.
+
+## ComfyUI-Manager
+
+When your ComfyUI ships it, the installer offers to enable **ComfyUI-Manager** (--enable-manager). It lets you install the nodes a workflow is missing from inside the interface.
 
 ## Generated launchers
 
@@ -161,6 +179,8 @@ Spanish installations use the equivalent Iniciar/Actualizar names.
 
 Launchers check port 8188. If ComfyUI is already running, the existing interface is opened instead of launching a second instance.
 
+The updaters move ComfyUI to the **latest stable release** (not the development branch). Update-ComfyUI-and-Nodes.bat saves a Manager snapshot first so you can roll back.
+
 ## Desktop shortcut
 
 Only one desktop shortcut is created: **ComfyUI**.
@@ -168,7 +188,7 @@ Only one desktop shortcut is created: **ComfyUI**.
 It points to the best launcher that was actually verified:
 
 1. SageAttention, if it works.
-2. Comfy Kitchen, if available.
+2. Comfy Kitchen, if available (NVIDIA only).
 3. Base launcher as a fallback.
 
 The installer attempts to use the ComfyUI favicon from the official Comfy-Org documentation repository. If it cannot obtain it, it does not substitute channel branding.
@@ -185,9 +205,11 @@ It then offers to install:
 
 The installer does **not download models**.
 
-It can optionally find another ComfyUI model library and create extra_model_paths.yaml so existing models can be reused without copying them.
+It automatically searches your local drives for model folders from previous installations and, only if it finds one, offers to link it through extra_model_paths.yaml so those models can be reused without copying them. It recognizes ComfyUI libraries as well as A1111 / Forge ones (Stable-diffusion, Lora, ESRGAN...).
 
-The search is bounded by depth, number of scanned folders, and number of results.
+The search covers every fixed local drive (not USB or network drives) and is bounded by depth, number of scanned folders, and number of results.
+
+If extra_model_paths.yaml already exists, a .bak copy is made first and only the CineConIA-managed block is changed.
 
 ## Migrating models from an existing ComfyUI
 
@@ -205,7 +227,8 @@ Recommended flow:
    D:\AI\Models\ComfyUI\models
 7. Choose:
    - **Copy** — keeps all originals.
-   - **Safe move** — copies each file, verifies SHA-256, then removes the original.
+   - **Safe move** — on the same drive files are renamed (instant, no extra space);
+     across drives each file is copied, verified with SHA-256, and only then is the original removed.
 8. Review the **SIMULATION** before anything changes.
 9. Type **MIGRATE** to confirm in English mode.
 10. The migrator can update extra_model_paths.yaml for recognized ComfyUI installations.
@@ -232,13 +255,13 @@ Recommended flow:
         vae_approx\
         _sin_clasificar\
 
-The internal folder _sin_clasificar remains language-independent so the same model library can be shared by Spanish and English installations. Files are placed there only when they cannot be classified safely from their existing folder structure.
+The internal folder _sin_clasificar remains language-independent so the same model library can be shared by Spanish and English installations. Files are placed there only when they cannot be classified safely from their existing folder structure. A1111 / Forge folders are translated to their equivalent (Stable-diffusion → checkpoints, Lora → loras, ESRGAN → upscale_models). The empty put_*_here placeholders from the portable build are ignored.
 
 ### Duplicates and conflicts
 
 - Possible duplicates are confirmed with SHA-256.
 - Same filename but different content is never overwritten; the conflict is preserved with a suffix such as __conflicto_2.
-- In safe-move mode an original is removed only after the copied file is verified.
+- In safe-move mode across drives, an original is removed only after the copied file is verified.
 - If an error occurs, that original remains untouched.
 
 ### extra_model_paths.yaml

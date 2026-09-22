@@ -3,7 +3,9 @@ setlocal EnableExtensions EnableDelayedExpansion
 cd /D "%~dp0"
 chcp 65001 >nul
 call :SELECT_LANGUAGE "%~1"
-set "MIN_ESPACIO_GB=8"
+rem Paquete ~2 GB + portable extraido ~7 GB + aceleradores y margen.
+set "MIN_ESPACIO_GB=15"
+set "CIA_DIR=%~dp0"
 call :LOAD_TEXT
 title !T_TITLE!
 set "DESTINO=%~dp0ComfyUI"
@@ -25,11 +27,20 @@ if exist "%PY%" if exist "%MAIN%" (
 )
 where curl.exe >nul 2>&1 || (echo   [X] !T_NO_CURL!&goto :fin)
 where powershell.exe >nul 2>&1 || (echo   [X] !T_NO_PS!&goto :fin)
-for /f %%G in ('powershell -NoProfile -Command "[math]::Round((Get-PSDrive -Name ([IO.Path]::GetPathRoot('%~dp0').Substring(0,1))).Free/1GB,1)"') do set "ESPACIO=%%G"
+rem OneDrive sincroniza (y puede dejar "solo en la nube") miles de archivos del
+rem portable; una ruta con tildes o enes rompe algunos nodos y paquetes pip.
+echo(!CIA_DIR! | findstr /I /C:"OneDrive" >nul && (
+    echo   [^^!] !T_ONEDRIVE!
+    set /p "SEGUIR=   !T_CONTINUE_ANYWAY! "
+    if /I not "!SEGUIR!"=="S" if /I not "!SEGUIR!"=="Y" goto :fin
+)
+powershell -NoProfile -Command "if ($env:CIA_DIR -match '[^\x00-\x7F]') { exit 1 } else { exit 0 }"
+if errorlevel 1 echo   [^^!] !T_NON_ASCII!
+rem GB enteros: con Windows en espanol un decimal sale como "9,5" y se leia 95.
+for /f %%G in ('powershell -NoProfile -Command "[int][math]::Floor((Get-PSDrive -Name ([IO.Path]::GetPathRoot($env:CIA_DIR).Substring(0,1))).Free/1GB)"') do set "ESPACIO=%%G"
 if defined ESPACIO (
     echo   !T_FREE!: !ESPACIO! GB
-    powershell -NoProfile -Command "if ([double]'!ESPACIO!' -lt %MIN_ESPACIO_GB%) { exit 1 } else { exit 0 }"
-    if errorlevel 1 (echo   [X] !T_LOW_SPACE!&goto :fin)
+    if !ESPACIO! LSS %MIN_ESPACIO_GB% (echo   [X] !T_LOW_SPACE!&goto :fin)
 )
 where nvidia-smi.exe >nul 2>&1 && (
     for /f "tokens=*" %%G in ('nvidia-smi --query-gpu^=name --format^=csv^,noheader 2^>nul') do if not defined GPU set "GPU=%%G"
@@ -60,9 +71,26 @@ if /I "!FABRICANTE!"=="nvidia" (
     where nvidia-smi.exe >nul 2>&1 && (
         for /f "tokens=1 delims=." %%V in ('nvidia-smi --query-gpu^=driver_version --format^=csv^,noheader 2^>nul') do if "!NV_MAJOR!"=="0" set "NV_MAJOR=%%V"
     )
+    rem CUDA 13 exige compute capability 7.5+ (Turing o superior) y driver 580+.
     set "LEGACY=0"
-    echo(!GPU! | findstr /I /C:"GTX 10" /C:"TITAN Xp" /C:"Quadro P" /C:"Tesla P" >nul && set "LEGACY=1"
-    if not "!NV_MAJOR!"=="0" if !NV_MAJOR! LSS 580 set "LEGACY=1"
+    set "CC_MAJ="
+    set "CC_MIN="
+    where nvidia-smi.exe >nul 2>&1 && (
+        for /f "tokens=1,2 delims=." %%A in ('nvidia-smi --query-gpu^=compute_cap --format^=csv^,noheader 2^>nul') do if not defined CC_MAJ (set "CC_MAJ=%%A"&set "CC_MIN=%%B")
+    )
+    set "CC_NUM=0"
+    if defined CC_MAJ set /a "CC_NUM=!CC_MAJ!*10+!CC_MIN!" 2>nul
+    if !CC_NUM! GTR 0 (
+        echo   Compute capability: !CC_MAJ!.!CC_MIN!
+        if !CC_NUM! LSS 75 set "LEGACY=1"
+    ) else (
+        echo(!GPU! | findstr /I /C:"GTX 10" /C:"GTX 9" /C:"GTX 7" /C:"TITAN X" /C:"TITAN V" /C:"Quadro P" /C:"Quadro M" /C:"Quadro GV" /C:"Tesla P" /C:"Tesla V" /C:"Tesla M" >nul && set "LEGACY=1"
+    )
+    if not "!NV_MAJOR!"=="0" if !NV_MAJOR! LSS 580 (
+        if "!LEGACY!"=="0" echo   [^^!] !T_DRIVER_UPDATE! ^(!NV_MAJOR!^)
+        set "LEGACY=1"
+    )
+    if not "!NV_MAJOR!"=="0" if !NV_MAJOR! LSS 528 echo   [^^!] !T_DRIVER_TOO_OLD!
     if "!LEGACY!"=="1" set "VARIANTE=nvidia_cu126"
 )
 if /I "!FABRICANTE!"=="amd" set "VARIANTE=amd"
@@ -85,9 +113,10 @@ if exist "!PAQUETE!" (
 )
 if not exist "!PAQUETE!" (
     echo   !T_DOWNLOAD_COMFY!
-    if exist "!PAQUETE!.part" del /Q "!PAQUETE!.part" >nul 2>&1
-    curl.exe --fail --location --retry 5 --retry-delay 2 --progress-bar -o "!PAQUETE!.part" "https://github.com/Comfy-Org/ComfyUI/releases/latest/download/!PAQUETE!"
-    if errorlevel 1 (del /Q "!PAQUETE!.part" >nul 2>&1&echo   [X] !T_DOWNLOAD_COMFY_FAIL!&goto :fin)
+    rem -C - reanuda un .part previo: un corte al 90%% no obliga a bajar 2 GB otra vez.
+    rem Si el .part fuera de otra version, el SHA-256 lo detecta y se descarta.
+    curl.exe --fail --location --retry 5 --retry-delay 2 -C - --progress-bar -o "!PAQUETE!.part" "https://github.com/Comfy-Org/ComfyUI/releases/latest/download/!PAQUETE!"
+    if errorlevel 1 (echo   [X] !T_DOWNLOAD_COMFY_FAIL!&echo   !T_RESUME_HINT!&goto :fin)
     move /Y "!PAQUETE!.part" "!PAQUETE!" >nul
     call :VERIFICAR_HASH "!PAQUETE!"
     if errorlevel 1 (echo   [X] !T_HASH_FAIL!&del /Q "!PAQUETE!" >nul 2>&1&goto :fin)
@@ -108,6 +137,8 @@ if errorlevel 1 (echo   [X] !T_EXTRACT_FAIL!&goto :fin)
 if exist "%~dp0ComfyUI_windows_portable\python_embeded\python.exe" if not exist "%DESTINO%" ren "%~dp0ComfyUI_windows_portable" "ComfyUI"
 if not exist "%PY%" (echo   [X] !T_NO_EMBEDDED!&goto :fin)
 if not exist "%MAIN%" (echo   [X] !T_NO_MAIN!&goto :fin)
+rem El paquete ya no hace falta: libera ~2 GB.
+del /Q "!PAQUETE!" >nul 2>&1 && echo   !T_CLEANUP!
 echo.
 echo   !T_BASE_READY!
 "%PY%" -s "%~dp0src\instalador.py" "%DESTINO%" "!FABRICANTE!" "!VARIANTE!"
@@ -116,7 +147,7 @@ goto :fin
 set "DIGEST="
 for /f "delims=" %%H in ('powershell -NoProfile -Command "$ErrorActionPreference='Stop'; $r=Invoke-RestMethod -Headers @{'User-Agent'='CineConIA-Installer'} 'https://api.github.com/repos/Comfy-Org/ComfyUI/releases/latest'; $a=$r.assets ^| Where-Object name -eq '%~1'; if($a.digest){$a.digest}" 2^>nul') do set "DIGEST=%%H"
 if not defined DIGEST (
-    echo   [!] !T_NO_DIGEST!
+    echo   [^^!] !T_NO_DIGEST!
     "7zr.exe" t "%~1" >nul 2>&1
     exit /b !errorlevel!
 )
@@ -181,6 +212,13 @@ if /I "%CINECONIA_LANG%"=="es" (
  set "T_NO_DIGEST=GitHub no entrego digest; se validara el archivo con 7-Zip."
  set "T_HASH_OK=SHA-256 verificado."
  set "T_EXIT=Pulsa una tecla para salir..."
+ set "T_ONEDRIVE=Esta carpeta esta dentro de OneDrive. ComfyUI tiene miles de archivos y OneDrive puede romperlo al sincronizar. Mejor mueve el instalador a una carpeta como C:\ComfyUI o D:\ComfyUI."
+ set "T_CONTINUE_ANYWAY=Instalar aqui de todos modos? [s/N]:"
+ set "T_NON_ASCII=La ruta contiene tildes, enes u otros caracteres especiales. Algunos nodos fallan con eso; si puedes, usa una ruta simple como C:\ComfyUI."
+ set "T_DRIVER_UPDATE=Tu driver NVIDIA es anterior al 580. Se instalara la version compatible (CUDA 12.6). Si actualizas el driver, el instalador usara la version moderna (CUDA 13)."
+ set "T_DRIVER_TOO_OLD=El driver NVIDIA es muy antiguo y PyTorch podria no ver la GPU. Actualizalo desde https://www.nvidia.com/drivers"
+ set "T_RESUME_HINT=Vuelve a ejecutar el instalador: la descarga continuara donde quedo."
+ set "T_CLEANUP=Paquete de instalacion eliminado (se liberaron ~2 GB)."
 ) else (
  set "T_TITLE=Adaptive ComfyUI Installer"
  set "T_BANNER=ComfyUI - adaptive Cine con IA installer"
@@ -212,6 +250,13 @@ if /I "%CINECONIA_LANG%"=="es" (
  set "T_NO_DIGEST=GitHub did not provide a digest; the archive will be tested with 7-Zip."
  set "T_HASH_OK=SHA-256 verified."
  set "T_EXIT=Press any key to exit..."
+ set "T_ONEDRIVE=This folder is inside OneDrive. ComfyUI has thousands of files and OneDrive syncing can break it. Move the installer to a folder such as C:\ComfyUI or D:\ComfyUI."
+ set "T_CONTINUE_ANYWAY=Install here anyway? [y/N]:"
+ set "T_NON_ASCII=The path contains accents or other special characters. Some nodes fail with them; if possible use a simple path such as C:\ComfyUI."
+ set "T_DRIVER_UPDATE=Your NVIDIA driver is older than 580. The compatible build (CUDA 12.6) will be installed. After a driver update the installer will use the modern build (CUDA 13)."
+ set "T_DRIVER_TOO_OLD=The NVIDIA driver is very old and PyTorch may not see the GPU. Update it from https://www.nvidia.com/drivers"
+ set "T_RESUME_HINT=Run the installer again: the download will continue where it stopped."
+ set "T_CLEANUP=Installation package removed (~2 GB freed)."
 )
 exit /b 0
 :fin

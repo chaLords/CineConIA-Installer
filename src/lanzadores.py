@@ -17,6 +17,7 @@ def _inicio(titulo,flags=""):
     comfy_error=i18n.t("launcher.comfy_error")
     return f'''@echo off
 setlocal
+chcp 65001 >nul
 cd /D "%~dp0"
 title {titulo}
 set "PORT={PUERTO}"
@@ -34,19 +35,35 @@ def _actualizador(nodos=False):
     if nodos:
         extra=r'''
 if exist ".\ComfyUI\custom_nodes\ComfyUI-Cine-con-IA\.git" git -C ".\ComfyUI\custom_nodes\ComfyUI-Cine-con-IA" pull --ff-only
-if exist ".\ComfyUI\custom_nodes\ComfyUI-Manager\cm-cli.py" .\python_embeded\python.exe -s ".\ComfyUI\custom_nodes\ComfyUI-Manager\cm-cli.py" update all
+set "COMFYUI_PATH=%~dp0ComfyUI"
+if exist ".\python_embeded\Lib\site-packages\cm_cli\__main__.py" (
+ rem Snapshot antes de actualizar: se puede volver atras desde el Manager.
+ .\python_embeded\python.exe -s -m cm_cli save-snapshot
+ .\python_embeded\python.exe -s -m cm_cli update all
+) else if exist ".\ComfyUI\custom_nodes\ComfyUI-Manager\cm-cli.py" (
+ .\python_embeded\python.exe -s ".\ComfyUI\custom_nodes\ComfyUI-Manager\cm-cli.py" save-snapshot
+ .\python_embeded\python.exe -s ".\ComfyUI\custom_nodes\ComfyUI-Manager\cm-cli.py" update all
+)
 '''
     close_msg=i18n.t("launcher.close_before_update")
     missing_msg=i18n.t("launcher.updater_missing")
     done_msg=i18n.t("launcher.update_done")
     return f'''@echo off
 setlocal
+chcp 65001 >nul
 cd /D "%~dp0"
 set "PORT={PUERTO}"
 for /f %%A in ('powershell -NoProfile -Command "if (Get-NetTCPConnection -LocalPort %PORT% -State Listen -ErrorAction SilentlyContinue) {{1}} else {{0}}"') do set "INUSE=%%A"
 if "%INUSE%"=="1" (echo {close_msg}&pause&exit /b 1)
-if exist ".\\update\\update_comfyui.bat" (
- call ".\\update\\update_comfyui.bat" nopause
+rem Los scripts oficiales usan rutas ..\\ relativas: hay que entrar en update\\.
+rem Se prefiere la version estable; la otra sigue la rama de desarrollo.
+set "UPD="
+if exist ".\\update\\update_comfyui.bat" set "UPD=update_comfyui.bat"
+if exist ".\\update\\update_comfyui_stable.bat" set "UPD=update_comfyui_stable.bat"
+if defined UPD (
+ pushd ".\\update"
+ call ".\\%UPD%" nopause
+ popd
 ) else (
  if exist ".\\ComfyUI\\.git" (git -C ".\\ComfyUI" pull --ff-only) else (echo {missing_msg}&pause&exit /b 1)
 )
@@ -84,32 +101,41 @@ def _nombres():
         "update_nodes":"Update-ComfyUI-and-Nodes.bat",
     }
 
+def flag_soportado(destino,flag):
+    """El flag existe en esta version de ComfyUI (evita lanzadores que no arrancan)."""
+    try:
+        with open(os.path.join(destino,"ComfyUI","comfy","cli_args.py"),encoding="utf-8") as f:
+            return f'"{flag}"' in f.read()
+    except OSError:
+        return False
+
+def manager_disponible(destino):
+    py=os.path.join(destino,"python_embeded","python.exe")
+    return flag_soportado(destino,"--enable-manager") and _modulo_ok(py,"comfyui_manager")
+
 def crear_lanzadores(destino,entorno,verificados):
     py=os.path.join(destino,"python_embeded","python.exe")
     nombres=_nombres()
+    comun="--enable-manager" if manager_disponible(destino) else ""
     creados={}
-    base=os.path.join(destino,nombres["base"])
-    _escribir(base,_inicio("ComfyUI"))
-    creados["base"]=base
-    if _modulo_ok(py,"comfy_kitchen"):
-        r=os.path.join(destino,nombres["kitchen"])
-        _escribir(r,_inicio("ComfyUI - Kitchen","--use-ck-attention"))
-        creados["kitchen"]=r
+    def lanzador(clave,titulo,flag=""):
+        r=os.path.join(destino,nombres[clave])
+        _escribir(r,_inicio(titulo,f"{comun} {flag}"))
+        creados[clave]=r
+    lanzador("base","ComfyUI")
+    if _modulo_ok(py,"comfy_kitchen") and flag_soportado(destino,"--use-ck-attention"):
+        lanzador("kitchen","ComfyUI - Kitchen","--use-ck-attention")
     if "sageattention" in verificados:
-        r=os.path.join(destino,nombres["sage"])
-        _escribir(r,_inicio("ComfyUI - SageAttention","--use-sage-attention"))
-        creados["sage"]=r
+        lanzador("sage","ComfyUI - SageAttention","--use-sage-attention")
     if "flashattention" in verificados:
-        r=os.path.join(destino,nombres["flash"])
-        _escribir(r,_inicio("ComfyUI - FlashAttention","--use-flash-attention"))
-        creados["flash"]=r
-    if entorno.get("fabricante")=="amd":
-        r=os.path.join(destino,nombres["amd"])
-        _escribir(r,_inicio("ComfyUI - AMD Dynamic VRAM","--enable-dynamic-vram"))
-        creados["amd_dynamic_vram"]=r
+        lanzador("flash","ComfyUI - FlashAttention","--use-flash-attention")
+    if entorno.get("fabricante")=="amd" and flag_soportado(destino,"--enable-dynamic-vram"):
+        lanzador("amd","ComfyUI - AMD Dynamic VRAM","--enable-dynamic-vram")
     _escribir(os.path.join(destino,nombres["update"]),_actualizador(False))
     _escribir(os.path.join(destino,nombres["update_nodes"]),_actualizador(True))
-    return creados, creados.get("sage") or creados.get("kitchen") or creados["base"]
+    # Kitchen solo esta medido en CUDA; en AMD/Intel el acceso usa el backend oficial.
+    kitchen=creados.get("kitchen") if entorno.get("fabricante")=="nvidia" else None
+    return creados, creados.get("sage") or kitchen or creados["base"]
 
 def _descargar_icono(destino):
     ruta=os.path.join(destino,"ComfyUI.ico")

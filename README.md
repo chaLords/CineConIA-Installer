@@ -1,23 +1,21 @@
-<p align="center">
-  <strong>🇪🇸 Español</strong> · <a href="README.en.md">🇬🇧 English</a>
-</p>
-
-<h1 align="center">Instalador de Cine con IA</h1>
+<h1 align="center">Instalación limpia de ComfyUI</h1>
 
 <p align="center">
-  <strong>ComfyUI adaptativo, instalado según tu hardware y listo para crear.</strong><br>
-  NVIDIA · AMD · Intel · Sin descargar modelos · Sin marcas ajenas
+  <strong>Instalador automático y adaptativo para Windows</strong><br>
+  NVIDIA · AMD · Intel
 </p>
 
 <p align="center">
-  <a href="LICENSE"><img alt="Licencia MIT" src="https://img.shields.io/badge/licencia-MIT-blue?style=flat-square"></a>
-  <img alt="Windows" src="https://img.shields.io/badge/Windows-10%20%2F%2011-0078d4?style=flat-square&logo=windows&logoColor=white">
-  <img alt="Versión adaptativa" src="https://img.shields.io/badge/rama-v2--adaptive--installer-7c3aed?style=flat-square">
-  <a href="https://www.youtube.com/@cineconia.oficial"><img alt="Canal de YouTube" src="https://img.shields.io/badge/youtube-Cine%20con%20IA-red?style=flat-square&logo=youtube&logoColor=white"></a>
+  <strong>Español</strong> · <a href="README.en.md">English</a>
 </p>
 
 <p align="center">
-  Detecta el equipo, instala el portable adecuado, verifica aceleradores y crea un acceso directo limpio llamado <strong>ComfyUI</strong>.
+  Instala ComfyUI desde cero, detecta el hardware del equipo y configura automáticamente una instalación adecuada.
+</p>
+
+<p align="center">
+  <sub>Sin sponsors · Sin accesos promocionales · Sin software innecesario · Sin modelos obligatorios</sub><br>
+  <sub>Desarrollado por <a href="https://www.youtube.com/@cineconia.oficial">Cine con IA</a></sub>
 </p>
 
 ---
@@ -39,15 +37,17 @@ Los archivos neutrales para cualquier usuario son:
 Para mantener compatibilidad también existen **Instalar-ComfyUI.bat** y
 **Migrar-Modelos-ComfyUI.bat**; ambos llaman al mismo sistema bilingüe.
 
-## ¿Que archivo ejecuto primero?
+## ¿Qué archivo ejecuto primero?
 
-Para una instalacion nueva, el orden recomendado es este:
+Para una instalación nueva, el orden recomendado es este:
 
 1. **Primero: Instalar-ComfyUI.bat**
    - Instala ComfyUI.
    - Detecta la GPU y el backend apropiado.
    - Configura los aceleradores compatibles.
-   - Instala los nodos Cine con IA si el usuario lo acepta.
+   - Activa ComfyUI-Manager si lo aceptas.
+   - Instala los nodos Cine con IA si lo aceptas.
+   - Busca modelos de instalaciones anteriores y ofrece usarlos sin copiarlos.
    - Crea los lanzadores y el acceso directo de escritorio **ComfyUI**.
 
 2. **Prueba ComfyUI una vez**
@@ -55,10 +55,10 @@ Para una instalacion nueva, el orden recomendado es este:
    - Comprueba que la interfaz inicia correctamente.
    - Luego cierra ComfyUI antes de migrar modelos.
 
-3. **Despues, solo si ya tienes modelos anteriores: Migrar-Modelos-ComfyUI.bat**
+3. **Después, solo si quieres reunir tus modelos en otro disco: Migrar-Modelos-ComfyUI.bat**
    - Busca o permite seleccionar la biblioteca antigua.
    - Permite elegir otro SSD/HDD para los modelos.
-   - Primero hace una simulacion.
+   - Primero hace una simulación.
    - Luego puede copiar o mover de forma segura.
    - Finalmente puede enlazar la nueva biblioteca mediante extra_model_paths.yaml.
 
@@ -73,9 +73,9 @@ En forma resumida:
        Cerrar ComfyUI
             |
             v
-    ¿Ya tienes modelos?
+    ¿Quieres reunir tus modelos en otro disco?
         /         \
-      No           Si
+      No           Sí
       |            |
       v            v
    Terminar   Migrar-Modelos-ComfyUI.bat
@@ -83,42 +83,51 @@ En forma resumida:
 **Si empiezas desde cero y no tienes modelos antiguos, no necesitas ejecutar
 Migrar-Modelos-ComfyUI.bat.**
 
-**Si ya tenias un ComfyUI anterior y solo quieres ordenar/mover sus modelos,
-tambien puedes usar Migrar-Modelos-ComfyUI.bat de forma independiente.**
+**Si ya tenías un ComfyUI anterior y solo quieres ordenar/mover sus modelos,
+también puedes usar Migrar-Modelos-ComfyUI.bat de forma independiente.**
 
-## Inicio rapido
+## Inicio rápido
 
-1. Descarga/descomprime el repositorio.
+1. Descarga/descomprime el repositorio en una carpeta simple, por ejemplo **C:\ComfyUI**.
+   Evita OneDrive y rutas con tildes o eñes.
 2. Ejecuta **Instalar-ComfyUI.bat**.
-3. Usa la configuracion automatica recomendada o entra al modo avanzado.
+3. Usa la configuración automática recomendada o entra al modo avanzado.
 
-Al terminar queda un unico acceso directo llamado **ComfyUI** en el escritorio.
+Al terminar queda un único acceso directo llamado **ComfyUI** en el escritorio.
 No se crean accesos al canal, launchers promocionales ni branding de Cine con IA.
 
-## Como decide la instalacion
+## Cómo decide la instalación
 
 ### Antes de descargar
 
 - Detecta NVIDIA, AMD o Intel.
-- NVIDIA moderno usa el portable oficial NVIDIA por defecto.
-- NVIDIA antiguo/driver previo a CUDA 13 usa el portable oficial nvidia_cu126.
+- NVIDIA moderno usa el portable oficial NVIDIA (CUDA 13) por defecto.
+- NVIDIA con compute capability menor a 7.5 (GTX 10xx, GTX 9xx, TITAN V...) o con
+  driver anterior al 580 usa el portable oficial nvidia_cu126. Si el driver es
+  el motivo, lo indica para que puedas actualizarlo.
 - AMD usa el portable AMD/ROCm oficial.
 - Intel usa el portable Intel XPU oficial.
-- Comprueba espacio libre, curl y PowerShell.
+- Comprueba espacio libre (15 GB), curl y PowerShell.
+- Avisa si la carpeta está dentro de OneDrive o si la ruta tiene tildes o eñes.
 
 ### Descarga robusta
 
 - curl --fail para no confundir un 404/500 con una descarga correcta.
-- Reintentos automaticos.
+- Reintentos automáticos.
 - Archivos grandes se descargan primero como .part.
+- Si la descarga se corta, al volver a ejecutar el instalador continúa donde quedó.
 - El .7z de ComfyUI se compara con el SHA-256 que publica GitHub cuando existe.
 - Si GitHub no entrega digest, se hace al menos una prueba de integridad con 7-Zip.
-- Una instalacion parcial previa se conserva como respaldo antes de reinstalar.
+- Una instalación parcial previa se conserva como respaldo antes de reinstalar.
+- Tras extraer, el paquete .7z se elimina para liberar ~2 GB.
 
-### Despues de instalar ComfyUI
+### Después de instalar ComfyUI
 
-El instalador ejecuta el **python_embeded del portable** y detecta lo que
-realmente quedo instalado:
+El instalador comprueba primero Microsoft Visual C++ Redistributable (sin él
+PyTorch falla con el error c10.dll) y ofrece instalarlo con winget.
+
+Después ejecuta el **python_embeded del portable** y detecta lo que
+realmente quedó instalado:
 
 - Python.
 - PyTorch.
@@ -127,19 +136,24 @@ realmente quedo instalado:
 - VRAM.
 - Compute capability cuando corresponde.
 
-Desde ese momento no se “elige CUDA” por intuicion. Los aceleradores se
-resuelven contra la combinacion que **realmente quedo instalada**.
+Si PyTorch no puede usar la GPU (casi siempre, un driver antiguo), lo avisa
+antes de seguir en vez de dejar una instalación que solo usaría la CPU.
+
+Desde ese momento no se “elige CUDA” por intuición. Los aceleradores se
+resuelven contra la combinación que **realmente quedó instalada**.
 
 ## Aceleradores
 
-### Configuracion automatica
+### Configuración automática
 
 En NVIDIA intenta SageAttention solo cuando encuentra una wheel que coincide con
-la rama real de PyTorch, CUDA y Python. Triton se instala solo si existe una
-regla conocida para esa rama de PyTorch.
+la rama real de PyTorch, CUDA y Python, incluidas las wheels publicadas para
+“esta versión de PyTorch y superiores”. Triton se instala siguiendo la tabla
+PyTorch 2.N → Triton 3.(N-4) de triton-windows, y solo si esa rama ya está
+publicada en PyPI.
 
 En AMD e Intel se conserva el backend oficial del portable y no se entra en la
-logica CUDA de NVIDIA.
+lógica CUDA de NVIDIA.
 
 ### Modo avanzado
 
@@ -150,23 +164,38 @@ Permite seleccionar, cuando el equipo lo soporta:
 - Nunchaku.
 - InsightFace / ONNX Runtime.
 
-Un pip install exitoso no basta: el modulo se importa en un proceso separado.
-Si el import falla, el componente no se considera operativo y no se crea su BAT.
+Un pip install exitoso no basta. SageAttention y FlashAttention se prueban
+ejecutando una operación real de atención en la GPU; el resto se importa en un
+proceso separado. Si la prueba falla, el componente no se considera operativo y
+no se crea su BAT.
+
+Si vuelves a ejecutar el instalador, lo que ya funcionaba se vuelve a verificar,
+así que repetir la instalación nunca degrada el acceso directo.
+
+## ComfyUI-Manager
+
+Si tu ComfyUI lo incluye, el instalador ofrece activar **ComfyUI-Manager**
+(--enable-manager). Sirve para instalar desde la interfaz los nodos que le
+falten a un workflow.
 
 ## Lanzadores generados
 
 Dentro de la carpeta instalada de ComfyUI pueden aparecer:
 
 - Iniciar-ComfyUI.bat
-- Iniciar-ComfyUI-Kitchen.bat (si Comfy Kitchen esta disponible)
+- Iniciar-ComfyUI-Kitchen.bat (si Comfy Kitchen está disponible)
 - Iniciar-ComfyUI-SageAttention.bat (solo si Sage fue verificado)
 - Iniciar-ComfyUI-FlashAttention.bat (solo si Flash fue verificado)
 - Iniciar-ComfyUI-DynamicVRAM.bat (AMD)
 - Actualizar-ComfyUI.bat
 - Actualizar-ComfyUI-y-Nodos.bat
 
-Los lanzadores comprueban el puerto 8188. Si ComfyUI ya esta abierto, se abre
+Los lanzadores comprueban el puerto 8188. Si ComfyUI ya está abierto, se abre
 la interfaz existente en vez de iniciar otra instancia.
+
+Los actualizadores llevan ComfyUI a la **última versión estable** (no a la
+rama de desarrollo). Actualizar-ComfyUI-y-Nodos.bat guarda antes un snapshot
+del Manager para poder volver atrás.
 
 ## Acceso directo de escritorio
 
@@ -174,7 +203,7 @@ Se crea **un solo acceso**: ComfyUI.
 
 Apunta al mejor lanzador verificado:
 1. SageAttention, si realmente funciona.
-2. Comfy Kitchen, si esta disponible.
+2. Comfy Kitchen, si está disponible (solo NVIDIA).
 3. Lanzador base como fallback.
 
 El instalador intenta usar el favicon.ico del repositorio oficial
@@ -183,7 +212,7 @@ del canal.
 
 ## Git y nodos
 
-Git se comprueba antes de clonar nodos. Si falta y winget esta disponible,
+Git se comprueba antes de clonar nodos. Si falta y winget está disponible,
 el instalador pregunta si quieres instalar Git for Windows.
 
 Luego ofrece instalar:
@@ -193,28 +222,20 @@ https://github.com/chaLords/ComfyUI-Cine-con-IA
 
 El instalador **no descarga modelos**.
 
-Opcionalmente puede buscar otra instalacion de ComfyUI y crear
-extra_model_paths.yaml para reutilizar modelos existentes sin copiarlos.
+Busca automáticamente carpetas de modelos de instalaciones anteriores en tus
+discos locales y, solo si encuentra alguna, ofrece enlazarla con
+extra_model_paths.yaml para reutilizar esos modelos sin copiarlos. Reconoce
+bibliotecas de ComfyUI y también de A1111 / Forge (Stable-diffusion, Lora,
+ESRGAN...).
 
-La busqueda:
-- tiene limite de profundidad;
-- tiene limite de directorios recorridos;
-- tiene limite de resultados;
-- no sobrescribe un extra_model_paths.yaml que ya exista.
+La búsqueda:
+- recorre todos los discos locales fijos (no USB ni red);
+- tiene límite de profundidad;
+- tiene límite de directorios recorridos;
+- tiene límite de resultados.
 
-## Filosofia de compatibilidad
-
-Compatible -> instalar y verificar.
-Dudoso -> omitir.
-No compatible -> usar fallback.
-
-El objetivo es que un extra opcional nunca rompa una instalacion base funcional.
-
-## Licencia
-
-El instalador es MIT. ComfyUI y todos los componentes externos conservan sus
-propias licencias. Consulta THIRD_PARTY_NOTICES.md.
-
+Si extra_model_paths.yaml ya existe, crea antes una copia .bak y solo modifica
+el bloque administrado por CineConIA.
 
 ## Migrar modelos de un ComfyUI que ya existe
 
@@ -235,9 +256,10 @@ sobrescribir archivos ni borrar originales antes de verificar.
    D:\IA\Modelos\ComfyUI\models
 7. Elige:
    - **Copiar:** deja intactos todos los originales.
-   - **Mover seguro:** copia cada archivo, verifica SHA-256 y solo entonces elimina
-     el original.
-8. Primero aparece una **SIMULACION**. Muestra archivos, tamaño, duplicados,
+   - **Mover seguro:** en el mismo disco se renombra (instantáneo, sin ocupar
+     espacio extra); entre discos copia cada archivo, verifica SHA-256 y solo
+     entonces elimina el original.
+8. Primero aparece una **SIMULACIÓN**. Muestra archivos, tamaño, duplicados,
    conflictos y elementos sin clasificar.
 9. Nada cambia hasta escribir exactamente **MIGRAR**.
 10. Al terminar puede actualizar extra_model_paths.yaml de los ComfyUI detectados.
@@ -266,16 +288,20 @@ La biblioteca usa las carpetas habituales de ComfyUI:
         vae_approx\
         _sin_clasificar\
 
-Si un archivo ya estaba dentro de una categoria conocida, conserva su categoria
-y sus subcarpetas. Si no se puede clasificar con seguridad, va a
-**_sin_clasificar**. El migrador no adivina tipos por el nombre del archivo.
+Si un archivo ya estaba dentro de una categoría conocida, conserva su categoría
+y sus subcarpetas. Las carpetas de A1111 / Forge se traducen a su equivalente
+(Stable-diffusion → checkpoints, Lora → loras, ESRGAN → upscale_models). Si no
+se puede clasificar con seguridad, va a **_sin_clasificar**. El migrador no
+adivina tipos por el nombre del archivo. Los marcadores vacíos put_*_here del
+portable se ignoran.
 
 ### Duplicados y conflictos
 
 - Un posible duplicado se confirma por **SHA-256**.
 - Si el mismo nombre tiene contenido diferente, no se sobrescribe: se conserva
   con un nombre como __conflicto_2.
-- En modo mover, el original se elimina solo despues de verificar la copia.
+- En modo mover entre discos, el original se elimina solo después de verificar
+  la copia.
 - Si aparece un error, ese original no se borra.
 
 ### extra_model_paths.yaml
@@ -287,14 +313,27 @@ la nueva biblioteca. Si ya existe extra_model_paths.yaml:
 - modifica solo el bloque administrado por CineConIA;
 - conserva el resto del archivo.
 
-Asi varias instalaciones de ComfyUI pueden compartir una unica biblioteca en
+Así varias instalaciones de ComfyUI pueden compartir una única biblioteca en
 otro SSD/HDD sin duplicar cientos de gigabytes.
 
 ### Reporte
 
-Cada ejecucion confirmada guarda un reporte JSON en:
+Cada ejecución confirmada guarda un reporte JSON en:
 
     <biblioteca>\_cineconia_migracion\
 
-Incluye origenes, destino, modo, duplicados, conflictos, errores y configuraciones
+Incluye orígenes, destino, modo, duplicados, conflictos, errores y configuraciones
 extra_model_paths.yaml actualizadas.
+
+## Filosofía de compatibilidad
+
+Compatible → instalar y verificar.
+Dudoso → omitir.
+No compatible → usar fallback.
+
+El objetivo es que un extra opcional nunca rompa una instalación base funcional.
+
+## Licencia
+
+El instalador es MIT. ComfyUI y todos los componentes externos conservan sus
+propias licencias. Consulta THIRD_PARTY_NOTICES.md.

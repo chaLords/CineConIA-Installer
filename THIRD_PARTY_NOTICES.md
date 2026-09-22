@@ -47,6 +47,16 @@ Este instalador es MIT y descarga componentes desde sus fuentes correspondientes
 - Licencia: MIT
 - NVIDIA usa onnxruntime-gpu; otros backends usan fallback CPU en esta version.
 
+## ComfyUI-Manager
+- Origen: https://github.com/Comfy-Org/ComfyUI-Manager
+- Licencia: GPL-3.0
+- Se instala desde manager_requirements.txt del propio ComfyUI si el usuario lo acepta.
+
+## Microsoft Visual C++ Redistributable
+- Origen: winget, paquete Microsoft.VCRedist.2015+.x64
+- Licencia: terminos de Microsoft
+- Solo si falta y el usuario lo acepta; necesario para que PyTorch cargue.
+
 ## 7-Zip
 - Origen: https://www.7-zip.org/
 - Licencia: LGPL-2.1

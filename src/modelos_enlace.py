@@ -4,21 +4,69 @@ La busqueda tiene limites para que un disco grande no deje el instalador
 aparentemente congelado.
 """
 from __future__ import annotations
+import json
 import os
-import i18n
+import re
+import shutil
+import string
+from datetime import datetime
 
 CARPETAS=[
     "checkpoints","diffusion_models","unet","text_encoders","clip","clip_vision",
     "vae","loras","controlnet","upscale_models","embeddings","hypernetworks",
     "style_models","gligen","latent_upscale_models","frame_interpolation","vae_approx",
 ]
+# Nombres que usan A1111 / Forge / SD.Next para las mismas categorias.
+ALIAS={
+    "stable-diffusion":"checkpoints",
+    "lora":"loras",
+    "lycoris":"loras",
+    "esrgan":"upscale_models",
+    "realesrgan":"upscale_models",
+    "swinir":"upscale_models",
+}
 IGNORAR={"$recycle.bin","windows","program files","program files (x86)","programdata",
          "appdata","node_modules",".git","system volume information","python_embeded",
          "custom_nodes","venv","site-packages","users"}
+MARCA_INICIO="# BEGIN CINECONIA MODEL LIBRARY"
+MARCA_FIN="# END CINECONIA MODEL LIBRARY"
+BLOQUE_NOMBRE="cineconia_model_library"
+
+def categoria_de(nombre_carpeta):
+    """Categoria de ComfyUI para una subcarpeta de models, o None."""
+    n=nombre_carpeta.lower()
+    for c in CARPETAS:
+        if c==n:
+            return c
+    return ALIAS.get(n)
+
+def mapa_categorias(models):
+    """{categoria: subcarpeta real} de lo que existe dentro de models."""
+    mapa={}
+    try: entradas=sorted(os.scandir(models),key=lambda e:e.name.lower())
+    except OSError: return mapa
+    for e in entradas:
+        if not e.is_dir(): continue
+        c=categoria_de(e.name)
+        if c and (c not in mapa or e.name.lower()==c):
+            mapa[c]=e.name
+    return mapa
+
+def discos_fijos():
+    """Unidades locales fijas (C:, D:, ...), sin USB ni unidades de red."""
+    try:
+        import ctypes
+        k=ctypes.windll.kernel32
+        mascara=k.GetLogicalDrives()
+        return [f"{l}:/" for i,l in enumerate(string.ascii_uppercase)
+                if mascara>>i & 1 and k.GetDriveTypeW(f"{l}:\\")==3]
+    except (AttributeError,OSError):
+        return [d for d in ("C:/","D:/","E:/") if os.path.isdir(d)]
 
 def detectar_instalaciones(profundidad=5,max_directorios=25000,max_resultados=10):
     candidatos,vistos=[],set()
-    raices=[os.path.expanduser("~/Documents"),os.path.expanduser("~/Desktop"),"C:/","D:/","E:/"]
+    raices=[os.path.expanduser("~/Documents"),os.path.expanduser("~/Desktop"),
+            os.path.expanduser("~/Downloads")]+discos_fijos()
     visitados=0
     def mirar(carpeta,nivel):
         nonlocal visitados
@@ -35,8 +83,9 @@ def detectar_instalaciones(profundidad=5,max_directorios=25000,max_resultados=10
             if nombre in IGNORAR or nombre.startswith("."): continue
             if nombre=="models":
                 real=os.path.normpath(e.path)
-                if real not in vistos and any(os.path.isdir(os.path.join(real,c)) for c in CARPETAS):
-                    vistos.add(real); candidatos.append(real)
+                clave=os.path.normcase(real)
+                if clave not in vistos and mapa_categorias(real):
+                    vistos.add(clave); candidatos.append(real)
                 continue
             mirar(e.path,nivel+1)
     for raiz in raices:
@@ -46,29 +95,40 @@ def detectar_instalaciones(profundidad=5,max_directorios=25000,max_resultados=10
 
 def tamano_gb(carpeta):
     total=0
-    for categoria in CARPETAS:
-        inicio=os.path.join(carpeta,categoria)
-        if not os.path.isdir(inicio): continue
-        for raiz,_,archivos in os.walk(inicio):
+    for sub in mapa_categorias(carpeta).values():
+        for raiz,_,archivos in os.walk(os.path.join(carpeta,sub)):
             for nombre in archivos:
                 try: total+=os.path.getsize(os.path.join(raiz,nombre))
                 except OSError: pass
     return round(total/1e9,1)
 
-def escribir_yaml(destino_comfyui,carpeta_modelos):
-    ruta=os.path.join(destino_comfyui,"extra_model_paths.yaml")
-    if os.path.exists(ruta): return None,i18n.t("models.yaml_exists",path=ruta)
-    base=carpeta_modelos.replace("\\","/")
-    lineas=[
-        i18n.t("models.yaml_comment"),
-        i18n.t("models.yaml_comment2"),
-        "otra_instalacion:",
-        f"    base_path: {base}",
-        "",
-    ]
+def bloque_yaml(models,mapa=None):
+    """Bloque administrado; mapa={categoria: subcarpeta} (por defecto, todas)."""
+    mapa=mapa or {c:c for c in CARPETAS}
+    base=json.dumps(models.replace("\\","/"),ensure_ascii=False)
+    lineas=[MARCA_INICIO,f"{BLOQUE_NOMBRE}:",f"    base_path: {base}"]
     for c in CARPETAS:
-        if os.path.isdir(os.path.join(carpeta_modelos,c)): lineas.append(f"    {c}: {c}")
-    try:
-        with open(ruta,"w",encoding="utf-8") as f: f.write("\n".join(lineas)+"\n")
-    except OSError as e: return None,str(e)
-    return ruta,None
+        if c in mapa:
+            lineas.append(f"    {c}: {json.dumps(mapa[c],ensure_ascii=False)}")
+    lineas.append(MARCA_FIN)
+    return "\n".join(lineas)
+
+def actualizar_yaml(comfy_root,models,mapa=None):
+    """Escribe o reemplaza solo el bloque administrado, con copia .bak previa."""
+    ruta=os.path.join(comfy_root,"extra_model_paths.yaml")
+    previo,backup="",None
+    if os.path.isfile(ruta):
+        with open(ruta,"r",encoding="utf-8") as f:
+            previo=f.read()
+        backup=ruta+datetime.now().strftime(".bak-%Y%m%d-%H%M%S")
+        shutil.copy2(ruta,backup)
+    nuevo_bloque=bloque_yaml(models,mapa)
+    patron=re.compile(re.escape(MARCA_INICIO)+r".*?"+re.escape(MARCA_FIN),flags=re.DOTALL)
+    if patron.search(previo):
+        nuevo=patron.sub(lambda _:nuevo_bloque,previo)
+    else:
+        separador="" if not previo else ("\n" if previo.endswith("\n") else "\n\n")
+        nuevo=previo+separador+nuevo_bloque+"\n"
+    with open(ruta,"w",encoding="utf-8",newline="\n") as f:
+        f.write(nuevo)
+    return ruta,backup
