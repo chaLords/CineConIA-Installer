@@ -116,13 +116,16 @@ def raiz_comfyui_desde_models(models_root):
     return None
 
 
-def detectar_origenes():
-    encontrados = []
-    if pedir_si_no("\n"+t("migrator.search"), True):
-        print("   "+t("migrator.searching"))
-        encontrados = modelos_enlace.detectar_instalaciones(
-            profundidad=5, max_directorios=25000, max_resultados=12
-        )
+def detectar_origenes(encontrados=None):
+    """Elige las bibliotecas de origen. Con encontrados, no vuelve a buscar
+    (el instalador ya recorrio los discos)."""
+    if encontrados is None:
+        encontrados = []
+        if pedir_si_no("\n"+t("migrator.search"), True):
+            print("   "+t("migrator.searching"))
+            encontrados = modelos_enlace.detectar_instalaciones(
+                profundidad=5, max_directorios=25000, max_resultados=12
+            )
 
     fuentes = []
     if encontrados:
@@ -496,13 +499,16 @@ def guardar_reporte(destino, fuentes, modo, plan, resultado, yaml_actualizados):
     return ruta
 
 
-def main():
+def main(encontrados=None, instalaciones_extra=()):
+    """encontrados: bibliotecas ya detectadas (desde el instalador).
+    instalaciones_extra: raices de ComfyUI que tambien deben apuntar a la
+    biblioteca final aunque no sean origen, como la recien instalada."""
     print("\n"+t("migrator.title"))
     print("------------------------------------")
     print(t("migrator.close_comfy"))
     print(t("migrator.consolidate"))
 
-    fuentes = detectar_origenes()
+    fuentes = detectar_origenes(encontrados)
     if not fuentes:
         print("\n"+t("migrator.no_sources"))
         return 1
@@ -558,8 +564,7 @@ def main():
     yaml_actualizados = []
     roots = []
     vistos = set()
-    for fuente in fuentes:
-        root = raiz_comfyui_desde_models(fuente)
+    for root in [raiz_comfyui_desde_models(f) for f in fuentes] + list(instalaciones_extra):
         if root:
             clave = os.path.normcase(os.path.normpath(root))
             if clave not in vistos:

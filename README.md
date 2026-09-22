@@ -24,10 +24,10 @@
 
 El instalador y el migrador detectan el idioma configurado en Windows.
 
-- Windows en español → Español.
-- Windows en inglés u otro idioma → English por defecto.
-- Al comenzar puedes cambiar manualmente entre Español y English.
-- También puedes forzar el idioma con **--lang=es** o **--lang=en**.
+- Windows en español (interfaz o formato regional) → Español.
+- Windows en inglés u otro idioma → English.
+- No pregunta nada: empieza directamente en el idioma correcto.
+- Si hace falta, se puede forzar con **--lang es** o **--lang en**.
 
 Los archivos neutrales para cualquier usuario son:
 
@@ -47,7 +47,9 @@ Para una instalación nueva, el orden recomendado es este:
    - Configura los aceleradores compatibles.
    - Activa ComfyUI-Manager si lo aceptas.
    - Instala los nodos Cine con IA si lo aceptas.
-   - Busca modelos de instalaciones anteriores y ofrece usarlos sin copiarlos.
+   - Instala el monitor de recursos (CPU, RAM, GPU, VRAM) si lo aceptas.
+   - Busca modelos de instalaciones anteriores y ofrece usarlos donde están
+     o llevarlos a una biblioteca central en otro disco.
    - Crea los lanzadores y el acceso directo de escritorio **ComfyUI**.
 
 2. **Prueba ComfyUI una vez**
@@ -218,17 +220,28 @@ Git se comprueba antes de clonar nodos. Si falta y winget está disponible,
 el instalador pregunta si quieres instalar Git for Windows.
 
 Luego ofrece instalar:
-https://github.com/chaLords/ComfyUI-Cine-con-IA
+- https://github.com/chaLords/ComfyUI-Cine-con-IA
+- https://github.com/crystian/ComfyUI-Crystools — monitor de CPU, RAM, GPU,
+  VRAM y temperatura en la barra superior de ComfyUI.
 
 ## Modelos
 
 El instalador **no descarga modelos**.
 
 Busca automáticamente carpetas de modelos de instalaciones anteriores en tus
-discos locales y, solo si encuentra alguna, ofrece enlazarla con
-extra_model_paths.yaml para reutilizar esos modelos sin copiarlos. Reconoce
-bibliotecas de ComfyUI y también de A1111 / Forge (Stable-diffusion, Lora,
-ESRGAN...).
+discos locales. Solo si encuentra alguna, pregunta qué hacer:
+
+1. **Usarlos donde están**: los enlaza con extra_model_paths.yaml, sin copiar
+   ni mover nada.
+2. **Llevarlos a una biblioteca central en otro disco**: abre el mismo
+   migrador de Migrar-Modelos-ComfyUI.bat (simulación, confirmación MIGRAR,
+   SHA-256) y al terminar enlaza también este ComfyUI a la biblioteca nueva.
+3. **No hacer nada.**
+
+La biblioteca central aparece primero y marcada en las instalaciones
+siguientes: así todos tus ComfyUI futuros usan los mismos modelos en el disco
+que elegiste. Reconoce bibliotecas de ComfyUI y también de A1111 / Forge
+(Stable-diffusion, Lora, ESRGAN...).
 
 La búsqueda:
 - recorre todos los discos locales fijos (no USB ni red);

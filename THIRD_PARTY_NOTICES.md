@@ -62,6 +62,13 @@ Este instalador es MIT y descarga componentes desde sus fuentes correspondientes
 - Licencia: terminos de Microsoft
 - Solo si falta y el usuario lo acepta; necesario para que PyTorch cargue.
 
+## ComfyUI-Crystools
+- Origen: https://github.com/crystian/ComfyUI-Crystools
+- Licencia: MIT
+- Opcional: monitor de recursos en la barra superior. Tras instalar sus
+  dependencias se retira el paquete pynvml (envoltorio obsoleto); el modulo
+  real lo aporta nvidia-ml-py.
+
 ## 7-Zip
 - Origen: https://www.7-zip.org/
 - Licencia: LGPL-2.1

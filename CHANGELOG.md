@@ -104,3 +104,11 @@
 - Instalador y migrador escriben el mismo bloque administrado en extra_model_paths.yaml, con copia .bak.
 - El migrador en modo mover renombra en el mismo disco: instantaneo y sin espacio extra.
 - El migrador ignora los marcadores put_*_here del portable.
+
+#### Prueba real en el equipo del autor (2026-09-22)
+- Idioma automatico: sin pregunta inicial. Espanol si la interfaz o el formato regional de Windows estan en espanol.
+- --lang=en nunca funcionaba: cmd separa argumentos en "=". Ahora se aceptan --lang en y --lang=en.
+- Opcion de monitor de recursos (ComfyUI-Crystools), verificada con ComfyUI 0.37 y RTX 4060 Ti.
+- El paso de modelos del instalador ofrece tres caminos: usarlos donde estan, llevarlos a una biblioteca central con el migrador o no hacer nada. Al migrar desde el instalador, el ComfyUI nuevo tambien queda enlazado.
+- La biblioteca central aparece primera y marcada en instalaciones futuras.
+- Las bibliotecas de menos de 50 MB ya no se descartan por redondeo.

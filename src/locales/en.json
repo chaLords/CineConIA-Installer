@@ -29,7 +29,6 @@
   "installer.install_nodes": "Install Cine con IA custom nodes?",
   "installer.search_models_no": "Does not touch existing folders",
   "installer.no_models_found": "No other model library was found.",
-  "installer.do_not_link": "Do not link anything",
   "installer.which_models": "Which one should be used?",
   "installer.models_linked": "Models linked without copying files.",
   "installer.no_changes": "Nothing was changed: {error}",
@@ -122,7 +121,7 @@
   "migrator.choose_different": "Choose a different folder.",
   "migrator.mode": "Migration mode:",
   "migrator.copy_mode": "1) Copy. Keep all originals.",
-  "migrator.move_mode": "2) Safe move. Copy, verify SHA-256, then delete the original.",
+  "migrator.move_mode": "2) Safe move. On the same drive it just renames; across drives it copies, verifies SHA-256, then deletes the original.",
   "migrator.choose_mode": "Choose [1]: ",
   "migrator.building": "Building simulation...",
   "migrator.no_files": "[X] No files were found to migrate.",
@@ -158,5 +157,15 @@
   "installer.migrator_hint": "To merge several libraries onto one drive, use ComfyUI-Model-Migrator.bat.",
   "installer.ready": "Done. Open ComfyUI from the desktop shortcut.",
   "catalog.no_python_headers": "triton-windows publishes no include/libs for Python {version}; Triton will not be able to compile",
-  "catalog.python_headers_added": "Added the Python {version} include and libs folders Triton needs to compile"
+  "catalog.python_headers_added": "Added the Python {version} include and libs folders Triton needs to compile",
+  "installer.models_what": "What should we do with these models?",
+  "installer.models_link": "Use them where they are",
+  "installer.models_link_desc": "This ComfyUI reads them without copying or moving anything",
+  "installer.models_migrate": "Move them to a central library on another drive",
+  "installer.models_migrate_desc": "Copies or moves them into the ComfyUI folder layout; every future ComfyUI will use it",
+  "installer.models_nothing": "Do nothing",
+  "installer.central_library": "central library",
+  "installer.install_monitor": "Install the resource monitor?",
+  "installer.monitor_desc": "ComfyUI-Crystools shows CPU, RAM, GPU, VRAM usage and temperature in the top bar.",
+  "installer.monitor": "Resource monitor"
 }

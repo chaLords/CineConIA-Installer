@@ -29,7 +29,6 @@
   "installer.install_nodes": "¿Instalar nodos Cine con IA?",
   "installer.search_models_no": "No toca carpetas existentes",
   "installer.no_models_found": "No encontré otra carpeta de modelos.",
-  "installer.do_not_link": "No enlazar nada",
   "installer.which_models": "¿Cuál usar?",
   "installer.models_linked": "Modelos enlazados sin copiar archivos.",
   "installer.no_changes": "No se modificó nada: {error}",
@@ -122,7 +121,7 @@
   "migrator.choose_different": "Elige una carpeta diferente.",
   "migrator.mode": "Modo de migración:",
   "migrator.copy_mode": "1) Copiar. Conserva todos los originales.",
-  "migrator.move_mode": "2) Mover seguro. Copia, verifica SHA-256 y después borra el original.",
+  "migrator.move_mode": "2) Mover seguro. En el mismo disco solo renombra; entre discos copia, verifica SHA-256 y después borra el original.",
   "migrator.choose_mode": "Elige [1]: ",
   "migrator.building": "Construyendo simulación...",
   "migrator.no_files": "[X] No se encontraron archivos para migrar.",
@@ -158,5 +157,15 @@
   "installer.migrator_hint": "Para reunir varias bibliotecas en un disco usa ComfyUI-Model-Migrator.bat.",
   "installer.ready": "Listo. Abre ComfyUI con el acceso directo del escritorio.",
   "catalog.no_python_headers": "triton-windows no publica include/libs para Python {version}; Triton no podrá compilar",
-  "catalog.python_headers_added": "Añadidas las carpetas include y libs de Python {version} que Triton necesita para compilar"
+  "catalog.python_headers_added": "Añadidas las carpetas include y libs de Python {version} que Triton necesita para compilar",
+  "installer.models_what": "¿Qué hacemos con estos modelos?",
+  "installer.models_link": "Usarlos donde están",
+  "installer.models_link_desc": "Este ComfyUI los lee sin copiar ni mover nada",
+  "installer.models_migrate": "Llevarlos a una biblioteca central en otro disco",
+  "installer.models_migrate_desc": "Copia o mueve con la estructura de ComfyUI; la usarán todos tus ComfyUI futuros",
+  "installer.models_nothing": "No hacer nada",
+  "installer.central_library": "biblioteca central",
+  "installer.install_monitor": "¿Instalar el monitor de recursos?",
+  "installer.monitor_desc": "ComfyUI-Crystools muestra en la barra superior el uso de CPU, RAM, GPU, VRAM y la temperatura.",
+  "installer.monitor": "Monitor de recursos"
 }

@@ -2,7 +2,7 @@
 setlocal EnableExtensions EnableDelayedExpansion
 cd /D "%~dp0"
 chcp 65001 >nul
-call :SELECT_LANGUAGE "%~1"
+call :SELECT_LANGUAGE "%~1" "%~2"
 call :LOAD_TEXT
 title !T_TITLE!
 set "SCRIPT=%~dp0src\migrar_modelos.py"
@@ -45,27 +45,18 @@ echo   !T_EXIT!
 pause >nul
 exit /b
 :SELECT_LANGUAGE
-set "CULTURE="
+rem Idioma automatico: espanol si la interfaz o el formato regional de Windows
+rem estan en espanol; si no, ingles. --lang es / --lang en lo fuerza.
+rem cmd separa los argumentos en "=", asi que --lang=en llega como "--lang" "en".
 set "CINECONIA_LANG="
+if /I "%~1"=="--lang" set "CINECONIA_LANG=%~2"
 if /I "%~1"=="--lang=es" set "CINECONIA_LANG=es"
 if /I "%~1"=="--lang=en" set "CINECONIA_LANG=en"
-if defined CINECONIA_LANG exit /b 0
-for /f "delims=" %%L in ('powershell -NoProfile -Command "(Get-Culture).Name" 2^>nul') do set "CULTURE=%%L"
+if /I "!CINECONIA_LANG!"=="es" exit /b 0
+if /I "!CINECONIA_LANG!"=="en" exit /b 0
 set "CINECONIA_LANG=en"
-echo(!CULTURE! | findstr /B /I "es" >nul && set "CINECONIA_LANG=es"
-echo.
-if /I "!CINECONIA_LANG!"=="es" (
- echo   Idioma detectado: Espanol ^(!CULTURE!^)
- echo     1^) Continuar en Espanol
- echo     2^) Switch to English
- set /p "LANG_CHOICE=   Elige [1]: "
- if "!LANG_CHOICE!"=="2" set "CINECONIA_LANG=en"
-) else (
- echo   Detected language: English ^(!CULTURE!^)
- echo     1^) Continue in English
- echo     2^) Cambiar a Espanol
- set /p "LANG_CHOICE=   Choose [1]: "
- if "!LANG_CHOICE!"=="2" set "CINECONIA_LANG=es"
+for /f "delims=" %%L in ('powershell -NoProfile -Command "(Get-UICulture).Name; (Get-Culture).Name" 2^>nul') do (
+    echo(%%L| findstr /B /I "es" >nul && set "CINECONIA_LANG=es"
 )
 exit /b 0
 :LOAD_TEXT

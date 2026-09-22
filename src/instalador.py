@@ -4,8 +4,20 @@ import os, subprocess, sys
 sys.path.insert(0,os.path.dirname(os.path.abspath(__file__)))
 import catalogo, deteccion, i18n, lanzadores, modelos_enlace, preflight, rutas_largas
 
-NODOS_REPO="https://github.com/chaLords/ComfyUI-Cine-con-IA.git"
-NOMBRES_NODOS=["ComfyUI-Cine-con-IA","ComfyUI-CineConIA","cine-con-ia"]
+# Nodos opcionales. "carpetas": nombres con que puede estar ya instalado;
+# el primero es el que se usa al clonar.
+NODOS={
+    "cineconia":{"repo":"https://github.com/chaLords/ComfyUI-Cine-con-IA.git",
+                 "carpetas":["ComfyUI-Cine-con-IA","ComfyUI-CineConIA","cine-con-ia"],
+                 "pregunta":"installer.install_nodes","detalle":None},
+    # Monitor de CPU, RAM, GPU, VRAM y temperatura en la barra superior.
+    "monitor":{"repo":"https://github.com/crystian/ComfyUI-Crystools.git",
+               "carpetas":["ComfyUI-Crystools","comfyui-crystools"],
+               "pregunta":"installer.install_monitor","detalle":"installer.monitor_desc",
+               # Su requirements pide "pynvml", hoy un envoltorio que solo avisa de que esta
+               # obsoleto en cada arranque; el modulo real lo trae nvidia-ml-py.
+               "sobrante":"pynvml"},
+}
 A,G,R,X="\033[38;5;179m","\033[38;5;245m","\033[38;5;203m","\033[0m"
 t=i18n.t
 SI_NO=lambda:[(t("common.yes"),None),(t("common.no"),None)]
@@ -195,22 +207,31 @@ def ofrecer_manager(destino,py):
     pip_instalar(py,["-r",req],"ComfyUI-Manager")
     return lanzadores.manager_disponible(destino)
 
-def instalar_nodos(destino):
+def instalar_nodo(destino,py,clave):
+    nodo=NODOS[clave]
     custom=os.path.join(destino,"ComfyUI","custom_nodes")
-    if any(os.path.isdir(os.path.join(custom,n)) for n in NOMBRES_NODOS):
+    if any(os.path.isdir(os.path.join(custom,n)) for n in nodo["carpetas"]):
         return True
     git=preflight.git_exe()
     if not git:
         return False
-    os.makedirs(custom,exist_ok=True)
-    if preguntar(t("installer.install_nodes"),SI_NO(),1)!=1:
+    if nodo["detalle"]:
+        print("\n   "+t(nodo["detalle"]))
+    if preguntar(t(nodo["pregunta"]),SI_NO(),1)!=1:
         return False
+    os.makedirs(custom,exist_ok=True)
+    ruta=os.path.join(custom,nodo["carpetas"][0])
     try:
-        return subprocess.run(
-            [git,"clone","--depth","1",NODOS_REPO,os.path.join(custom,NOMBRES_NODOS[0])]
-        ).returncode==0
+        if subprocess.run([git,"clone","--depth","1",nodo["repo"],ruta]).returncode!=0:
+            return False
     except OSError:
         return False
+    req=os.path.join(ruta,"requirements.txt")
+    if os.path.isfile(req) and not pip_instalar(py,["-r",req],nodo["carpetas"][0]):
+        return False
+    if nodo.get("sobrante"):
+        subprocess.run([py,"-s","-m","pip","uninstall","-y","-q",nodo["sobrante"]])
+    return True
 
 def ofrecer_enlace_modelos(destino):
     """Busca modelos de instalaciones anteriores y solo pregunta si encuentra algo."""
@@ -220,18 +241,35 @@ def ofrecer_enlace_modelos(destino):
     titulo(t("installer.models_title"))
     print(f"   {G}{t('installer.searching_models')}{X}")
     encontradas=[p for p in modelos_enlace.detectar_instalaciones() if real(p)!=propia]
-    con_tamano=[(p,modelos_enlace.tamano_gb(p)) for p in encontradas]
-    con_tamano=sorted([x for x in con_tamano if x[1]>0],key=lambda x:-x[1])[:5]
+    # La biblioteca central que dejo el migrador va primero: es la que deben
+    # compartir todas las instalaciones futuras.
+    central=lambda p:os.path.isdir(os.path.join(p,"_cineconia_migracion"))
+    con_tamano=[(p,modelos_enlace.tamano_bytes(p)/1e9) for p in encontradas]
+    con_tamano=sorted([x for x in con_tamano if x[1]>0],key=lambda x:(not central(x[0]),-x[1]))[:5]
     if not con_tamano:
         print(f"   {G}{t('installer.no_models_found')}{X}")
         return
+    etiqueta=lambda p,gb:f"{gb:.1f} GB - {p}"+(f" {A}[{t('installer.central_library')}]{X}" if central(p) else "")
     print("   "+t("installer.models_found"))
-    opciones=[(f"{gb:.1f} GB - {p}",None) for p,gb in con_tamano]
-    opciones.append((t("installer.do_not_link"),t("installer.search_models_no")))
-    eleccion=preguntar(t("installer.which_models"),opciones,1)
-    if eleccion>len(con_tamano):
+    for p,gb in con_tamano:
+        print("   - "+etiqueta(p,gb))
+    accion=preguntar(t("installer.models_what"),[
+        (t("installer.models_link"),t("installer.models_link_desc")),
+        (t("installer.models_migrate"),t("installer.models_migrate_desc")),
+        (t("installer.models_nothing"),t("installer.search_models_no")),
+    ],1)
+    if accion==3:
         return
-    models=con_tamano[eleccion-1][0]
+    if accion==2:
+        # El mismo migrador del BAT, con simulacion y confirmacion MIGRAR.
+        # Al terminar tambien enlaza este ComfyUI a la biblioteca nueva.
+        import migrar_modelos
+        migrar_modelos.main(encontrados=[p for p,_ in con_tamano],instalaciones_extra=[destino_comfy])
+        return
+    models=con_tamano[0][0]
+    if len(con_tamano)>1:
+        eleccion=preguntar(t("installer.which_models"),[(etiqueta(p,gb),None) for p,gb in con_tamano],1)
+        models=con_tamano[eleccion-1][0]
     try:
         _,backup=modelos_enlace.actualizar_yaml(destino_comfy,models,modelos_enlace.mapa_categorias(models))
     except OSError as e:
@@ -240,7 +278,8 @@ def ofrecer_enlace_modelos(destino):
     print(f"   {A}{t('installer.models_linked')}{X}")
     if backup:
         print(f"   {G}{backup}{X}")
-    print(f"   {G}{t('installer.migrator_hint')}{X}")
+    if not central(models):
+        print(f"   {G}{t('installer.migrator_hint')}{X}")
 
 def main():
     os.system("")  # activa los colores ANSI en la consola clasica de Windows 10
@@ -281,7 +320,8 @@ def main():
             print(f"   {A if ok else R}{msg}{X}")
     verificados,_=verificar(list(catalogo.HERRAMIENTAS),py,solo_presentes=True)
     manager_ok=ofrecer_manager(destino,py)
-    nodos_ok=instalar_nodos(destino)
+    nodos_ok=instalar_nodo(destino,py,"cineconia")
+    monitor_ok=instalar_nodo(destino,py,"monitor")
     ofrecer_enlace_modelos(destino)
     titulo(t("installer.creating_launchers"))
     creados,preferido=lanzadores.crear_lanzadores(destino,inf,verificados)
@@ -294,6 +334,7 @@ def main():
     print(f"   {t('installer.main_launcher')}: {os.path.basename(preferido)}")
     print(f"   ComfyUI-Manager: {t('common.ok') if manager_ok else t('common.not_active')}")
     print(f"   {t('installer.nodes')}: {t('common.ok') if nodos_ok else t('common.not_installed')}")
+    print(f"   {t('installer.monitor')}: {t('common.ok') if monitor_ok else t('common.not_installed')}")
     print(f"   SageAttention: {t('common.ok') if 'sageattention' in verificados else t('common.not_active')}")
     print(f"   FlashAttention: {t('common.ok') if 'flashattention' in verificados else t('common.not_active')}")
     print(f"   Nunchaku: {t('common.ok') if 'nunchaku' in verificados else t('common.not_active')}")

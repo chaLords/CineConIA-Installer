@@ -24,10 +24,10 @@
 
 The installer and model migrator detect the language configured in Windows.
 
-- Spanish Windows → Spanish.
-- English or another Windows language → English by default.
-- At startup you can switch manually between Spanish and English.
-- You can also force a language with **--lang=es** or **--lang=en**.
+- Spanish Windows (display language or regional format) → Spanish.
+- English or another Windows language → English.
+- It asks nothing: it starts directly in the right language.
+- If needed, force it with **--lang es** or **--lang en**.
 
 Language-neutral entry files:
 
@@ -47,7 +47,9 @@ For a new installation, the recommended order is:
    - Configures compatible accelerators.
    - Offers to enable ComfyUI-Manager.
    - Offers to install the Cine con IA custom nodes.
-   - Looks for models from previous installations and offers to use them without copying.
+   - Offers to install the resource monitor (CPU, RAM, GPU, VRAM).
+   - Looks for models from previous installations and offers to use them where they are
+     or move them to a central library on another drive.
    - Creates launchers and a desktop shortcut named **ComfyUI**.
 
 2. **Test ComfyUI once**
@@ -199,13 +201,20 @@ Git is checked before cloning custom nodes. If Git is missing and winget is avai
 
 It then offers to install:
 
-    https://github.com/chaLords/ComfyUI-Cine-con-IA
+- https://github.com/chaLords/ComfyUI-Cine-con-IA
+- https://github.com/crystian/ComfyUI-Crystools — CPU, RAM, GPU, VRAM and temperature monitor in the ComfyUI top bar.
 
 ## Models
 
 The installer does **not download models**.
 
-It automatically searches your local drives for model folders from previous installations and, only if it finds one, offers to link it through extra_model_paths.yaml so those models can be reused without copying them. It recognizes ComfyUI libraries as well as A1111 / Forge ones (Stable-diffusion, Lora, ESRGAN...).
+It automatically searches your local drives for model folders from previous installations. Only if it finds one does it ask what to do:
+
+1. **Use them where they are**: links them through extra_model_paths.yaml without copying or moving anything.
+2. **Move them to a central library on another drive**: opens the same migrator as ComfyUI-Model-Migrator.bat (simulation, MIGRATE confirmation, SHA-256) and, when done, also links this ComfyUI to the new library.
+3. **Do nothing.**
+
+In later installations the central library is listed first and marked, so every future ComfyUI uses the same models on the drive you chose. It recognizes ComfyUI libraries as well as A1111 / Forge ones (Stable-diffusion, Lora, ESRGAN...).
 
 The search covers every fixed local drive (not USB or network drives) and is bounded by depth, number of scanned folders, and number of results.
 

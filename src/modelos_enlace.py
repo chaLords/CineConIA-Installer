@@ -94,13 +94,16 @@ def detectar_instalaciones(profundidad=5,max_directorios=25000,max_resultados=10
     return candidatos
 
 def tamano_gb(carpeta):
+    return round(tamano_bytes(carpeta)/1e9,1)
+
+def tamano_bytes(carpeta):
     total=0
     for sub in mapa_categorias(carpeta).values():
         for raiz,_,archivos in os.walk(os.path.join(carpeta,sub)):
             for nombre in archivos:
                 try: total+=os.path.getsize(os.path.join(raiz,nombre))
                 except OSError: pass
-    return round(total/1e9,1)
+    return total
 
 def bloque_yaml(models,mapa=None):
     """Bloque administrado; mapa={categoria: subcarpeta} (por defecto, todas)."""
