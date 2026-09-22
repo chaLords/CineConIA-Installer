@@ -4,6 +4,53 @@ Esta rama contiene la nueva arquitectura del instalador. La meta es que una
 persona pueda ejecutar un solo BAT y que la instalacion se adapte al equipo
 real, sin tener que conocer CUDA, ROCm, XPU, PyTorch o wheels.
 
+## ¿Que archivo ejecuto primero?
+
+Para una instalacion nueva, el orden recomendado es este:
+
+1. **Primero: Instalar-ComfyUI.bat**
+   - Instala ComfyUI.
+   - Detecta la GPU y el backend apropiado.
+   - Configura los aceleradores compatibles.
+   - Instala los nodos Cine con IA si el usuario lo acepta.
+   - Crea los lanzadores y el acceso directo de escritorio **ComfyUI**.
+
+2. **Prueba ComfyUI una vez**
+   - Abre el acceso directo **ComfyUI**.
+   - Comprueba que la interfaz inicia correctamente.
+   - Luego cierra ComfyUI antes de migrar modelos.
+
+3. **Despues, solo si ya tienes modelos anteriores: Migrar-Modelos-ComfyUI.bat**
+   - Busca o permite seleccionar la biblioteca antigua.
+   - Permite elegir otro SSD/HDD para los modelos.
+   - Primero hace una simulacion.
+   - Luego puede copiar o mover de forma segura.
+   - Finalmente puede enlazar la nueva biblioteca mediante extra_model_paths.yaml.
+
+En forma resumida:
+
+    Instalar-ComfyUI.bat
+            |
+            v
+      Probar ComfyUI
+            |
+            v
+       Cerrar ComfyUI
+            |
+            v
+    ¿Ya tienes modelos?
+        /         \
+      No           Si
+      |            |
+      v            v
+   Terminar   Migrar-Modelos-ComfyUI.bat
+
+**Si empiezas desde cero y no tienes modelos antiguos, no necesitas ejecutar
+Migrar-Modelos-ComfyUI.bat.**
+
+**Si ya tenias un ComfyUI anterior y solo quieres ordenar/mover sus modelos,
+tambien puedes usar Migrar-Modelos-ComfyUI.bat de forma independiente.**
+
 ## Inicio rapido
 
 1. Descarga/descomprime el repositorio.
