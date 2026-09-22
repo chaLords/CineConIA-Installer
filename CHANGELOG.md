@@ -1,6 +1,10 @@
 # Changelog
 
-## v2 adaptativa — 2026-09-21
+## v2.0.0 — 2026-09-22
+
+Primera version publicada del instalador adaptativo.
+
+### Base adaptativa (2026-09-21)
 
 ### Hardware y portable
 - Deteccion NVIDIA/AMD/Intel.

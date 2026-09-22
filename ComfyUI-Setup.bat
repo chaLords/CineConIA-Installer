@@ -5,6 +5,7 @@ chcp 65001 >nul
 call :SELECT_LANGUAGE "%~1" "%~2"
 rem Paquete ~2 GB + portable extraido ~7 GB + aceleradores y margen.
 set "MIN_ESPACIO_GB=15"
+set "VERSION=2.0.0"
 set "CIA_DIR=%~dp0"
 call :LOAD_TEXT
 title !T_TITLE!
@@ -175,7 +176,7 @@ exit /b 0
 :LOAD_TEXT
 if /I "%CINECONIA_LANG%"=="es" (
  set "T_TITLE=Instalador adaptativo de ComfyUI"
- set "T_BANNER=ComfyUI - instalador adaptativo de Cine con IA"
+ set "T_BANNER=ComfyUI - instalador adaptativo de Cine con IA v%VERSION%"
  set "T_ALREADY=ComfyUI ya esta instalado. Analizando el entorno real..."
  set "T_NO_CURL=Falta curl.exe. Se necesita Windows 10 1803 o superior."
  set "T_NO_PS=No se encuentra PowerShell."
@@ -213,7 +214,7 @@ if /I "%CINECONIA_LANG%"=="es" (
  set "T_CLEANUP=Paquete de instalacion eliminado (se liberaron ~2 GB)."
 ) else (
  set "T_TITLE=Adaptive ComfyUI Installer"
- set "T_BANNER=ComfyUI - adaptive Cine con IA installer"
+ set "T_BANNER=ComfyUI - adaptive Cine con IA installer v%VERSION%"
  set "T_ALREADY=ComfyUI is already installed. Inspecting the real environment..."
  set "T_NO_CURL=curl.exe is missing. Windows 10 1803 or newer is required."
  set "T_NO_PS=PowerShell was not found."
