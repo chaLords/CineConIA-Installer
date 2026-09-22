@@ -70,6 +70,9 @@
 - Los avisos "[!]" del BAT se imprimian mal con delayed expansion (por ejemplo "[T_NO_DIGEST").
 - Los .bat se guardaban con saltos LF; cmd.exe falla con call/goto en esos archivos. .gitattributes fuerza CRLF, tambien en el ZIP de GitHub.
 - Los lanzadores generados no activaban UTF-8 y las tildes salian corruptas.
+- La verificacion SHA-256 nunca funcionaba: el "^|" dentro de las comillas de PowerShell llegaba literal y fallaba, asi que siempre se usaba la prueba de 7-Zip (una descompresion completa extra).
+- Por el mismo motivo, la deteccion de GPU AMD/Intel sin nvidia-smi siempre terminaba en la pregunta manual.
+- La extraccion y la prueba de 7-Zip muestran porcentaje de avance en vez de parecer congeladas.
 - i18n no reconocia "Spanish_Chile" (locale de Windows) como espanol y relanzaba PowerShell en cada texto.
 
 #### Deteccion

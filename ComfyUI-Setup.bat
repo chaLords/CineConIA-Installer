@@ -47,7 +47,7 @@ where nvidia-smi.exe >nul 2>&1 && (
     if defined GPU set "FABRICANTE=nvidia"
 )
 if not defined FABRICANTE (
-    for /f "delims=" %%G in ('powershell -NoProfile -Command "$n=(Get-CimInstance Win32_VideoController -ErrorAction SilentlyContinue ^| Select-Object -ExpandProperty Name); $n -join ' ^| '"') do set "GPU=%%G"
+    for /f "delims=" %%G in ('powershell -NoProfile -Command "(Get-CimInstance Win32_VideoController -ErrorAction SilentlyContinue).Name -join ' / '"') do set "GPU=%%G"
     echo(!GPU! | findstr /I /C:"NVIDIA" >nul && set "FABRICANTE=nvidia"
     if not defined FABRICANTE echo(!GPU! | findstr /I /C:"AMD" /C:"Radeon" >nul && set "FABRICANTE=amd"
     if not defined FABRICANTE echo(!GPU! | findstr /I /C:"Intel" /C:"Arc" >nul && set "FABRICANTE=intel"
@@ -132,7 +132,7 @@ if exist "%DESTINO%" if not exist "%PY%" (
 )
 echo   !T_EXTRACTING!
 if exist "%~dp0ComfyUI_windows_portable" rmdir /S /Q "%~dp0ComfyUI_windows_portable"
-"7zr.exe" x "!PAQUETE!" -o"%~dp0" -y >nul
+"7zr.exe" x "!PAQUETE!" -o"%~dp0" -y -bso0 -bsp1
 if errorlevel 1 (echo   [X] !T_EXTRACT_FAIL!&goto :fin)
 if exist "%~dp0ComfyUI_windows_portable\python_embeded\python.exe" if not exist "%DESTINO%" ren "%~dp0ComfyUI_windows_portable" "ComfyUI"
 if not exist "%PY%" (echo   [X] !T_NO_EMBEDDED!&goto :fin)
@@ -144,11 +144,12 @@ echo   !T_BASE_READY!
 "%PY%" -s "%~dp0src\instalador.py" "%DESTINO%" "!FABRICANTE!" "!VARIANTE!"
 goto :fin
 :VERIFICAR_HASH
+rem Sin tuberias: dentro de las comillas de -Command, "^|" llega literal a PowerShell y falla.
 set "DIGEST="
-for /f "delims=" %%H in ('powershell -NoProfile -Command "$ErrorActionPreference='Stop'; $r=Invoke-RestMethod -Headers @{'User-Agent'='CineConIA-Installer'} 'https://api.github.com/repos/Comfy-Org/ComfyUI/releases/latest'; $a=$r.assets ^| Where-Object name -eq '%~1'; if($a.digest){$a.digest}" 2^>nul') do set "DIGEST=%%H"
+for /f "delims=" %%H in ('powershell -NoProfile -Command "$ErrorActionPreference='Stop'; $r=Invoke-RestMethod -Headers @{'User-Agent'='CineConIA-Installer'} 'https://api.github.com/repos/Comfy-Org/ComfyUI/releases/latest'; foreach($a in $r.assets){if($a.name -eq '%~1' -and $a.digest){$a.digest}}" 2^>nul') do set "DIGEST=%%H"
 if not defined DIGEST (
     echo   [^^!] !T_NO_DIGEST!
-    "7zr.exe" t "%~1" >nul 2>&1
+    "7zr.exe" t "%~1" -bso0 -bsp1
     exit /b !errorlevel!
 )
 set "ESPERADO=!DIGEST:sha256:=!"
