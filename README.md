@@ -1,8 +1,26 @@
-# CineConIA Installer — instalador adaptativo de ComfyUI
+<p align="center">
+  <strong>Español</strong>
+</p>
 
-Esta rama contiene la nueva arquitectura del instalador. La meta es que una
-persona pueda ejecutar un solo BAT y que la instalacion se adapte al equipo
-real, sin tener que conocer CUDA, ROCm, XPU, PyTorch o wheels.
+<h1 align="center">Instalador de Cine con IA</h1>
+
+<p align="center">
+  <strong>ComfyUI adaptativo, instalado según tu hardware y listo para crear.</strong><br>
+  NVIDIA · AMD · Intel · Sin descargar modelos · Sin marcas ajenas
+</p>
+
+<p align="center">
+  <a href="LICENSE"><img alt="Licencia MIT" src="https://img.shields.io/badge/licencia-MIT-blue?style=flat-square"></a>
+  <img alt="Windows" src="https://img.shields.io/badge/Windows-10%20%2F%2011-0078d4?style=flat-square&logo=windows&logoColor=white">
+  <img alt="Versión adaptativa" src="https://img.shields.io/badge/rama-v2--adaptive--installer-7c3aed?style=flat-square">
+  <a href="https://www.youtube.com/@cineconia.oficial"><img alt="Canal de YouTube" src="https://img.shields.io/badge/youtube-Cine%20con%20IA-red?style=flat-square&logo=youtube&logoColor=white"></a>
+</p>
+
+<p align="center">
+  Detecta el equipo, instala el portable adecuado, verifica aceleradores y crea un acceso directo limpio llamado <strong>ComfyUI</strong>.
+</p>
+
+---
 
 ## ¿Que archivo ejecuto primero?
 
