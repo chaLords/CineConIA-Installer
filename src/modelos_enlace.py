@@ -5,6 +5,7 @@ aparentemente congelado.
 """
 from __future__ import annotations
 import os
+import i18n
 
 CARPETAS=[
     "checkpoints","diffusion_models","unet","text_encoders","clip","clip_vision",
@@ -56,11 +57,11 @@ def tamano_gb(carpeta):
 
 def escribir_yaml(destino_comfyui,carpeta_modelos):
     ruta=os.path.join(destino_comfyui,"extra_model_paths.yaml")
-    if os.path.exists(ruta): return None,f"ya existe {ruta}; no se toca"
+    if os.path.exists(ruta): return None,i18n.t("models.yaml_exists",path=ruta)
     base=carpeta_modelos.replace("\\","/")
     lineas=[
-        "# Escrito por el instalador de Cine con IA.",
-        "# Apunta a modelos existentes: no se copio ningun archivo.",
+        i18n.t("models.yaml_comment"),
+        i18n.t("models.yaml_comment2"),
         "otra_instalacion:",
         f"    base_path: {base}",
         "",

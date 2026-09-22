@@ -1,6 +1,7 @@
 """Catalogo adaptativo de aceleradores."""
 from __future__ import annotations
 import json, re, urllib.error, urllib.request
+import i18n
 
 TIEMPO_ESPERA = 25
 FLAG_ATENCION = "--use-ck-attention"
@@ -58,7 +59,7 @@ def _puntua(nombre,torch_rama,cuda,py_tag):
 def buscar_rueda(repo,torch_rama,cuda,py_tag):
     try: releases=_releases(repo)
     except (urllib.error.URLError,OSError,ValueError) as e:
-        return None,f"no se pudo consultar {repo} ({type(e).__name__})"
+        return None,i18n.t("catalog.query_failed",repo=repo,error=type(e).__name__)"
     mejor,punt=None,-1
     for rel in releases:
         if rel.get("draft") or rel.get("prerelease"): continue
@@ -66,7 +67,7 @@ def buscar_rueda(repo,torch_rama,cuda,py_tag):
             p=_puntua(a.get("name",""),torch_rama,cuda,py_tag)
             if p is not None and p>punt:
                 mejor,punt=a.get("browser_download_url"),p
-    return (mejor,None) if mejor else (None,f"sin wheel para torch {torch_rama} + CUDA {cuda} + {py_tag}")
+    return (mejor,None) if mejor else (None,i18n.t("catalog.no_wheel",torch=torch_rama,cuda=cuda,python=py_tag))
 
 def plan(herramientas,entorno,py_tag):
     fabricante=entorno.get("fabricante"); torch_rama=entorno.get("torch_rama"); cuda=entorno.get("cuda")
@@ -75,18 +76,18 @@ def plan(herramientas,entorno,py_tag):
         h=HERRAMIENTAS[clave]
         p={"clave":clave,"nombre":h["nombre"],"para":h["para"],"licencia":h["licencia"],"url":None,"spec":None,"aviso":None}
         if fabricante not in h.get("fabricantes",{fabricante}):
-            p["aviso"]=f"no habilitado para {fabricante}"; pasos.append(p); continue
+            p["aviso"]=i18n.t("catalog.not_enabled",vendor=fabricante); pasos.append(p); continue
         if h["fuente"]=="pypi":
             mapa=h.get("spec_por_torch")
             if mapa is not None:
                 p["spec"]=mapa.get(torch_rama)
-                if not p["spec"]: p["aviso"]=f"sin regla segura para torch {torch_rama}; se omite"
+                if not p["spec"]: p["aviso"]=i18n.t("catalog.no_safe_rule",torch=torch_rama)
             else:
                 packs=h.get("paquete_por_fabricante")
                 p["spec"]=packs.get(fabricante) if packs else h.get("paquete")
         else:
-            if fabricante!="nvidia": p["aviso"]="solo resuelto para NVIDIA"
-            elif not cuda: p["aviso"]="PyTorch no informa CUDA"
+            if fabricante!="nvidia": p["aviso"]=i18n.t("catalog.nvidia_only")
+            elif not cuda: p["aviso"]=i18n.t("catalog.cuda_missing")
             else: p["url"],p["aviso"]=buscar_rueda(h["repo"],torch_rama,cuda,py_tag)
         pasos.append(p)
     return pasos

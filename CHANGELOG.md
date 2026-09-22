@@ -48,3 +48,14 @@
 - Mueve elementos no clasificables a _sin_clasificar.
 - Puede actualizar extra_model_paths.yaml creando antes una copia de seguridad.
 - Genera un reporte JSON de cada migracion.
+
+
+### Bilingual interface
+- Added automatic Windows language detection for Spanish and English.
+- Added a manual language switch at startup.
+- Added neutral entry points ComfyUI-Setup.bat and ComfyUI-Model-Migrator.bat.
+- Kept the Spanish BAT names as compatibility aliases.
+- Added JSON locale files under src/locales and a reusable src/i18n.py layer.
+- Installer, migrator, compatibility warnings, generated launchers and update launchers now follow the selected language.
+- Added README.en.md and language links in both READMEs.
+- Language can be forced with --lang=es or --lang=en.

@@ -11,6 +11,7 @@ de administrador, así que no se hace por sorpresa: se detecta, se explica y
 se da el comando para que lo ejecute quien quiera, a sabiendas.
 """
 import subprocess
+import i18n
 
 CLAVE = r"HKLM\SYSTEM\CurrentControlSet\Control\FileSystem"
 VALOR = "LongPathsEnabled"
@@ -44,15 +45,8 @@ def estado():
 
 
 def aviso():
-    """Qué contarle al usuario, o None si no hay nada que contar."""
+    """Localized warning, or None when there is nothing to report."""
     e = estado()
     if e is True or e is None:
         return None
-    return (
-        "Windows tiene el límite de 260 caracteres por ruta activo.\n"
-        "   Con ComfyUI eso rompe la instalación de algunos paquetes, y el\n"
-        "   error que sale no menciona la causa. Para quitarlo hace falta\n"
-        "   permiso de administrador, así que no lo toco yo. Si te pasa,\n"
-        "   ejecuta esto en PowerShell y reinicia:\n\n"
-        "   " + COMANDO
-    )
+    return i18n.t("longpaths.warning", command=COMANDO)

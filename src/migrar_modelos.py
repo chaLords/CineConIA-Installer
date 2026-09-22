@@ -20,6 +20,9 @@ try:
 except ImportError:
     sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
     import modelos_enlace
+import i18n
+
+t=i18n.t
 
 CATEGORIAS = list(modelos_enlace.CARPETAS)
 IGNORAR_ARCHIVOS = {"desktop.ini", "thumbs.db", ".ds_store"}
@@ -39,7 +42,7 @@ def human_bytes(n):
 
 
 def pedir_si_no(texto, defecto=True):
-    sufijo = "[S/n]" if defecto else "[s/N]"
+    sufijo = t("migrator.yes_suffix") if defecto else t("migrator.no_suffix")
     while True:
         r = input(f"{texto} {sufijo}: ").strip().lower()
         if not r:
@@ -77,15 +80,15 @@ def seleccionar_carpeta(titulo):
     ruta = powershell_folder(titulo)
     if ruta:
         return ruta
-    print("\n   No se pudo abrir el selector de Windows.")
+    print("\n   "+t("migrator.folder_dialog_failed"))
     while True:
-        ruta = input("   Pega la ruta de la carpeta (Enter cancela): ").strip().strip('"')
+        ruta = input("   "+t("migrator.paste_path")).strip().strip('"')
         if not ruta:
             return None
         ruta = os.path.abspath(os.path.expandvars(os.path.expanduser(ruta)))
         if os.path.isdir(ruta):
             return ruta
-        print("   Esa carpeta no existe.")
+        print("   "+t("migrator.folder_missing"))
 
 
 def normalizar_origen(ruta):
@@ -114,20 +117,20 @@ def raiz_comfyui_desde_models(models_root):
 
 def detectar_origenes():
     encontrados = []
-    if pedir_si_no("\n¿Buscar bibliotecas de modelos automaticamente?", True):
-        print("   Buscando con limites para no recorrer el disco indefinidamente...")
+    if pedir_si_no("\n"+t("migrator.search"), True):
+        print("   "+t("migrator.searching"))
         encontrados = modelos_enlace.detectar_instalaciones(
             profundidad=5, max_directorios=25000, max_resultados=12
         )
 
     fuentes = []
     if encontrados:
-        print("\n   Bibliotecas encontradas:")
+        print("\n   "+t("migrator.found"))
         for i, p in enumerate(encontrados, 1):
             print(f"   {i:>2}) {p}")
-        print("   T) Todas")
-        seleccion = input("\n   Elige numeros separados por coma [T]: ").strip().lower()
-        if not seleccion or seleccion == "t":
+        print("   "+t("migrator.all"))
+        seleccion = input("\n   "+t("migrator.choose_found")).strip().lower()
+        if not seleccion or seleccion in ("t","a"):
             fuentes.extend(encontrados)
         else:
             for token in re.split(r"[\s,;]+", seleccion):
@@ -136,21 +139,21 @@ def detectar_origenes():
                     if 0 <= idx < len(encontrados):
                         fuentes.append(encontrados[idx])
 
-    while not fuentes or pedir_si_no("\n¿Agregar otra biblioteca manualmente?", False):
+    while not fuentes or pedir_si_no("\n"+t("migrator.add_manual"), False):
         ruta = seleccionar_carpeta(
-            "Selecciona ComfyUI, su carpeta models o una biblioteca de modelos"
+            t("migrator.select_source")
         )
         if not ruta:
             if fuentes:
                 break
-            print("   Debes seleccionar al menos una biblioteca.")
+            print("   "+t("migrator.need_source"))
             continue
         models = normalizar_origen(ruta)
         if not models:
-            print("   [X] No encontre una carpeta models valida en esa ubicacion.")
+            print("   "+t("migrator.invalid_source"))
             continue
         fuentes.append(models)
-        if not pedir_si_no("¿Agregar otra biblioteca?", False):
+        if not pedir_si_no(t("migrator.add_another"), False):
             break
 
     unicas = []
@@ -225,7 +228,7 @@ def destino_conflicto(base, ocupados):
         clave = os.path.normcase(os.path.normpath(candidato))
         if clave not in ocupados and not os.path.exists(candidato):
             return candidato
-    raise RuntimeError(f"Demasiados conflictos para {base}")
+    raise RuntimeError(t("migrator.too_many_conflicts",path=base))
 
 
 def iterar_archivos(root):
@@ -306,29 +309,29 @@ def resumen_plan(plan):
 def mostrar_simulacion(plan, fuentes, destino):
     r = resumen_plan(plan)
     print("\n" + "=" * 68)
-    print("  SIMULACION - TODAVIA NO SE HA CAMBIADO NINGUN ARCHIVO")
+    print("  "+t("migrator.simulation_title"))
     print("=" * 68)
-    print("\n   Origenes:")
+    print("\n   "+t("migrator.sources"))
     for p in fuentes:
         print(f"   - {p}")
-    print(f"\n   Biblioteca final: {destino}")
-    print(f"   Archivos encontrados: {r['total']}")
-    print(f"   Datos nuevos:         {human_bytes(r['bytes_nuevos'])}")
-    print(f"   Duplicados exactos:   {r['duplicados']}")
-    print(f"   Conflictos de nombre: {r['conflictos']}")
-    print(f"   Sin clasificar:       {r['sin_clasificar']}")
+    print("\n   "+t("migrator.final_library",path=destino))
+    print("   "+t("migrator.files_found",count=r["total"]))
+    print("   "+t("migrator.new_data",size=human_bytes(r["bytes_nuevos"])))
+    print("   "+t("migrator.exact_duplicates",count=r["duplicados"]))
+    print("   "+t("migrator.name_conflicts",count=r["conflictos"]))
+    print("   "+t("migrator.unclassified",count=r["sin_clasificar"]))
 
     muestras = [
         x for x in plan
         if x["accion"] in ("conflicto", "duplicado") or not x["clasificado"]
     ][:20]
     if muestras:
-        print("\n   Muestras que requieren atencion:")
+        print("\n   "+t("migrator.samples"))
         for x in muestras:
             print(f"   [{x['accion']}] {x['origen']}")
             print(f"       -> {x['destino']}")
 
-    print("\n   Se crearan las carpetas estandar de ComfyUI y _sin_clasificar.")
+    print("\n   "+t("migrator.standard_folders"))
 
 
 def ancestro_existente(ruta):
@@ -363,11 +366,11 @@ def comprobar_espacio(plan, destino, modo):
     try:
         libre = shutil.disk_usage(ancestro_existente(destino)).free
     except OSError:
-        print("   [!] No pude calcular espacio libre.")
+        print("   "+t("migrator.space_unknown"))
         return True
     requerido = espacio_requerido(plan, destino, modo)
-    print(f"\n   Espacio libre en destino:  {human_bytes(libre)}")
-    print(f"   Estimacion prudente:       {human_bytes(requerido)}")
+    print("\n   "+t("migrator.space_free",size=human_bytes(libre)))
+    print("   "+t("migrator.space_estimate",size=human_bytes(requerido)))
     return libre >= requerido
 
 
@@ -385,7 +388,7 @@ def copiar_verificar(origen, destino, cache):
             os.remove(temporal)
         shutil.copy2(origen, temporal)
         if sha256(origen, cache) != sha256(temporal, {}):
-            raise IOError("SHA-256 diferente despues de copiar")
+            raise IOError(t("migrator.hash_mismatch"))
 
         if os.path.exists(final):
             if mismo_contenido(origen, final, cache):
@@ -431,12 +434,12 @@ def ejecutar_plan(plan, modo, cache):
         try:
             if item["accion"] == "duplicado":
                 if not os.path.exists(destino) or not mismo_contenido(origen, destino, cache):
-                    raise IOError("el duplicado previsto ya no coincide con el destino")
+                    raise IOError(t("migrator.duplicate_changed"))
                 resultado["duplicados"] += 1
                 if modo == "mover":
                     os.remove(origen)
                     resultado["eliminados_origen"] += 1
-                print("      duplicado exacto verificado")
+                print("      "+t("migrator.duplicate_verified"))
                 continue
 
             final, estado = copiar_verificar(origen, destino, cache)
@@ -523,51 +526,52 @@ def guardar_reporte(destino, fuentes, modo, plan, resultado, yaml_actualizados):
 
 
 def main():
-    print("\nMigrador seguro de modelos de ComfyUI")
+    print("\n"+t("migrator.title"))
     print("------------------------------------")
-    print("Cierra ComfyUI antes de comenzar.")
-    print("Puedes consolidar una o varias bibliotecas en un solo disco.")
+    print(t("migrator.close_comfy"))
+    print(t("migrator.consolidate"))
 
     fuentes = detectar_origenes()
     if not fuentes:
-        print("\n[X] No se seleccionaron bibliotecas.")
+        print("\n"+t("migrator.no_sources"))
         return 1
 
-    print("\nSelecciona la carpeta PADRE donde quieres guardar la biblioteca.")
-    print("Ejemplo: D:\\IA\\Modelos\\ComfyUI")
-    print("El migrador creara o usara dentro de ella una carpeta models.")
-    seleccion_dest = seleccionar_carpeta("Selecciona la carpeta de destino")
+    print("\n"+t("migrator.select_parent"))
+    print(t("migrator.destination_example"))
+    print(t("migrator.destination_models"))
+    seleccion_dest = seleccionar_carpeta(t("migrator.select_destination"))
     if not seleccion_dest:
-        print("\n[X] No se selecciono destino.")
+        print("\n"+t("migrator.no_destination"))
         return 1
     destino = normalizar_destino(seleccion_dest)
 
     for fuente in fuentes:
         if rutas_se_solapan(fuente, destino):
-            print(f"\n[X] El destino se solapa con el origen: {fuente}")
-            print("    Elige una carpeta diferente.")
+            print("\n"+t("migrator.overlap",path=fuente))
+            print("    "+t("migrator.choose_different"))
             return 1
 
-    print("\nModo de migracion:")
-    print("   1) Copiar. Conserva todos los originales.")
-    print("   2) Mover seguro. Copia, verifica SHA-256 y despues borra el original.")
-    modo = "mover" if input("   Elige [1]: ").strip() == "2" else "copiar"
+    print("\n"+t("migrator.mode"))
+    print("   "+t("migrator.copy_mode"))
+    print("   "+t("migrator.move_mode"))
+    modo = "mover" if input("   "+t("migrator.choose_mode")).strip() == "2" else "copiar"
 
-    print("\nConstruyendo simulacion...")
+    print("\n"+t("migrator.building"))
     plan, cache = construir_plan(fuentes, destino)
     if not plan:
-        print("[X] No se encontraron archivos para migrar.")
+        print(t("migrator.no_files"))
         return 1
 
     mostrar_simulacion(plan, fuentes, destino)
     if not comprobar_espacio(plan, destino, modo):
-        print("\n[X] No hay espacio libre suficiente.")
-        print("    No se modifico ningun archivo.")
+        print("\n"+t("migrator.no_space"))
+        print("    "+t("migrator.no_changes_made"))
         return 2
 
-    print("\nPara ejecutar el plan escribe exactamente: MIGRAR")
-    if input("   Confirmacion: ").strip() != "MIGRAR":
-        print("\nCancelado. No se modifico ningun archivo.")
+    word=t("migrator.confirm_word")
+    print("\n"+t("migrator.confirm",word=word))
+    if input("   "+t("migrator.confirm_prompt")).strip() != word:
+        print("\n"+t("migrator.cancelled"))
         return 0
 
     os.makedirs(destino, exist_ok=True)
@@ -592,7 +596,7 @@ def main():
                 roots.append(root)
 
     if roots and pedir_si_no(
-        "\n¿Actualizar estas instalaciones de ComfyUI para usar la nueva biblioteca?", True
+        "\n"+t("migrator.update_comfy"), True
     ):
         for root in roots:
             try:
@@ -600,25 +604,25 @@ def main():
                 yaml_actualizados.append({"comfyui": root, "yaml": ruta, "backup": backup})
                 print(f"   OK {ruta}")
                 if backup:
-                    print(f"      copia de seguridad: {backup}")
+                    print("      "+t("migrator.backup",path=backup))
             except Exception as e:
                 print(f"   [X] {root}: {type(e).__name__}: {e}")
 
     reporte = guardar_reporte(destino, fuentes, modo, plan, resultado, yaml_actualizados)
 
     print("\n" + "=" * 68)
-    print("  MIGRACION TERMINADA")
+    print("  "+t("migrator.finished"))
     print("=" * 68)
-    print(f"   Biblioteca:           {destino}")
-    print(f"   Copiados:             {resultado['copiados']}")
-    print(f"   Duplicados:           {resultado['duplicados']}")
-    print(f"   Conflictos guardados: {resultado['conflictos']}")
-    print(f"   Originales borrados:  {resultado['eliminados_origen']}")
-    print(f"   Errores:              {len(resultado['errores'])}")
-    print(f"   Reporte:              {reporte}")
-    print("\n   Lo no clasificable queda en _sin_clasificar.")
+    print("   "+t("migrator.library",path=destino))
+    print("   "+t("migrator.copied",count=resultado["copiados"]))
+    print("   "+t("migrator.duplicates",count=resultado["duplicados"]))
+    print("   "+t("migrator.conflicts",count=resultado["conflictos"]))
+    print("   "+t("migrator.deleted",count=resultado["eliminados_origen"]))
+    print("   "+t("migrator.errors",count=len(resultado["errores"])))
+    print("   "+t("migrator.report",path=reporte))
+    print("\n   "+t("migrator.unclassified_note"))
     if resultado["errores"]:
-        print("   Los originales con error NO se borraron.")
+        print("   "+t("migrator.errors_kept"))
         return 3
     return 0
 

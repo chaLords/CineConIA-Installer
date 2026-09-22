@@ -7,6 +7,7 @@ import re
 import shutil
 import subprocess
 import sys
+import i18n
 
 def _ejecutar(cmd, timeout=25):
     try:
@@ -79,12 +80,12 @@ print(json.dumps(d,ensure_ascii=False))
     if not salida:
         return {"torch":None,"rama":"","cuda":None,"hip":None,"cuda_available":False,
                 "xpu_available":False,"gpu":None,"vram_gb":None,"cap":None,
-                "error":"No se pudo consultar PyTorch"}
+                "error":i18n.t("detection.torch_query_failed")}
     try: return json.loads(salida.splitlines()[-1])
     except ValueError:
         return {"torch":None,"rama":"","cuda":None,"hip":None,"cuda_available":False,
                 "xpu_available":False,"gpu":None,"vram_gb":None,"cap":None,
-                "error":"PyTorch devolvio una respuesta no valida"}
+                "error":i18n.t("detection.torch_invalid")}
 
 def espacio_libre_gb(ruta):
     try: return round(shutil.disk_usage(ruta).free / 1e9, 1)
@@ -106,9 +107,9 @@ def informe(python_exe=None, ruta_destino=None, fabricante_hint=None, variante=N
     elif torch.get("xpu_available"):
         fabricante, backend = "intel", "Intel XPU"
     elif torch.get("cuda_available") or torch.get("cuda"):
-        fabricante, backend = "nvidia", f"CUDA {torch.get('cuda') or 'desconocida'}"
+        fabricante, backend = "nvidia", f"CUDA {torch.get('cuda') or i18n.t('detection.cuda_unknown')}"
     else:
-        fabricante, backend = fabricante_hint or _fabricante(adaptadores), "sin acelerador detectado"
+        fabricante, backend = fabricante_hint or _fabricante(adaptadores), i18n.t("detection.no_accelerator")
     gpu, vram = torch.get("gpu"), torch.get("vram_gb")
     if not gpu and nvidia:
         gpu, vram = nvidia["gpu"], nvidia["vram_gb"]
@@ -117,10 +118,10 @@ def informe(python_exe=None, ruta_destino=None, fabricante_hint=None, variante=N
     return {
         "so": f"{platform.system()} {platform.release()}",
         "python": platform.python_version(),
-        "fabricante": fabricante or "desconocido",
+        "fabricante": fabricante or i18n.t("detection.unknown"),
         "variante_portable": variante,
         "backend": backend,
-        "gpu": gpu or "No identificada",
+        "gpu": gpu or i18n.t("detection.gpu_unknown"),
         "vram_gb": vram,
         "driver": nvidia,
         "torch": torch,

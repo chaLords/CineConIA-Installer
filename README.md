@@ -1,5 +1,5 @@
 <p align="center">
-  <strong>Español</strong>
+  <strong>🇪🇸 Español</strong> · <a href="README.en.md">🇬🇧 English</a>
 </p>
 
 <h1 align="center">Instalador de Cine con IA</h1>
@@ -21,6 +21,23 @@
 </p>
 
 ---
+
+## Idioma automático
+
+El instalador y el migrador detectan el idioma configurado en Windows.
+
+- Windows en español → Español.
+- Windows en inglés u otro idioma → English por defecto.
+- Al comenzar puedes cambiar manualmente entre Español y English.
+- También puedes forzar el idioma con **--lang=es** o **--lang=en**.
+
+Los archivos neutrales para cualquier usuario son:
+
+- **ComfyUI-Setup.bat** — instalación.
+- **ComfyUI-Model-Migrator.bat** — migración de modelos.
+
+Para mantener compatibilidad también existen **Instalar-ComfyUI.bat** y
+**Migrar-Modelos-ComfyUI.bat**; ambos llaman al mismo sistema bilingüe.
 
 ## ¿Que archivo ejecuto primero?
 
