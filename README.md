@@ -164,9 +164,24 @@ lógica CUDA de NVIDIA.
 Permite seleccionar, cuando el equipo lo soporta:
 
 - SageAttention.
-- FlashAttention.
-- Nunchaku.
+- FlashAttention: se busca en dos fuentes (mjun0812 publica para las versiones
+  recientes de PyTorch; kingbri1 para las anteriores).
+- Nunchaku: modelos de **imagen** en 4-bit (FLUX, Qwen-Image, Z-Image) para
+  equipos con poca VRAM. Para video no hace falta. Si tu PyTorch es más nuevo
+  que el último que soporta Nunchaku, el instalador ofrece cambiarlo a esa
+  versión con la misma CUDA; antes guarda el estado (pip freeze en
+  _cineconia\) y, si algo deja de cargar, vuelve atrás solo. También instala
+  el nodo ComfyUI-nunchaku.
 - InsightFace / ONNX Runtime.
+
+### Protección de PyTorch
+
+Algunos nodos traen en sus requisitos un PyTorch distinto y, al instalarlos,
+dejan ComfyUI sin GPU o sin arrancar. El instalador anota la versión de
+PyTorch antes de cada extra o nodo y, si algo la cambia, restaura la anterior
+y lo avisa. Si un requisito no se puede instalar (por ejemplo, porque necesita
+compilarse), se instalan los demás uno por uno y se indica cuál faltó. Al
+final se ejecuta pip check y se muestran los conflictos que haya.
 
 Un pip install exitoso no basta. SageAttention y FlashAttention se prueban
 ejecutando una operación real de atención en la GPU; el resto se importa en un
@@ -229,6 +244,14 @@ Luego ofrece instalar:
 - https://github.com/chaLords/ComfyUI-Cine-con-IA
 - https://github.com/crystian/ComfyUI-Crystools — monitor de CPU, RAM, GPU,
   VRAM y temperatura en la barra superior de ComfyUI.
+- Nodos para video, con una sola pregunta: lo que usan los workflows de
+  MiniMax H3 y LTX.
+  - https://github.com/kijai/ComfyUI-KJNodes
+  - https://github.com/Kosinkadink/ComfyUI-VideoHelperSuite
+  - https://github.com/city96/ComfyUI-GGUF — modelos GGUF, la forma de ahorrar
+    VRAM en video.
+  - https://github.com/facok/comfyui-SelfLift — render progresivo para H3:
+    primeros pasos a baja resolución y final a resolución completa.
 
 ## Modelos
 

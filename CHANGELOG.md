@@ -5,6 +5,12 @@
 - ComfyUI-Manager clasico: se instala como nodo en custom_nodes/comfyui-manager y los lanzadores ya no usan --enable-manager. El Manager integrado de ComfyUI 4.x con legacy UI crea el boton "Manager" pero no lo coloca en la barra de la interfaz actual, y el flag desactiva el clasico. Resultado: el boton "Manager" de siempre, como en los tutoriales.
 - Sin Git se recurre al Manager integrado para no dejar al usuario sin Manager.
 - Actualizar ComfyUI y nodos usa primero el cm-cli del Manager clasico.
+- FlashAttention para PyTorch recientes: se busca tambien en mjun0812/flash-attention-prebuild-wheels (2.13, 2.14...). Se descartan las wheels "free-threaded" (cp313t) y se revisan hasta 100 releases por repositorio.
+- Nunchaku opcional: si PyTorch es mas nuevo que el ultimo soportado, ofrece cambiarlo a esa rama con la misma CUDA (2.13 -> 2.11 con CUDA 13), guardando antes un pip freeze y volviendo atras solo si algo deja de cargar. Instala tambien el nodo ComfyUI-nunchaku. Probado: Triton 3.6, Sage, FlashAttention y Nunchaku pasan la prueba en GPU y ComfyUI carga 1324 nodos sin errores.
+- Proteccion de PyTorch: antes de cada extra o nodo se anota la version y, si un requirements.txt la cambia, se restaura.
+- Requisitos de nodos tolerantes a fallos: si el -r falla por un paquete, se instalan los demas uno por uno y se avisa del que falto.
+- Grupo "nodos para video" con una sola pregunta: KJNodes, VideoHelperSuite, ComfyUI-GGUF y SelfLift.
+- pip check al final, con los conflictos en el resumen.
 - Icono del acceso directo: logo actual de ComfyUI (azul con la C amarilla), incluido en assets/ComfyUI.ico en vez de descargar el favicon antiguo.
 
 ## v2.0.0 — 2026-09-22

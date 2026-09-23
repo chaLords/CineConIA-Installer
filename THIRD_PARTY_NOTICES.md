@@ -40,7 +40,8 @@ Este instalador es MIT y descarga componentes desde sus fuentes correspondientes
 ## FlashAttention
 - Proyecto: https://github.com/Dao-AILab/flash-attention
 - Licencia: BSD-3-Clause
-- Wheels Windows: actualmente kingbri1/flash-attention.
+- Wheels Windows: mjun0812/flash-attention-prebuild-wheels (BSD-3-Clause) para
+  PyTorch recientes y kingbri1/flash-attention para las versiones anteriores.
 - Opcional y verificado por import.
 
 ## InsightFace
@@ -69,6 +70,14 @@ Este instalador es MIT y descarga componentes desde sus fuentes correspondientes
 - Opcional: monitor de recursos en la barra superior. Tras instalar sus
   dependencias se retira el paquete pynvml (envoltorio obsoleto); el modulo
   real lo aporta nvidia-ml-py.
+
+## Nodos opcionales
+Se clonan desde el repositorio de su autor solo si el usuario lo acepta:
+- ComfyUI-nunchaku — https://github.com/nunchux-ai/ComfyUI-nunchaku — Apache-2.0
+- ComfyUI-KJNodes — https://github.com/kijai/ComfyUI-KJNodes — GPL-3.0
+- ComfyUI-VideoHelperSuite — https://github.com/Kosinkadink/ComfyUI-VideoHelperSuite — GPL-3.0
+- ComfyUI-GGUF — https://github.com/city96/ComfyUI-GGUF — Apache-2.0
+- comfyui-SelfLift — https://github.com/facok/comfyui-SelfLift — sin licencia declarada en el repositorio
 
 ## 7-Zip
 - Origen: https://www.7-zip.org/

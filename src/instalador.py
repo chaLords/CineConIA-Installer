@@ -2,7 +2,7 @@
 from __future__ import annotations
 import os, subprocess, sys
 sys.path.insert(0,os.path.dirname(os.path.abspath(__file__)))
-import catalogo, deteccion, i18n, lanzadores, modelos_enlace, preflight, rutas_largas
+import catalogo, deteccion, entorno_torch, i18n, lanzadores, modelos_enlace, preflight, rutas_largas
 
 # Nodos opcionales. "carpetas": nombres con que puede estar ya instalado;
 # el primero es el que se usa al clonar.
@@ -22,6 +22,19 @@ NODOS={
                # Su requirements pide "pynvml", hoy un envoltorio que solo avisa de que esta
                # obsoleto en cada arranque; el modulo real lo trae nvidia-ml-py.
                "sobrante":"pynvml"},
+    # Grupo "video": lo que usan los workflows de MiniMax H3 y LTX. Una sola pregunta.
+    "kjnodes":{"repo":"https://github.com/kijai/ComfyUI-KJNodes.git",
+               "carpetas":["comfyui-kjnodes","ComfyUI-KJNodes"],"grupo":"video"},
+    "vhs":{"repo":"https://github.com/Kosinkadink/ComfyUI-VideoHelperSuite.git",
+           "carpetas":["comfyui-videohelpersuite","ComfyUI-VideoHelperSuite"],"grupo":"video"},
+    # Modelos GGUF: la forma de ahorrar VRAM en video (Nunchaku solo cubre imagen).
+    "gguf":{"repo":"https://github.com/city96/ComfyUI-GGUF.git",
+            "carpetas":["ComfyUI-GGUF","comfyui-gguf"],"grupo":"video"},
+    "selflift":{"repo":"https://github.com/facok/comfyui-SelfLift.git",
+                "carpetas":["comfyui-SelfLift","comfyui-selflift"],"grupo":"video"},
+    # Nodos de Nunchaku: sin ellos la wheel no aporta nada. Van con el perfil Nunchaku.
+    "nunchaku":{"repo":"https://github.com/nunchux-ai/ComfyUI-nunchaku.git",
+                "carpetas":["ComfyUI-nunchaku","comfyui-nunchaku"]},
 }
 A,G,R,X="\033[38;5;179m","\033[38;5;245m","\033[38;5;203m","\033[0m"
 t=i18n.t
@@ -196,7 +209,15 @@ def verificar(claves,py,solo_presentes=False):
             print(f"   {R}{t('installer.import_failed')}{X} {h['nombre']}: {detalle[:80]}")
     return verificados,fallos
 
-def ofrecer_manager(destino,py):
+def conflictos_pip(py):
+    """Lineas de 'pip check': paquetes con dependencias incompatibles."""
+    try:
+        r=subprocess.run([py,"-s","-m","pip","check"],capture_output=True,text=True,timeout=120)
+    except (OSError,subprocess.SubprocessError):
+        return []
+    return [] if r.returncode==0 else [l for l in r.stdout.splitlines() if l.strip()]
+
+def ofrecer_manager(destino,py,torch_base=None):
     """Devuelve "clasico", "integrado" o None.
 
     Se prefiere el Manager clasico como nodo. El integrado de ComfyUI
@@ -204,7 +225,7 @@ def ofrecer_manager(destino,py):
     solo se usa si no hay Git para clonar el clasico.
     """
     if preflight.git_exe():
-        return "clasico" if instalar_nodo(destino,py,"manager") else None
+        return "clasico" if instalar_nodo(destino,py,"manager",torch_base) else None
     if not lanzadores.flag_soportado(destino,"--enable-manager"):
         return None
     if not lanzadores.manager_integrado(destino):
@@ -215,18 +236,33 @@ def ofrecer_manager(destino,py):
         pip_instalar(py,["-r",req],"ComfyUI-Manager")
     return "integrado" if lanzadores.manager_integrado(destino) else None
 
-def instalar_nodo(destino,py,clave):
-    nodo=NODOS[clave]
+def instalar_requisitos(py,req,nombre):
+    """pip -r; si falla, requisito por requisito. Devuelve los que no se instalaron.
+
+    Un solo paquete que no compila en Windows (insightface sin Visual C++, por
+    ejemplo) hace fallar el -r entero y deja al nodo sin nada.
+    """
+    if pip_instalar(py,["-r",req],nombre):
+        return []
+    fallidos=[]
+    with open(req,encoding="utf-8",errors="replace") as f:
+        for linea in f:
+            linea=linea.split("#",1)[0].strip()
+            if linea and not linea.startswith("-") and not pip_instalar(py,[linea],f"{nombre}: {linea}"):
+                fallidos.append(linea)
+    return fallidos
+
+def nodo_instalado(destino,clave):
     custom=os.path.join(destino,"ComfyUI","custom_nodes")
-    if any(os.path.isdir(os.path.join(custom,n)) for n in nodo["carpetas"]):
-        return True
+    return any(os.path.isdir(os.path.join(custom,n)) for n in NODOS[clave]["carpetas"])
+
+def clonar_nodo(destino,py,clave,torch_base=None):
+    """Clona el nodo e instala sus requisitos, vigilando que no toquen PyTorch."""
+    nodo=NODOS[clave]
     git=preflight.git_exe()
     if not git:
         return False
-    if nodo["detalle"]:
-        print("\n   "+t(nodo["detalle"]))
-    if preguntar(t(nodo["pregunta"]),SI_NO(),1)!=1:
-        return False
+    custom=os.path.join(destino,"ComfyUI","custom_nodes")
     os.makedirs(custom,exist_ok=True)
     ruta=os.path.join(custom,nodo["carpetas"][0])
     try:
@@ -235,11 +271,68 @@ def instalar_nodo(destino,py,clave):
     except OSError:
         return False
     req=os.path.join(ruta,"requirements.txt")
-    if os.path.isfile(req) and not pip_instalar(py,["-r",req],nodo["carpetas"][0]):
-        return False
+    if os.path.isfile(req):
+        for paquete in instalar_requisitos(py,req,nodo["carpetas"][0]):
+            print(f"   {R}{t('installer.req_failed',package=paquete,node=nodo['carpetas'][0])}{X}")
     if nodo.get("sobrante"):
         subprocess.run([py,"-s","-m","pip","uninstall","-y","-q",nodo["sobrante"]])
+    proteger_torch(py,torch_base)
     return True
+
+def instalar_nodo(destino,py,clave,torch_base=None):
+    nodo=NODOS[clave]
+    if nodo_instalado(destino,clave):
+        return True
+    if not preflight.git_exe():
+        return False
+    if nodo.get("detalle"):
+        print("\n   "+t(nodo["detalle"]))
+    if preguntar(t(nodo["pregunta"]),SI_NO(),1)!=1:
+        return False
+    return clonar_nodo(destino,py,clave,torch_base)
+
+def instalar_grupo(destino,py,grupo,torch_base=None):
+    """Una sola pregunta para un grupo de nodos. Devuelve los que quedaron instalados."""
+    claves=[c for c,n in NODOS.items() if n.get("grupo")==grupo]
+    faltan=[c for c in claves if not nodo_instalado(destino,c)]
+    if faltan and preflight.git_exe():
+        print("\n   "+t(f"installer.{grupo}_nodes_desc"))
+        if preguntar(t(f"installer.install_{grupo}_nodes"),SI_NO(),1)==1:
+            for clave in faltan:
+                clonar_nodo(destino,py,clave,torch_base)
+    return [c for c in claves if nodo_instalado(destino,c)]
+
+def proteger_torch(py,antes):
+    """Si algo reinstalo PyTorch por su cuenta, se devuelve a la version anterior."""
+    cambio,restaurado=entorno_torch.vigilar(py,antes,pip_instalar)
+    if cambio:
+        print(f"   {A if restaurado else R}{t('installer.torch_restored' if restaurado else 'installer.torch_restore_failed')}{X}")
+
+def preparar_nunchaku(destino,py,inf):
+    """Nunchaku solo publica wheels hasta cierta rama de PyTorch. Si la instalada
+    es mas nueva, ofrece cambiar a la ultima compatible con la misma CUDA.
+    Devuelve True si PyTorch cambio (hay que volver a detectar el entorno)."""
+    if inf["fabricante"]!="nvidia" or not inf.get("cuda"):
+        return False
+    py_tag=f"cp{sys.version_info.major}{sys.version_info.minor}"
+    ramas=catalogo.ramas_con_rueda(catalogo.HERRAMIENTAS["nunchaku"]["repo"],inf["cuda"],py_tag)
+    actual=catalogo._version(inf["torch_rama"])
+    if not ramas or actual in ramas:
+        return False
+    compatibles=[r for r in ramas if r<actual]
+    if not compatibles:
+        return False
+    objetivo=compatibles[-1]
+    titulo("Nunchaku")
+    print("   "+t("installer.nunchaku_needs",need=f"{objetivo[0]}.{objetivo[1]}",have=inf["torch_rama"]))
+    if preguntar(t("installer.nunchaku_switch"),SI_NO(),1)!=1:
+        return False
+    ruta=entorno_torch.guardar_estado(destino,py)
+    if ruta:
+        print(f"   {G}{t('installer.state_saved',path=ruta)}{X}")
+    ok,detalle=entorno_torch.cambiar_rama(py,objetivo,inf["torch"].get("torch"),pip_instalar)
+    print(f"   {A if ok else R}{t('installer.torch_switched' if ok else 'installer.torch_switch_failed',version=detalle)}{X}")
+    return ok
 
 def ofrecer_enlace_modelos(destino):
     """Busca modelos de instalaciones anteriores y solo pregunta si encuentra algo."""
@@ -312,12 +405,20 @@ def main():
     if preguntar(t("installer.continue"),opciones,1)==2:
         perfiles=elegir_perfiles(inf.get("vram_gb"))
     herramientas=catalogo.herramientas_de(perfiles)
+    if "nunchaku" in herramientas and preparar_nunchaku(destino,py,inf):
+        inf=deteccion.informe(py,destino,fabricante,variante)
+        mostrar_equipo(inf)
+    # Version de PyTorch "buena": ningun extra ni nodo puede cambiarla sin permiso.
+    torch_base=entorno_torch.versiones(py)
     if herramientas:
         pasos=catalogo.plan(herramientas,inf,f"cp{sys.version_info.major}{sys.version_info.minor}")
         if mostrar_plan(pasos) and preguntar(t("installer.install_compatible"),SI_NO(),1)==1:
-            _,omitidos,fallidos=ejecutar(pasos,py)
+            instalados,omitidos,fallidos=ejecutar(pasos,py)
+            proteger_torch(py,torch_base)
             for nombre,motivo in omitidos+fallidos:
                 print(f"   {R}{nombre}{X}: {motivo}")
+            if any(p["clave"]=="nunchaku" for p in instalados) and not nodo_instalado(destino,"nunchaku"):
+                clonar_nodo(destino,py,"nunchaku",torch_base)
     # Se verifica todo lo que haya, instalado ahora o en una ejecucion anterior:
     # asi repetir el instalador nunca degrada el acceso directo.
     titulo(t("installer.real_verification"))
@@ -327,9 +428,11 @@ def main():
         if msg:
             print(f"   {A if ok else R}{msg}{X}")
     verificados,_=verificar(list(catalogo.HERRAMIENTAS),py,solo_presentes=True)
-    manager=ofrecer_manager(destino,py)
-    nodos_ok=instalar_nodo(destino,py,"cineconia")
-    monitor_ok=instalar_nodo(destino,py,"monitor")
+    manager=ofrecer_manager(destino,py,torch_base)
+    nodos_ok=instalar_nodo(destino,py,"cineconia",torch_base)
+    monitor_ok=instalar_nodo(destino,py,"monitor",torch_base)
+    video=instalar_grupo(destino,py,"video",torch_base)
+    problemas=conflictos_pip(py)
     ofrecer_enlace_modelos(destino)
     titulo(t("installer.creating_launchers"))
     creados,preferido=lanzadores.crear_lanzadores(destino,inf,verificados,manager)
@@ -343,6 +446,12 @@ def main():
     print(f"   ComfyUI-Manager: {t('installer.manager_'+manager) if manager else t('common.not_active')}")
     print(f"   {t('installer.nodes')}: {t('common.ok') if nodos_ok else t('common.not_installed')}")
     print(f"   {t('installer.monitor')}: {t('common.ok') if monitor_ok else t('common.not_installed')}")
+    print(f"   {t('installer.video_nodes')}: {', '.join(NODOS[c]['carpetas'][0] for c in video) or t('common.not_installed')}")
+    print(f"   PyTorch: {inf['torch'].get('torch')}")
+    if problemas:
+        print(f"   {R}{t('installer.pip_conflicts',count=len(problemas))}{X}")
+        for linea in problemas[:8]:
+            print(f"      {G}{linea}{X}")
     print(f"   SageAttention: {t('common.ok') if 'sageattention' in verificados else t('common.not_active')}")
     print(f"   FlashAttention: {t('common.ok') if 'flashattention' in verificados else t('common.not_active')}")
     print(f"   Nunchaku: {t('common.ok') if 'nunchaku' in verificados else t('common.not_active')}")

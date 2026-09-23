@@ -153,9 +153,13 @@ AMD and Intel stay on their official portable backend and do not enter NVIDIA CU
 When compatible, advanced mode can offer:
 
 - SageAttention.
-- FlashAttention.
-- Nunchaku.
+- FlashAttention: searched in two sources (mjun0812 publishes for recent PyTorch versions; kingbri1 for older ones).
+- Nunchaku: 4-bit **image** models (FLUX, Qwen-Image, Z-Image) for low-VRAM computers. Video does not need it. If your PyTorch is newer than the last one Nunchaku supports, the installer offers to switch to that version with the same CUDA; it saves the current state first (pip freeze in _cineconia\) and rolls back on its own if anything stops loading. It also installs the ComfyUI-nunchaku node.
 - InsightFace / ONNX Runtime.
+
+### PyTorch protection
+
+Some nodes list a different PyTorch in their requirements and, once installed, leave ComfyUI without GPU or unable to start. The installer records the PyTorch version before each extra or node and, if anything changes it, restores the previous one and says so. If a requirement cannot be installed (for example because it needs compiling), the rest are installed one by one and the missing one is reported. At the end it runs pip check and shows any conflicts.
 
 A successful pip install is not enough. SageAttention and FlashAttention are tested by running a real attention operation on the GPU; everything else is imported in a separate process. If the test fails, the component is not marked as operational and its launcher is not created.
 
@@ -205,6 +209,11 @@ It then offers to install:
 
 - https://github.com/chaLords/ComfyUI-Cine-con-IA
 - https://github.com/crystian/ComfyUI-Crystools — CPU, RAM, GPU, VRAM and temperature monitor in the ComfyUI top bar.
+- Video nodes, with a single question: what MiniMax H3 and LTX workflows use.
+  - https://github.com/kijai/ComfyUI-KJNodes
+  - https://github.com/Kosinkadink/ComfyUI-VideoHelperSuite
+  - https://github.com/city96/ComfyUI-GGUF — GGUF models, the way to save VRAM for video.
+  - https://github.com/facok/comfyui-SelfLift — progressive rendering for H3: first steps at low resolution, the rest at full resolution.
 
 ## Models
 

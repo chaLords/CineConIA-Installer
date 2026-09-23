@@ -39,7 +39,9 @@ HERRAMIENTAS = {
     "triton":{"nombre":"Triton","para":"Runtime para kernels.","fuente":"triton","paquete":"triton-windows","modulo":"triton","fabricantes":{"nvidia"},
               "licencia":"MIT - woct0rdho/triton-windows"},
     "sageattention":{"nombre":"SageAttention 2","para":"Acelera atencion si existe wheel exacta.","fuente":"github","repo":"woct0rdho/SageAttention","modulo":"sageattention","prueba":PRUEBA_SAGE,"fabricantes":{"nvidia"},"licencia":"Apache-2.0"},
-    "flashattention":{"nombre":"FlashAttention","para":"Backend alternativo.","fuente":"github","repo":"kingbri1/flash-attention","modulo":"flash_attn","prueba":PRUEBA_FLASH,"fabricantes":{"nvidia"},"licencia":"BSD-3-Clause"},
+    "flashattention":{"nombre":"FlashAttention","para":"Backend alternativo.","fuente":"github",
+                      # mjun0812 publica para PyTorch recientes (2.13, 2.14...); kingbri1 llega a 2.9.
+                      "repo":["mjun0812/flash-attention-prebuild-wheels","kingbri1/flash-attention"],"modulo":"flash_attn","prueba":PRUEBA_FLASH,"fabricantes":{"nvidia"},"licencia":"BSD-3-Clause"},
     "nunchaku":{"nombre":"Nunchaku","para":"Cuantizacion 4-bit.","fuente":"github","repo":"nunchux-ai/nunchaku","modulo":"nunchaku","fabricantes":{"nvidia"},"licencia":"Apache-2.0"},
     "insightface":{"nombre":"InsightFace","para":"Analisis facial.","fuente":"pypi","paquete":"insightface","modulo":"insightface","fabricantes":{"nvidia","amd","intel"},"licencia":"MIT"},
     "onnxruntime":{"nombre":"ONNX Runtime","para":"Runtime ONNX.","fuente":"pypi","modulo":"onnxruntime","fabricantes":{"nvidia","amd","intel"},
@@ -61,7 +63,8 @@ def _json(url):
         return json.loads(r.read().decode("utf-8"))
 
 def _releases(repo):
-    return _json(f"https://api.github.com/repos/{repo}/releases?per_page=30")
+    # 100: hay repos que publican una release por combinacion y la buena queda lejos.
+    return _json(f"https://api.github.com/repos/{repo}/releases?per_page=100")
 
 def _version(texto):
     m=re.match(r"(\d+)\.(\d+)",texto or "")
@@ -81,6 +84,8 @@ def _puntua(nombre,torch_rama,cuda,py_tag):
     n=(nombre or "").lower()
     if not n.endswith(".whl") or "win_amd64" not in n or not cuda or not torch_rama:
         return None
+    if re.search(r"-cp\d{2,3}t-",n):
+        return None  # Python "free-threaded" (sin GIL): no carga en el Python del portable
     may,_,men=cuda.partition("."); men=men or "0"
     if not re.search(rf"cu{re.escape(may)}\.?{re.escape(men)}(?!\d)",n): return None
     instalada=_version(torch_rama)
@@ -96,18 +101,37 @@ def _puntua(nombre,torch_rama,cuda,py_tag):
     else: py=1
     return exacta*10+py
 
-def buscar_rueda(repo,torch_rama,cuda,py_tag):
-    try: releases=_releases(repo)
-    except (urllib.error.URLError,OSError,ValueError) as e:
-        return None,i18n.t("catalog.query_failed",repo=repo,error=type(e).__name__)
-    mejor,punt=None,-1
-    for rel in releases:
-        if rel.get("draft") or rel.get("prerelease"): continue
-        for a in rel.get("assets") or []:
-            p=_puntua(a.get("name",""),torch_rama,cuda,py_tag)
-            if p is not None and p>punt:
-                mejor,punt=a.get("browser_download_url"),p
-    return (mejor,None) if mejor else (None,i18n.t("catalog.no_wheel",torch=torch_rama,cuda=cuda,python=py_tag))
+def buscar_rueda(repos,torch_rama,cuda,py_tag):
+    """Mejor wheel entre uno o varios repositorios; ante empate gana el primero."""
+    mejor,punt,error=None,-1,None
+    for repo in ([repos] if isinstance(repos,str) else repos):
+        try: releases=_releases(repo)
+        except (urllib.error.URLError,OSError,ValueError) as e:
+            error=i18n.t("catalog.query_failed",repo=repo,error=type(e).__name__)
+            continue
+        for rel in releases:
+            if rel.get("draft") or rel.get("prerelease"): continue
+            for a in rel.get("assets") or []:
+                p=_puntua(a.get("name",""),torch_rama,cuda,py_tag)
+                if p is not None and p>punt:
+                    mejor,punt=a.get("browser_download_url"),p
+    if mejor:
+        return mejor,None
+    return None,(error or i18n.t("catalog.no_wheel",torch=torch_rama,cuda=cuda,python=py_tag))
+
+def ramas_con_rueda(repos,cuda,py_tag):
+    """Ramas de PyTorch (2, N) con wheel publicada para esta CUDA y este Python."""
+    ramas=set()
+    for repo in ([repos] if isinstance(repos,str) else repos):
+        try: releases=_releases(repo)
+        except (urllib.error.URLError,OSError,ValueError): continue
+        for rel in releases:
+            if rel.get("draft") or rel.get("prerelease"): continue
+            for a in rel.get("assets") or []:
+                rama,_=_torch_de_rueda((a.get("name") or "").lower())
+                if rama and _puntua(a.get("name",""),f"{rama[0]}.{rama[1]}",cuda,py_tag) is not None:
+                    ramas.add(rama)
+    return sorted(ramas)
 
 # Respaldo si PyPI no responde o PyTorch es una nightly sin metadatos.
 # No hay formula: 2.10 y 2.11 comparten Triton 3.6, y 2.13 usa 3.7.
