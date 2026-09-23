@@ -1,9 +1,10 @@
 """Generate launchers and the single ComfyUI desktop shortcut."""
 from __future__ import annotations
-import os, subprocess, urllib.error, urllib.request
+import os, shutil, subprocess
 import i18n
 
-ICONO_URL="https://raw.githubusercontent.com/Comfy-Org/docs/main/favicon.ico"
+# Logo de ComfyUI (homarr-labs/dashboard-icons, Apache-2.0) en .ico de 16 a 256 px.
+ICONO=os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))),"assets","ComfyUI.ico")
 PUERTO=8188
 
 def _escribir(ruta,contenido):
@@ -140,24 +141,21 @@ def crear_lanzadores(destino,entorno,verificados,manager=None):
     kitchen=creados.get("kitchen") if entorno.get("fabricante")=="nvidia" else None
     return creados, creados.get("sage") or kitchen or creados["base"]
 
-def _descargar_icono(destino):
-    ruta=os.path.join(destino,"ComfyUI.ico")
-    if os.path.isfile(ruta) and os.path.getsize(ruta)>0:
-        return ruta
+def _copiar_icono(destino):
+    """Copia el logo de ComfyUI que viaja con el instalador.
+
+    Nombre propio y no ComfyUI.ico: Windows cachea el icono por ruta, y en
+    instalaciones previas ComfyUI.ico era el logo antiguo.
+    """
+    ruta=os.path.join(destino,"ComfyUI-logo.ico")
     try:
-        req=urllib.request.Request(ICONO_URL,headers={"User-Agent":"CineConIA-Installer"})
-        with urllib.request.urlopen(req,timeout=25) as r:
-            data=r.read()
-        if len(data)<100:
-            return None
-        with open(ruta,"wb") as f:
-            f.write(data)
+        shutil.copyfile(ICONO,ruta)
         return ruta
-    except (OSError,urllib.error.URLError):
+    except OSError:
         return None
 
 def crear_acceso_escritorio(destino,lanzador):
-    icono=_descargar_icono(destino)
+    icono=_copiar_icono(destino)
     q=lambda v:str(v).replace("'","''")
     icon=f"$s.IconLocation='{q(icono)},0';" if icono else ""
     script=("$w=New-Object -ComObject WScript.Shell;"

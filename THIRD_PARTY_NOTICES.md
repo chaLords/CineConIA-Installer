@@ -8,9 +8,9 @@ Este instalador es MIT y descarga componentes desde sus fuentes correspondientes
 - Uso: portable oficial de NVIDIA, AMD o Intel.
 
 ## Icono del acceso directo
-- Origen: https://github.com/Comfy-Org/docs (favicon.ico)
-- Uso: identidad visual de ComfyUI en el acceso ComfyUI.
-- Si falla la descarga, no se usa un icono promocional alternativo.
+- Origen: https://github.com/homarr-labs/dashboard-icons (png/comfyui.png), https://dashboardicons.com/icons/comfyui
+- Licencia de la coleccion: Apache-2.0. El logo es la marca de ComfyUI (Comfy Org).
+- Uso: identidad visual de ComfyUI en el acceso ComfyUI; convertido a assets/ComfyUI.ico.
 
 ## Comfy Kitchen
 - Origen: https://github.com/Comfy-Org/comfy-kitchen

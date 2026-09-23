@@ -216,9 +216,9 @@ Apunta al mejor lanzador verificado:
 2. Comfy Kitchen, si está disponible (solo NVIDIA).
 3. Lanzador base como fallback.
 
-El instalador intenta usar el favicon.ico del repositorio oficial
-Comfy-Org/docs. Si no puede descargarlo, no sustituye el icono por branding
-del canal.
+El acceso usa el logo actual de ComfyUI (fondo azul, "C" amarilla), que viaja
+dentro del instalador en assets\ComfyUI.ico: no depende de ninguna descarga y
+nunca se sustituye por branding del canal.
 
 ## Git y nodos
 

@@ -195,7 +195,7 @@ It points to the best launcher that was actually verified:
 2. Comfy Kitchen, if available (NVIDIA only).
 3. Base launcher as a fallback.
 
-The installer attempts to use the ComfyUI favicon from the official Comfy-Org documentation repository. If it cannot obtain it, it does not substitute channel branding.
+The shortcut uses the current ComfyUI logo (blue background, yellow "C"), shipped inside the installer as assets\ComfyUI.ico: it needs no download and is never replaced by channel branding.
 
 ## Git and custom nodes
 
