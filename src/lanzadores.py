@@ -36,13 +36,14 @@ def _actualizador(nodos=False):
         extra=r'''
 if exist ".\ComfyUI\custom_nodes\ComfyUI-Cine-con-IA\.git" git -C ".\ComfyUI\custom_nodes\ComfyUI-Cine-con-IA" pull --ff-only
 set "COMFYUI_PATH=%~dp0ComfyUI"
-if exist ".\python_embeded\Lib\site-packages\cm_cli\__main__.py" (
- rem Snapshot antes de actualizar: se puede volver atras desde el Manager.
+rem Snapshot antes de actualizar: se puede volver atras desde el Manager.
+rem Primero el Manager clasico (nodo); si no esta, el integrado de ComfyUI.
+if exist ".\ComfyUI\custom_nodes\comfyui-manager\cm-cli.py" (
+ .\python_embeded\python.exe -s ".\ComfyUI\custom_nodes\comfyui-manager\cm-cli.py" save-snapshot
+ .\python_embeded\python.exe -s ".\ComfyUI\custom_nodes\comfyui-manager\cm-cli.py" update all
+) else if exist ".\python_embeded\Lib\site-packages\cm_cli\__main__.py" (
  .\python_embeded\python.exe -s -m cm_cli save-snapshot
  .\python_embeded\python.exe -s -m cm_cli update all
-) else if exist ".\ComfyUI\custom_nodes\ComfyUI-Manager\cm-cli.py" (
- .\python_embeded\python.exe -s ".\ComfyUI\custom_nodes\ComfyUI-Manager\cm-cli.py" save-snapshot
- .\python_embeded\python.exe -s ".\ComfyUI\custom_nodes\ComfyUI-Manager\cm-cli.py" update all
 )
 '''
     close_msg=i18n.t("launcher.close_before_update")
@@ -109,14 +110,16 @@ def flag_soportado(destino,flag):
     except OSError:
         return False
 
-def manager_disponible(destino):
+def manager_integrado(destino):
     py=os.path.join(destino,"python_embeded","python.exe")
     return flag_soportado(destino,"--enable-manager") and _modulo_ok(py,"comfyui_manager")
 
-def crear_lanzadores(destino,entorno,verificados):
+def crear_lanzadores(destino,entorno,verificados,manager=None):
     py=os.path.join(destino,"python_embeded","python.exe")
     nombres=_nombres()
-    comun="--enable-manager" if manager_disponible(destino) else ""
+    # Solo el Manager integrado necesita el flag; con el clasico (nodo) sobra,
+    # y ademas lo desactivaria.
+    comun="--enable-manager" if manager=="integrado" else ""
     creados={}
     def lanzador(clave,titulo,flag=""):
         r=os.path.join(destino,nombres[clave])

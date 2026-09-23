@@ -7,6 +7,11 @@ import catalogo, deteccion, i18n, lanzadores, modelos_enlace, preflight, rutas_l
 # Nodos opcionales. "carpetas": nombres con que puede estar ya instalado;
 # el primero es el que se usa al clonar.
 NODOS={
+    # Manager clasico como nodo: boton "Manager" en la barra, el de casi todos los
+    # tutoriales. Su documentacion exige la carpeta custom_nodes/comfyui-manager.
+    "manager":{"repo":"https://github.com/Comfy-Org/ComfyUI-Manager.git",
+               "carpetas":["comfyui-manager","ComfyUI-Manager"],
+               "pregunta":"installer.install_manager","detalle":"installer.manager_desc"},
     "cineconia":{"repo":"https://github.com/chaLords/ComfyUI-Cine-con-IA.git",
                  "carpetas":["ComfyUI-Cine-con-IA","ComfyUI-CineConIA","cine-con-ia"],
                  "pregunta":"installer.install_nodes","detalle":None},
@@ -192,20 +197,23 @@ def verificar(claves,py,solo_presentes=False):
     return verificados,fallos
 
 def ofrecer_manager(destino,py):
-    """ComfyUI-Manager instala los nodos que falten al abrir un workflow."""
-    req=os.path.join(destino,"ComfyUI","manager_requirements.txt")
+    """Devuelve "clasico", "integrado" o None.
+
+    Se prefiere el Manager clasico como nodo. El integrado de ComfyUI
+    (--enable-manager) tiene otra interfaz y, activado, desactiva el clasico:
+    solo se usa si no hay Git para clonar el clasico.
+    """
+    if preflight.git_exe():
+        return "clasico" if instalar_nodo(destino,py,"manager") else None
     if not lanzadores.flag_soportado(destino,"--enable-manager"):
-        return False
-    if lanzadores.manager_disponible(destino):
-        return True
-    if not os.path.isfile(req):
-        return False
-    titulo("ComfyUI-Manager")
-    print("   "+t("installer.manager_desc"))
-    if preguntar(t("installer.install_manager"),SI_NO(),1)!=1:
-        return False
-    pip_instalar(py,["-r",req],"ComfyUI-Manager")
-    return lanzadores.manager_disponible(destino)
+        return None
+    if not lanzadores.manager_integrado(destino):
+        req=os.path.join(destino,"ComfyUI","manager_requirements.txt")
+        print("\n   "+t("installer.manager_desc"))
+        if not os.path.isfile(req) or preguntar(t("installer.install_manager"),SI_NO(),1)!=1:
+            return None
+        pip_instalar(py,["-r",req],"ComfyUI-Manager")
+    return "integrado" if lanzadores.manager_integrado(destino) else None
 
 def instalar_nodo(destino,py,clave):
     nodo=NODOS[clave]
@@ -319,12 +327,12 @@ def main():
         if msg:
             print(f"   {A if ok else R}{msg}{X}")
     verificados,_=verificar(list(catalogo.HERRAMIENTAS),py,solo_presentes=True)
-    manager_ok=ofrecer_manager(destino,py)
+    manager=ofrecer_manager(destino,py)
     nodos_ok=instalar_nodo(destino,py,"cineconia")
     monitor_ok=instalar_nodo(destino,py,"monitor")
     ofrecer_enlace_modelos(destino)
     titulo(t("installer.creating_launchers"))
-    creados,preferido=lanzadores.crear_lanzadores(destino,inf,verificados)
+    creados,preferido=lanzadores.crear_lanzadores(destino,inf,verificados,manager)
     for _,ruta in creados.items():
         print(f"   {A}{t('common.ok')}{X} {os.path.basename(ruta)}")
     ok,detalle=lanzadores.crear_acceso_escritorio(destino,preferido)
@@ -332,7 +340,7 @@ def main():
     titulo(t("installer.summary"))
     print(f"   Backend: {inf['backend']}")
     print(f"   {t('installer.main_launcher')}: {os.path.basename(preferido)}")
-    print(f"   ComfyUI-Manager: {t('common.ok') if manager_ok else t('common.not_active')}")
+    print(f"   ComfyUI-Manager: {t('installer.manager_'+manager) if manager else t('common.not_active')}")
     print(f"   {t('installer.nodes')}: {t('common.ok') if nodos_ok else t('common.not_installed')}")
     print(f"   {t('installer.monitor')}: {t('common.ok') if monitor_ok else t('common.not_installed')}")
     print(f"   SageAttention: {t('common.ok') if 'sageattention' in verificados else t('common.not_active')}")

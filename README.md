@@ -45,7 +45,7 @@ Para una instalación nueva, el orden recomendado es este:
    - Instala ComfyUI.
    - Detecta la GPU y el backend apropiado.
    - Configura los aceleradores compatibles.
-   - Activa ComfyUI-Manager si lo aceptas.
+   - Instala ComfyUI-Manager clásico (botón "Manager") si lo aceptas.
    - Instala los nodos Cine con IA si lo aceptas.
    - Instala el monitor de recursos (CPU, RAM, GPU, VRAM) si lo aceptas.
    - Busca modelos de instalaciones anteriores y ofrece usarlos donde están
@@ -178,9 +178,15 @@ así que repetir la instalación nunca degrada el acceso directo.
 
 ## ComfyUI-Manager
 
-Si tu ComfyUI lo incluye, el instalador ofrece activar **ComfyUI-Manager**
-(--enable-manager). Sirve para instalar desde la interfaz los nodos que le
-falten a un workflow.
+El instalador ofrece **ComfyUI-Manager clásico**, instalado como nodo en
+custom_nodes\comfyui-manager: el botón **"Manager"** de la barra superior, con
+"Install Missing Custom Nodes", "Model Manager", "Update All", etc. Es la
+misma interfaz que muestran casi todos los tutoriales.
+
+ComfyUI también trae un Manager integrado (--enable-manager, botón
+"Gestionar extensiones"), pero con otra interfaz, y al activarlo desactiva el
+clásico. Por eso los lanzadores no usan ese flag. Solo si no hay Git para
+instalar el clásico se recurre al integrado.
 
 ## Lanzadores generados
 

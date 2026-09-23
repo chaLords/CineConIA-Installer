@@ -149,8 +149,8 @@
   "installer.gpu_unusable_title": "PyTorch cannot use the GPU",
   "installer.gpu_unusable": "ComfyUI would run on the CPU only (very slow). This is almost always a\n   graphics driver that is too old: update it and run the installer again.",
   "installer.continue_anyway": "Continue anyway?",
-  "installer.manager_desc": "Lets you install the nodes a workflow is missing from inside the interface.",
-  "installer.install_manager": "Enable ComfyUI-Manager?",
+  "installer.manager_desc": "ComfyUI-Manager (classic): \"Manager\" button in the top bar to install nodes, models and whatever nodes a workflow is missing.",
+  "installer.install_manager": "Install ComfyUI-Manager?",
   "installer.models_title": "Models from previous installations",
   "installer.searching_models": "Searching your drives for model folders (bounded search)...",
   "installer.models_found": "Found models this ComfyUI can use without copying them:",
@@ -167,5 +167,7 @@
   "installer.central_library": "central library",
   "installer.install_monitor": "Install the resource monitor?",
   "installer.monitor_desc": "ComfyUI-Crystools shows CPU, RAM, GPU, VRAM usage and temperature in the top bar.",
-  "installer.monitor": "Resource monitor"
+  "installer.monitor": "Resource monitor",
+  "installer.manager_clasico": "OK (classic)",
+  "installer.manager_integrado": "OK (integrated)"
 }

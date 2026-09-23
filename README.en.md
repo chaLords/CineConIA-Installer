@@ -45,7 +45,7 @@ For a new installation, the recommended order is:
    - Installs ComfyUI.
    - Detects the GPU and appropriate backend.
    - Configures compatible accelerators.
-   - Offers to enable ComfyUI-Manager.
+   - Offers the classic ComfyUI-Manager ("Manager" button).
    - Offers to install the Cine con IA custom nodes.
    - Offers to install the resource monitor (CPU, RAM, GPU, VRAM).
    - Looks for models from previous installations and offers to use them where they are
@@ -163,7 +163,9 @@ Running the installer again re-verifies whatever already worked, so repeating th
 
 ## ComfyUI-Manager
 
-When your ComfyUI ships it, the installer offers to enable **ComfyUI-Manager** (--enable-manager). It lets you install the nodes a workflow is missing from inside the interface.
+The installer offers the **classic ComfyUI-Manager**, installed as a custom node in custom_nodes\comfyui-manager: the **"Manager"** button in the top bar, with "Install Missing Custom Nodes", "Model Manager", "Update All" and so on. It is the same interface almost every tutorial shows.
+
+ComfyUI also ships an integrated Manager (--enable-manager, "Manage Extensions" button), but it has a different interface and, when enabled, disables the classic one. That is why the launchers do not use that flag. The integrated one is used only when Git is not available to install the classic one.
 
 ## Generated launchers
 

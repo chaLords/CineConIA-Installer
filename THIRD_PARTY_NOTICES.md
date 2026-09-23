@@ -55,7 +55,8 @@ Este instalador es MIT y descarga componentes desde sus fuentes correspondientes
 ## ComfyUI-Manager
 - Origen: https://github.com/Comfy-Org/ComfyUI-Manager
 - Licencia: GPL-3.0
-- Se instala desde manager_requirements.txt del propio ComfyUI si el usuario lo acepta.
+- Version clasica, clonada en custom_nodes/comfyui-manager si el usuario lo acepta.
+- Sin Git, se usa el Manager integrado de ComfyUI (manager_requirements.txt).
 
 ## Microsoft Visual C++ Redistributable
 - Origen: winget, paquete Microsoft.VCRedist.2015+.x64

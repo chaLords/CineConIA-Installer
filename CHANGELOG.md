@@ -1,5 +1,11 @@
 # Changelog
 
+## v2.1.0 — 2026-09-22
+
+- ComfyUI-Manager clasico: se instala como nodo en custom_nodes/comfyui-manager y los lanzadores ya no usan --enable-manager. El Manager integrado de ComfyUI 4.x con legacy UI crea el boton "Manager" pero no lo coloca en la barra de la interfaz actual, y el flag desactiva el clasico. Resultado: el boton "Manager" de siempre, como en los tutoriales.
+- Sin Git se recurre al Manager integrado para no dejar al usuario sin Manager.
+- Actualizar ComfyUI y nodos usa primero el cm-cli del Manager clasico.
+
 ## v2.0.0 — 2026-09-22
 
 Primera version publicada del instalador adaptativo.
