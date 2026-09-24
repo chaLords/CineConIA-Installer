@@ -11,6 +11,7 @@ Este instalador es MIT y descarga componentes desde sus fuentes correspondientes
 - Origen: https://github.com/homarr-labs/dashboard-icons (png/comfyui.png), https://dashboardicons.com/icons/comfyui
 - Licencia de la coleccion: Apache-2.0. El logo es la marca de ComfyUI (Comfy Org).
 - Uso: identidad visual de ComfyUI en el acceso ComfyUI; convertido a assets/ComfyUI.ico.
+- Tambien aparece junto al logo de Cine con IA en la cabecera del README (.github/assets/logo-cineconia-comfyui.png), solo para indicar que el instalador es para ComfyUI. Este proyecto no esta afiliado a Comfy Org.
 
 ## Comfy Kitchen
 - Origen: https://github.com/Comfy-Org/comfy-kitchen

@@ -1,3 +1,7 @@
+<p align="center">
+  <img src=".github/assets/logo-cineconia-comfyui.png" alt="Cine con IA · ComfyUI" width="320">
+</p>
+
 <h1 align="center">Instalación limpia de ComfyUI</h1>
 
 <p align="center">
@@ -20,7 +24,7 @@
 
 <p align="center">
   <sub>Sin sponsors · Sin accesos promocionales · Sin software innecesario · Sin modelos obligatorios</sub><br>
-  <sub>Desarrollado por <a href="https://www.youtube.com/@cineconia.oficial">Cine con IA</a></sub>
+  <sub>Desarrollado por <a href="https://www.youtube.com/@cineconia.oficial">Cine con IA</a> · Proyecto independiente, no afiliado a Comfy Org</sub>
 </p>
 
 ---
