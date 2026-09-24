@@ -1,5 +1,11 @@
 # Changelog
 
+## Sin publicar
+
+- Boton de descarga en el README: baja CineConIA-Installer.zip de la ultima Release, solo con lo necesario para instalar (los .bat, src/, assets/, LICENSE y THIRD_PARTY_NOTICES.md).
+- GitHub Actions arma ese ZIP y lo sube a la Release cada vez que se publica una etiqueta vX.Y.Z. Tambien se puede lanzar a mano desde la pestaña Actions, por ejemplo para agregarlo a la v2.1.0.
+- El "Download ZIP" del boton verde Code tambien deja fuera README, CHANGELOG y .github.
+
 ## v2.1.0 — 2026-09-22
 
 - ComfyUI-Manager clasico: se instala como nodo en custom_nodes/comfyui-manager y los lanzadores ya no usan --enable-manager. El Manager integrado de ComfyUI 4.x con legacy UI crea el boton "Manager" pero no lo coloca en la barra de la interfaz actual, y el flag desactiva el clasico. Resultado: el boton "Manager" de siempre, como en los tutoriales.

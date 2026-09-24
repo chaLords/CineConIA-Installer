@@ -14,6 +14,11 @@
 </p>
 
 <p align="center">
+  <a href="https://github.com/chaLords/CineConIA-Installer/releases/latest/download/CineConIA-Installer.zip"><img alt="Descargar el instalador (.zip)" src="https://img.shields.io/badge/Descargar-instalador%20.zip-2ea44f?style=for-the-badge"></a><br>
+  <sub>Solo lo necesario para instalar; la documentación queda aquí en GitHub.</sub>
+</p>
+
+<p align="center">
   <sub>Sin sponsors · Sin accesos promocionales · Sin software innecesario · Sin modelos obligatorios</sub><br>
   <sub>Desarrollado por <a href="https://www.youtube.com/@cineconia.oficial">Cine con IA</a></sub>
 </p>
@@ -90,7 +95,8 @@ también puedes usar Migrar-Modelos-ComfyUI.bat de forma independiente.**
 
 ## Inicio rápido
 
-1. Descarga/descomprime el repositorio en una carpeta simple, por ejemplo **C:\ComfyUI**.
+1. Descarga **CineConIA-Installer.zip** con el botón de arriba y descomprímelo en una
+   carpeta simple, por ejemplo **C:\ComfyUI**.
    Evita OneDrive y rutas con tildes o eñes.
 2. Ejecuta **Instalar-ComfyUI.bat**.
 3. Usa la configuración automática recomendada o entra al modo avanzado.

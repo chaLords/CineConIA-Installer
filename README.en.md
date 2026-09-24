@@ -14,6 +14,11 @@
 </p>
 
 <p align="center">
+  <a href="https://github.com/chaLords/CineConIA-Installer/releases/latest/download/CineConIA-Installer.zip"><img alt="Download the installer (.zip)" src="https://img.shields.io/badge/Download-installer%20.zip-2ea44f?style=for-the-badge"></a><br>
+  <sub>Only what you need to install; the documentation stays here on GitHub.</sub>
+</p>
+
+<p align="center">
   <sub>No sponsors · No promotional shortcuts · No unnecessary software · No required models</sub><br>
   <sub>Made by <a href="https://www.youtube.com/@cineconia.oficial">Cine con IA</a></sub>
 </p>
@@ -88,7 +93,8 @@ If you already have ComfyUI and only want to reorganize or move its model librar
 
 ## Quick start
 
-1. Download or extract the repository into a simple folder such as **C:\ComfyUI**.
+1. Download **CineConIA-Installer.zip** with the button above and extract it into a
+   simple folder such as **C:\ComfyUI**.
    Avoid OneDrive and paths with accents.
 2. Run **ComfyUI-Setup.bat**.
 3. Use the recommended automatic configuration, or choose Advanced mode.

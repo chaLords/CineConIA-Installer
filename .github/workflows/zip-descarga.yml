@@ -1,0 +1,70 @@
+# Arma el ZIP de descarga y lo sube a la Release.
+#
+# El boton del README apunta a
+#   https://github.com/chaLords/CineConIA-Installer/releases/latest/download/CineConIA-Installer.zip
+# y esa direccion siempre entrega el ZIP de la ultima Release.
+#
+# El ZIP sale de "git archive": respeta export-ignore de .gitattributes, asi
+# que lleva solo lo necesario para instalar, y los .bat quedan con CRLF.
+#
+# Cuando corre:
+#   - al subir una etiqueta vX.Y.Z (git push origin v2.1.1)
+#   - a mano: pestaña Actions -> "ZIP de descarga" -> Run workflow
+name: ZIP de descarga
+
+on:
+  push:
+    tags: ["v*"]
+  workflow_dispatch:
+    inputs:
+      etiqueta:
+        description: "Etiqueta a publicar (ej. v2.1.0). Vacio = la ultima."
+        required: false
+        default: ""
+
+permissions:
+  contents: write
+
+jobs:
+  zip:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Elegir la etiqueta
+        id: version
+        env:
+          PEDIDA: ${{ inputs.etiqueta }}
+        run: |
+          if [ -n "$PEDIDA" ]; then TAG="$PEDIDA"
+          elif [ "$GITHUB_REF_TYPE" = "tag" ]; then TAG="$GITHUB_REF_NAME"
+          else TAG="$(git describe --tags --abbrev=0)"; fi
+          git rev-parse --verify --quiet "refs/tags/$TAG" >/dev/null || { echo "No existe la etiqueta $TAG"; exit 1; }
+          echo "tag=$TAG" >> "$GITHUB_OUTPUT"
+
+      - name: Armar CineConIA-Installer.zip
+        env:
+          TAG: ${{ steps.version.outputs.tag }}
+        run: |
+          # --worktree-attributes: usa el .gitattributes actual aunque la etiqueta sea anterior
+          git archive --worktree-attributes --format=zip -o CineConIA-Installer.zip "$TAG"
+          unzip -l CineConIA-Installer.zip
+          for f in ComfyUI-Setup.bat Instalar-ComfyUI.bat src/instalador.py assets/ComfyUI.ico LICENSE; do
+            unzip -l CineConIA-Installer.zip "$f" >/dev/null || { echo "Falta $f en el ZIP"; exit 1; }
+          done
+          if unzip -l CineConIA-Installer.zip README.md >/dev/null 2>&1; then
+            echo "README.md no deberia ir en el ZIP"; exit 1
+          fi
+
+      - name: Subir a la Release
+        env:
+          GH_TOKEN: ${{ github.token }}
+          TAG: ${{ steps.version.outputs.tag }}
+        run: |
+          if gh release view "$TAG" >/dev/null 2>&1; then
+            gh release upload "$TAG" CineConIA-Installer.zip --clobber
+          else
+            gh release create "$TAG" CineConIA-Installer.zip --title "$TAG" --notes-from-tag
+          fi

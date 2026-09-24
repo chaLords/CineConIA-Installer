@@ -4,5 +4,10 @@
 *.cmd text eol=crlf
 
 # Fuera del ZIP de descarga: solo sirven para el repositorio.
+# Aplica al boton del README (Release) y al "Download ZIP" de GitHub.
 .gitattributes export-ignore
 .gitignore export-ignore
+/.github export-ignore
+/README.md export-ignore
+/README.en.md export-ignore
+/CHANGELOG.md export-ignore
