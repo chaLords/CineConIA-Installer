@@ -2,10 +2,11 @@
 setlocal EnableExtensions EnableDelayedExpansion
 cd /D "%~dp0"
 chcp 65001 >nul
-call :SELECT_LANGUAGE "%~1" "%~2"
+call :LEER_ARGS %*
+call :SELECT_LANGUAGE
 rem Paquete ~2 GB + portable extraido ~7 GB + aceleradores y margen.
 set "MIN_ESPACIO_GB=15"
-set "VERSION=2.1.0"
+set "VERSION=2.2.0"
 set "CIA_DIR=%~dp0"
 call :LOAD_TEXT
 title !T_TITLE!
@@ -66,34 +67,8 @@ if not defined FABRICANTE (
 if not defined FABRICANTE (echo   [X] !T_GPU_NONE!&goto :fin)
 echo   !T_GPU!: !GPU!
 echo   !T_VENDOR!: !FABRICANTE!
-if /I "!FABRICANTE!"=="nvidia" (
-    set "VARIANTE=nvidia"
-    set "NV_MAJOR=0"
-    where nvidia-smi.exe >nul 2>&1 && (
-        for /f "tokens=1 delims=." %%V in ('nvidia-smi --query-gpu^=driver_version --format^=csv^,noheader 2^>nul') do if "!NV_MAJOR!"=="0" set "NV_MAJOR=%%V"
-    )
-    rem CUDA 13 exige compute capability 7.5+ (Turing o superior) y driver 580+.
-    set "LEGACY=0"
-    set "CC_MAJ="
-    set "CC_MIN="
-    where nvidia-smi.exe >nul 2>&1 && (
-        for /f "tokens=1,2 delims=." %%A in ('nvidia-smi --query-gpu^=compute_cap --format^=csv^,noheader 2^>nul') do if not defined CC_MAJ (set "CC_MAJ=%%A"&set "CC_MIN=%%B")
-    )
-    set "CC_NUM=0"
-    if defined CC_MAJ set /a "CC_NUM=!CC_MAJ!*10+!CC_MIN!" 2>nul
-    if !CC_NUM! GTR 0 (
-        echo   Compute capability: !CC_MAJ!.!CC_MIN!
-        if !CC_NUM! LSS 75 set "LEGACY=1"
-    ) else (
-        echo(!GPU! | findstr /I /C:"GTX 10" /C:"GTX 9" /C:"GTX 7" /C:"TITAN X" /C:"TITAN V" /C:"Quadro P" /C:"Quadro M" /C:"Quadro GV" /C:"Tesla P" /C:"Tesla V" /C:"Tesla M" >nul && set "LEGACY=1"
-    )
-    if not "!NV_MAJOR!"=="0" if !NV_MAJOR! LSS 580 (
-        if "!LEGACY!"=="0" echo   [^^!] !T_DRIVER_UPDATE! ^(!NV_MAJOR!^)
-        set "LEGACY=1"
-    )
-    if not "!NV_MAJOR!"=="0" if !NV_MAJOR! LSS 528 echo   [^^!] !T_DRIVER_TOO_OLD!
-    if "!LEGACY!"=="1" set "VARIANTE=nvidia_cu126"
-)
+if /I "!FABRICANTE!"=="nvidia" call :ELEGIR_NVIDIA
+if /I "!FABRICANTE!"=="nvidia" if not defined VARIANTE goto :fin
 if /I "!FABRICANTE!"=="amd" set "VARIANTE=amd"
 if /I "!FABRICANTE!"=="intel" set "VARIANTE=intel"
 set "PAQUETE=ComfyUI_windows_portable_!VARIANTE!.7z"
@@ -158,14 +133,122 @@ set "REAL="
 for /f "delims=" %%H in ('powershell -NoProfile -Command "(Get-FileHash -Algorithm SHA256 -LiteralPath '%~1').Hash.ToLower()"') do set "REAL=%%H"
 if /I "!REAL!"=="!ESPERADO!" (echo   !T_HASH_OK!&exit /b 0)
 exit /b 1
+:ELEGIR_NVIDIA
+rem Dos portables oficiales: nvidia (CUDA 13, Python 3.13) y nvidia_cu126
+rem (CUDA 12.6, Python 3.12). CUDA 13 exige compute capability 7.5+ (serie 16/20
+rem o superior) y driver 580+. CUDA 12.6 no trae kernels para Blackwell (serie 50,
+rem compute capability 10.0+): ahi solo sirve CUDA 13.
+set "VARIANTE=nvidia"
+set "NV_MAJOR=0"
+set "CC_MAJ="
+set "CC_MIN="
+set "CC_NUM=0"
+set "LEGACY=0"
+set "BLACKWELL=0"
+where nvidia-smi.exe >nul 2>&1 && (
+    for /f "tokens=1 delims=." %%V in ('nvidia-smi --query-gpu^=driver_version --format^=csv^,noheader 2^>nul') do if "!NV_MAJOR!"=="0" set "NV_MAJOR=%%V"
+    for /f "tokens=1,2 delims=." %%A in ('nvidia-smi --query-gpu^=compute_cap --format^=csv^,noheader 2^>nul') do if not defined CC_MAJ (set "CC_MAJ=%%A"&set "CC_MIN=%%B")
+)
+if defined CC_MAJ set /a "CC_NUM=!CC_MAJ!*10+!CC_MIN!" 2>nul
+if !CC_NUM! GTR 0 (
+    echo   Compute capability: !CC_MAJ!.!CC_MIN!
+    if !CC_NUM! LSS 75 set "LEGACY=1"
+    if !CC_NUM! GEQ 100 set "BLACKWELL=1"
+) else (
+    rem Drivers antiguos no informan la compute capability: se deduce por el nombre.
+    echo(!GPU! | findstr /I /C:"GTX 10" /C:"GTX 9" /C:"GTX 7" /C:"TITAN X" /C:"TITAN V" /C:"Quadro P" /C:"Quadro M" /C:"Quadro GV" /C:"Tesla P" /C:"Tesla V" /C:"Tesla M" >nul && set "LEGACY=1"
+)
+if "!LEGACY!"=="1" set "VARIANTE=nvidia_cu126"
+if not "!NV_MAJOR!"=="0" echo   Driver NVIDIA: !NV_MAJOR!
+if defined CUDA_PEDIDA goto :NV_PEDIDA
+if "!NV_MAJOR!"=="0" goto :NV_RECOMENDADA
+if !NV_MAJOR! GEQ 580 goto :NV_RECOMENDADA
+if "!LEGACY!"=="1" (
+    if !NV_MAJOR! LSS 528 echo   [^^!] !T_DRIVER_TOO_OLD!
+    goto :NV_RECOMENDADA
+)
+rem Tarjeta moderna con driver viejo: antes se bajaba a CUDA 12.6 sin preguntar.
+rem Ahora se recomienda actualizar el driver y la eleccion queda en manos del usuario.
+set "CU126_OK=1"
+if "!BLACKWELL!"=="1" set "CU126_OK=0"
+if !NV_MAJOR! LSS 528 set "CU126_OK=0"
+echo.
+echo   [^^!] !T_DRIVER_UPDATE! (!NV_MAJOR!)
+if "!BLACKWELL!"=="1" echo   !T_BLACKWELL_ONLY_CU13!
+echo.
+echo     1^) !T_OPT_UPDATE_DRIVER!
+echo     2^) !T_OPT_CU13_ANYWAY!
+if "!CU126_OK!"=="1" echo     3^) !T_OPT_CU126_NOW!
+if "!CU126_OK!"=="1" (choice /C 123 /N /M "   !T_CHOOSE_GPU! [1-3]: ") else (choice /C 12 /N /M "   !T_CHOOSE_GPU! [1-2]: ")
+set "OPC=!errorlevel!"
+if "!OPC!"=="1" (
+    start "" "https://www.nvidia.com/drivers"
+    echo.
+    echo   !T_DRIVER_THEN_RERUN!
+    set "VARIANTE="
+    exit /b 0
+)
+if "!OPC!"=="3" (set "VARIANTE=nvidia_cu126"&exit /b 0)
+echo   [^^!] !T_CU13_NEEDS_580!
+exit /b 0
+:NV_RECOMENDADA
+call :NV_ETIQUETA "!VARIANTE!"
+echo   !T_CUDA_RECOMMENDED!: !NV_TXT!
+choice /C AC /N /T 10 /D A /M "   !T_CUDA_ACCEPT_OR_CHANGE! "
+if not errorlevel 2 exit /b 0
+echo.
+echo   !T_CUDA_MENU!
+echo     1^) CUDA 13   - Python 3.13 - !T_CU13_DESC!
+echo     2^) CUDA 12.6 - Python 3.12 - !T_CU126_DESC!
+choice /C 12 /N /M "   !T_CHOOSE_GPU! [1-2]: "
+if errorlevel 2 (set "CUDA_PEDIDA=12.6") else (set "CUDA_PEDIDA=13")
+:NV_PEDIDA
+rem Eleccion manual (menu o --cuda), con protecciones por compute capability.
+set "PEDIDA="
+if "!CUDA_PEDIDA!"=="13" set "PEDIDA=nvidia"
+if "!CUDA_PEDIDA!"=="12.6" set "PEDIDA=nvidia_cu126"
+if "!CUDA_PEDIDA!"=="126" set "PEDIDA=nvidia_cu126"
+if "!CUDA_PEDIDA!"=="12" set "PEDIDA=nvidia_cu126"
+if not defined PEDIDA (
+    echo   [^^!] !T_CUDA_BAD_ARG! !CUDA_PEDIDA!
+    goto :NV_ELEGIDA
+)
+if "!PEDIDA!"=="nvidia" if "!LEGACY!"=="1" (
+    echo   [X] !T_CU13_BLOCKED!
+    goto :NV_ELEGIDA
+)
+if "!PEDIDA!"=="nvidia_cu126" if "!BLACKWELL!"=="1" (
+    echo   [X] !T_CU126_BLOCKED!
+    goto :NV_ELEGIDA
+)
+if !CC_NUM! EQU 0 echo   [^^!] !T_CC_UNKNOWN!
+set "VARIANTE=!PEDIDA!"
+if "!VARIANTE!"=="nvidia" if not "!NV_MAJOR!"=="0" if !NV_MAJOR! LSS 580 echo   [^^!] !T_CU13_NEEDS_580!
+if "!VARIANTE!"=="nvidia_cu126" if not "!NV_MAJOR!"=="0" if !NV_MAJOR! LSS 528 echo   [^^!] !T_DRIVER_TOO_OLD!
+:NV_ELEGIDA
+call :NV_ETIQUETA "!VARIANTE!"
+echo   CUDA: !NV_TXT!
+exit /b 0
+:NV_ETIQUETA
+if /I "%~1"=="nvidia_cu126" (set "NV_TXT=CUDA 12.6 - Python 3.12") else (set "NV_TXT=CUDA 13 - Python 3.13")
+exit /b 0
+:LEER_ARGS
+rem Argumentos opcionales, en cualquier orden: --lang es o en, y --cuda 13 o 12.6.
+rem cmd separa los argumentos en "=", asi que --lang=en llega como "--lang" "en".
+set "CINECONIA_LANG="
+set "CUDA_PEDIDA="
+:LEER_ARGS_SIGUIENTE
+if "%~1"=="" exit /b 0
+if /I "%~1"=="--lang=es" set "CINECONIA_LANG=es"
+if /I "%~1"=="--lang=en" set "CINECONIA_LANG=en"
+if /I "%~1"=="--lang" (set "CINECONIA_LANG=%~2"&shift)
+if /I "%~1"=="--cuda" (set "CUDA_PEDIDA=%~2"&shift)
+shift
+goto :LEER_ARGS_SIGUIENTE
 :SELECT_LANGUAGE
 rem Idioma automatico: espanol si la interfaz o el formato regional de Windows
 rem estan en espanol; si no, ingles. --lang es / --lang en lo fuerza.
-rem cmd separa los argumentos en "=", asi que --lang=en llega como "--lang" "en".
-set "CINECONIA_LANG="
-if /I "%~1"=="--lang" set "CINECONIA_LANG=%~2"
-if /I "%~1"=="--lang=es" set "CINECONIA_LANG=es"
-if /I "%~1"=="--lang=en" set "CINECONIA_LANG=en"
+rem (:LEER_ARGS ya dejo CINECONIA_LANG si vino --lang.)
 if /I "!CINECONIA_LANG!"=="es" exit /b 0
 if /I "!CINECONIA_LANG!"=="en" exit /b 0
 set "CINECONIA_LANG=en"
@@ -208,7 +291,22 @@ if /I "%CINECONIA_LANG%"=="es" (
  set "T_ONEDRIVE=Esta carpeta esta dentro de OneDrive. ComfyUI tiene miles de archivos y OneDrive puede romperlo al sincronizar. Mejor mueve el instalador a una carpeta como C:\ComfyUI o D:\ComfyUI."
  set "T_CONTINUE_ANYWAY=Instalar aqui de todos modos? [s/N]:"
  set "T_NON_ASCII=La ruta contiene tildes, enes u otros caracteres especiales. Algunos nodos fallan con eso; si puedes, usa una ruta simple como C:\ComfyUI."
- set "T_DRIVER_UPDATE=Tu driver NVIDIA es anterior al 580. Se instalara la version compatible (CUDA 12.6). Si actualizas el driver, el instalador usara la version moderna (CUDA 13)."
+ set "T_DRIVER_UPDATE=Tu tarjeta sirve para CUDA 13 (la version moderna), pero el driver NVIDIA es anterior al 580"
+ set "T_BLACKWELL_ONLY_CU13=Las tarjetas serie 50 solo funcionan con CUDA 13: la version CUDA 12.6 no las soporta."
+ set "T_OPT_UPDATE_DRIVER=Actualizar el driver primero (recomendado). Abre la pagina de NVIDIA y cierra el instalador."
+ set "T_OPT_CU13_ANYWAY=Instalar CUDA 13 igual y actualizar el driver antes de abrir ComfyUI."
+ set "T_OPT_CU126_NOW=Instalar CUDA 12.6: funciona con tu driver actual, pero es la version antigua (Python 3.12)."
+ set "T_DRIVER_THEN_RERUN=Instala el driver nuevo, reinicia el PC y vuelve a ejecutar este instalador."
+ set "T_CU13_NEEDS_580=CUDA 13 necesita el driver 580 o superior: actualizalo antes de abrir ComfyUI desde https://www.nvidia.com/drivers"
+ set "T_CUDA_RECOMMENDED=Version recomendada para tu tarjeta"
+ set "T_CUDA_ACCEPT_OR_CHANGE=[A] aceptar (automatico en 10 s)   [C] elegir otra CUDA:"
+ set "T_CUDA_MENU=Elige la version de CUDA:"
+ set "T_CU13_DESC=moderna: serie 16/20 o superior, driver 580+"
+ set "T_CU126_DESC=compatible: serie 10 o anterior, o driver viejo (no serie 50)"
+ set "T_CU13_BLOCKED=Tu tarjeta no soporta CUDA 13 (necesita compute capability 7.5 o mas). Se mantiene CUDA 12.6."
+ set "T_CU126_BLOCKED=Tu tarjeta serie 50 no funciona con CUDA 12.6. Se mantiene CUDA 13."
+ set "T_CC_UNKNOWN=No se pudo leer la compute capability de la tarjeta: se usa tu eleccion sin comprobarla."
+ set "T_CUDA_BAD_ARG=Valor de --cuda no reconocido (usa 13 o 12.6):"
  set "T_DRIVER_TOO_OLD=El driver NVIDIA es muy antiguo y PyTorch podria no ver la GPU. Actualizalo desde https://www.nvidia.com/drivers"
  set "T_RESUME_HINT=Vuelve a ejecutar el instalador: la descarga continuara donde quedo."
  set "T_CLEANUP=Paquete de instalacion eliminado (se liberaron ~2 GB)."
@@ -246,7 +344,22 @@ if /I "%CINECONIA_LANG%"=="es" (
  set "T_ONEDRIVE=This folder is inside OneDrive. ComfyUI has thousands of files and OneDrive syncing can break it. Move the installer to a folder such as C:\ComfyUI or D:\ComfyUI."
  set "T_CONTINUE_ANYWAY=Install here anyway? [y/N]:"
  set "T_NON_ASCII=The path contains accents or other special characters. Some nodes fail with them; if possible use a simple path such as C:\ComfyUI."
- set "T_DRIVER_UPDATE=Your NVIDIA driver is older than 580. The compatible build (CUDA 12.6) will be installed. After a driver update the installer will use the modern build (CUDA 13)."
+ set "T_DRIVER_UPDATE=Your card supports CUDA 13 (the modern build), but the NVIDIA driver is older than 580"
+ set "T_BLACKWELL_ONLY_CU13=50-series cards only work with CUDA 13: the CUDA 12.6 build does not support them."
+ set "T_OPT_UPDATE_DRIVER=Update the driver first (recommended). Opens the NVIDIA page and closes the installer."
+ set "T_OPT_CU13_ANYWAY=Install CUDA 13 anyway and update the driver before opening ComfyUI."
+ set "T_OPT_CU126_NOW=Install CUDA 12.6: works with your current driver, but it is the older build (Python 3.12)."
+ set "T_DRIVER_THEN_RERUN=Install the new driver, restart the PC and run this installer again."
+ set "T_CU13_NEEDS_580=CUDA 13 needs driver 580 or newer: update it before opening ComfyUI from https://www.nvidia.com/drivers"
+ set "T_CUDA_RECOMMENDED=Recommended build for your card"
+ set "T_CUDA_ACCEPT_OR_CHANGE=[A] accept (automatic in 10 s)   [C] choose another CUDA:"
+ set "T_CUDA_MENU=Choose the CUDA version:"
+ set "T_CU13_DESC=modern: 16/20 series or newer, driver 580+"
+ set "T_CU126_DESC=compatible: 10 series or older, or an old driver (not 50 series)"
+ set "T_CU13_BLOCKED=Your card does not support CUDA 13 (it needs compute capability 7.5 or higher). Keeping CUDA 12.6."
+ set "T_CU126_BLOCKED=Your 50-series card does not work with CUDA 12.6. Keeping CUDA 13."
+ set "T_CC_UNKNOWN=The card's compute capability could not be read: your choice is used without checking it."
+ set "T_CUDA_BAD_ARG=Unrecognized --cuda value (use 13 or 12.6):"
  set "T_DRIVER_TOO_OLD=The NVIDIA driver is very old and PyTorch may not see the GPU. Update it from https://www.nvidia.com/drivers"
  set "T_RESUME_HINT=Run the installer again: the download will continue where it stopped."
  set "T_CLEANUP=Installation package removed (~2 GB freed)."

@@ -113,10 +113,19 @@ No se crean accesos al canal, launchers promocionales ni branding de Cine con IA
 ### Antes de descargar
 
 - Detecta NVIDIA, AMD o Intel.
-- NVIDIA moderno usa el portable oficial NVIDIA (CUDA 13) por defecto.
-- NVIDIA con compute capability menor a 7.5 (GTX 10xx, GTX 9xx, TITAN V...) o con
-  driver anterior al 580 usa el portable oficial nvidia_cu126. Si el driver es
-  el motivo, lo indica para que puedas actualizarlo.
+- NVIDIA moderno (serie 16/20 o superior) usa el portable oficial NVIDIA
+  (CUDA 13, Python 3.13).
+- NVIDIA con compute capability menor a 7.5 (GTX 10xx, GTX 9xx, TITAN V...) usa el
+  portable oficial nvidia_cu126 (CUDA 12.6, Python 3.12).
+- Tarjeta moderna con driver anterior al 580: ya no baja a CUDA 12.6 por su
+  cuenta. Recomienda actualizar el driver (abre la página de NVIDIA y cierra el
+  instalador) y deja elegir entre instalar CUDA 13 igual o CUDA 12.6.
+- Antes de descargar muestra la CUDA recomendada y da 10 segundos para cambiarla
+  con la tecla **C**. Tiene protecciones: CUDA 13 no se instala en tarjetas
+  anteriores a la serie 16/20, y CUDA 12.6 no se instala en la serie 50, que solo
+  funciona con CUDA 13.
+- También se puede fijar al ejecutarlo: **ComfyUI-Setup.bat --cuda 12.6** o
+  **--cuda 13**, con las mismas protecciones.
 - AMD usa el portable AMD/ROCm oficial.
 - Intel usa el portable Intel XPU oficial.
 - Comprueba espacio libre (15 GB), curl y PowerShell.

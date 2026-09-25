@@ -111,10 +111,19 @@ The installer does not create promotional channel shortcuts or replace ComfyUI b
 ### Before downloading
 
 - Detects NVIDIA, AMD, or Intel.
-- Modern NVIDIA systems use the current official NVIDIA portable build (CUDA 13).
-- NVIDIA GPUs below compute capability 7.5 (GTX 10xx, GTX 9xx, TITAN V...) or with a
-  driver older than 580 use the official nvidia_cu126 build. When the driver is the
-  reason, the installer says so, so you can update it.
+- Modern NVIDIA cards (16/20 series or newer) use the official NVIDIA portable
+  build (CUDA 13, Python 3.13).
+- NVIDIA GPUs below compute capability 7.5 (GTX 10xx, GTX 9xx, TITAN V...) use the
+  official nvidia_cu126 build (CUDA 12.6, Python 3.12).
+- Modern card with a driver older than 580: the installer no longer falls back to
+  CUDA 12.6 on its own. It recommends updating the driver (opens the NVIDIA page
+  and closes the installer) and lets you install CUDA 13 anyway or CUDA 12.6.
+- Before downloading it shows the recommended CUDA and gives you 10 seconds to
+  change it with the **C** key. It has guards: CUDA 13 is never installed on cards
+  older than the 16/20 series, and CUDA 12.6 is never installed on the 50 series,
+  which only works with CUDA 13.
+- You can also set it when running it: **ComfyUI-Setup.bat --cuda 12.6** or
+  **--cuda 13**, with the same guards.
 - AMD uses the official AMD/ROCm portable build.
 - Intel uses the official Intel XPU portable build.
 - Checks free space (15 GB), curl, and PowerShell.

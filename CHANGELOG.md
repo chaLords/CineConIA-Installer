@@ -1,5 +1,12 @@
 # Changelog
 
+## v2.2.0 — 2026-09-25
+
+- Eleccion de CUDA en NVIDIA. Antes de descargar se muestra la version recomendada (CUDA 13 con Python 3.13, o CUDA 12.6 con Python 3.12) y hay 10 segundos para cambiarla con la tecla C. Tambien se puede fijar con --cuda 13 o --cuda 12.6.
+- Protecciones: CUDA 13 no se instala en tarjetas con compute capability menor a 7.5 (serie 10 y anteriores), y CUDA 12.6 no se instala en la serie 50 (compute capability 10.0 o mas), que solo funciona con CUDA 13. Si no se puede leer la compute capability, se respeta la eleccion con un aviso.
+- Tarjeta moderna con driver anterior al 580: ya no se baja a CUDA 12.6 sin preguntar. Se recomienda actualizar el driver (abre https://www.nvidia.com/drivers y cierra el instalador) y se puede elegir instalar CUDA 13 igual o CUDA 12.6 con el driver actual.
+- El instalador muestra la version del driver NVIDIA detectado.
+
 ## v2.1.1 — 2026-09-24
 
 - Boton de descarga en el README: baja CineConIA-Installer.zip de la ultima Release, solo con lo necesario para instalar (los .bat, src/, assets/ y LICENSE).
