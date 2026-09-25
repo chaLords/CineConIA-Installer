@@ -1,8 +1,10 @@
 # Changelog
 
-## Sin publicar
+## v2.1.1 — 2026-09-24
 
-- Boton de descarga en el README: baja CineConIA-Installer.zip de la ultima Release, solo con lo necesario para instalar (los .bat, src/, assets/, LICENSE y THIRD_PARTY_NOTICES.md).
+- Boton de descarga en el README: baja CineConIA-Installer.zip de la ultima Release, solo con lo necesario para instalar (los .bat, src/, assets/ y LICENSE).
+- Los avisos de terceros pasan a assets/THIRD_PARTY_NOTICES.md, junto al icono al que dan credito: en la raiz del ZIP solo quedan los .bat y LICENSE.
+- Logo de Cine con IA con el icono de ComfyUI en la cabecera del README, y la aclaracion de que el proyecto es independiente y no esta afiliado a Comfy Org.
 - GitHub Actions arma ese ZIP y lo sube a la Release cada vez que se publica una etiqueta vX.Y.Z. Tambien se puede lanzar a mano desde la pestaña Actions, por ejemplo para agregarlo a la v2.1.0.
 - El "Download ZIP" del boton verde Code tambien deja fuera README, CHANGELOG y .github.
 

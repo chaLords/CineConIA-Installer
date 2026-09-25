@@ -324,4 +324,4 @@ An optional optimization should never break a working base installation.
 
 ## License
 
-The installer is MIT. ComfyUI and external components keep their own licenses. See THIRD_PARTY_NOTICES.md.
+The installer is MIT. ComfyUI and external components keep their own licenses. See [assets/THIRD_PARTY_NOTICES.md](assets/THIRD_PARTY_NOTICES.md).

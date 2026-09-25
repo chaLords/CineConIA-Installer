@@ -390,4 +390,4 @@ El objetivo es que un extra opcional nunca rompa una instalación base funcional
 ## Licencia
 
 El instalador es MIT. ComfyUI y todos los componentes externos conservan sus
-propias licencias. Consulta THIRD_PARTY_NOTICES.md.
+propias licencias. Consulta [assets/THIRD_PARTY_NOTICES.md](assets/THIRD_PARTY_NOTICES.md).
