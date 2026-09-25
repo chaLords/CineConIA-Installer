@@ -32,6 +32,11 @@ NODOS={
             "carpetas":["ComfyUI-GGUF","comfyui-gguf"],"grupo":"video"},
     "selflift":{"repo":"https://github.com/facok/comfyui-SelfLift.git",
                 "carpetas":["comfyui-SelfLift","comfyui-selflift"],"grupo":"video"},
+    # Escalador latente 3D de H3: sin el, "Escalar y refinar" de Cine con IA no
+    # puede subir la resolucion del segundo pase.
+    "h3upscaler":{"repo":"https://github.com/LBH-123-AI/Comfyui_Minimax_h3_latent_Upscaler.git",
+                  "carpetas":["Comfyui_Minimax_h3_latent_Upscaler","comfyui_minimax_h3_latent_upscaler"],
+                  "grupo":"video"},
     # Nodos de Nunchaku: sin ellos la wheel no aporta nada. Van con el perfil Nunchaku.
     "nunchaku":{"repo":"https://github.com/nunchux-ai/ComfyUI-nunchaku.git",
                 "carpetas":["ComfyUI-nunchaku","comfyui-nunchaku"]},

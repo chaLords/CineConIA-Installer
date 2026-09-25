@@ -271,6 +271,9 @@ Luego ofrece instalar:
     VRAM en video.
   - https://github.com/facok/comfyui-SelfLift — render progresivo para H3:
     primeros pasos a baja resolución y final a resolución completa.
+  - https://github.com/LBH-123-AI/Comfyui_Minimax_h3_latent_Upscaler — escalador
+    latente de H3. Sin él, "Escalar y refinar" de Cine con IA no puede subir la
+    resolución del segundo pase.
 
 ## Modelos
 

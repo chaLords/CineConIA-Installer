@@ -1,5 +1,10 @@
 # Changelog
 
+## v2.2.1 — 2026-09-25
+
+- El grupo "nodos para video" instala tambien el escalador latente de H3 (LBH-123-AI/Comfyui_Minimax_h3_latent_Upscaler). Sin el, "Escalar y refinar" de Cine con IA no subia la resolucion: el video salia del tamano del primer pase.
+- En una instalacion ya hecha, volver a ejecutar ComfyUI-Setup.bat ofrece instalar solo lo que falte.
+
 ## v2.2.0 — 2026-09-25
 
 - Eleccion de CUDA en NVIDIA. Antes de descargar se muestra la version recomendada (CUDA 13 con Python 3.13, o CUDA 12.6 con Python 3.12) y hay 10 segundos para cambiarla con la tecla C. Tambien se puede fijar con --cuda 13 o --cuda 12.6.

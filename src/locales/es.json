@@ -173,7 +173,7 @@
   "installer.req_failed": "No se pudo instalar {package} (requisito de {node}); el resto del nodo sí quedó instalado.",
   "installer.torch_restored": "Un paquete cambió PyTorch por su cuenta: se restauró la versión anterior.",
   "installer.torch_restore_failed": "Un paquete cambió PyTorch y no se pudo restaurar. Vuelve a ejecutar el instalador.",
-  "installer.video_nodes_desc": "Nodos para video (MiniMax H3, LTX): KJNodes, VideoHelperSuite, GGUF (modelos ligeros para poca VRAM) y SelfLift (render progresivo H3).",
+  "installer.video_nodes_desc": "Nodos para video (MiniMax H3, LTX): KJNodes, VideoHelperSuite, GGUF (modelos ligeros para poca VRAM), SelfLift (render progresivo H3) y el escalador latente de H3 (lo usa Escalar y refinar).",
   "installer.install_video_nodes": "¿Instalar los nodos para video?",
   "installer.video_nodes": "Nodos para video",
   "installer.pip_conflicts": "pip check encontró {count} conflictos entre paquetes (ComfyUI puede funcionar igual):",

@@ -233,6 +233,7 @@ It then offers to install:
   - https://github.com/Kosinkadink/ComfyUI-VideoHelperSuite
   - https://github.com/city96/ComfyUI-GGUF — GGUF models, the way to save VRAM for video.
   - https://github.com/facok/comfyui-SelfLift — progressive rendering for H3: first steps at low resolution, the rest at full resolution.
+  - https://github.com/LBH-123-AI/Comfyui_Minimax_h3_latent_Upscaler — the H3 latent upscaler. Without it, Cine con IA's "Escalar y refinar" cannot raise the resolution of the second pass.
 
 ## Models
 
