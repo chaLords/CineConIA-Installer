@@ -1,5 +1,16 @@
 # Changelog
 
+## v2.5.0 — en preparación
+
+- Flujograma compacto, transparente y adaptado a GitHub claro/oscuro en ambos idiomas.
+- Instalación de nodos: conservar fallos de dependencias, reparar carpetas incompletas con respaldo y volver a comprobar nodos existentes.
+- Restringir versiones de PyTorch antes de instalar extras; detenerse si una recuperación falla. Comprobar GPU Intel no disponible.
+- Probar aceleradores después de los nodos y comprobar el arranque real de ComfyUI y la carga de los paquetes; evitar mensajes de éxito si quedan incidencias.
+- Extraer el portable en una carpeta temporal nueva sin borrar otro ComfyUI existente.
+- Migración en tres fases: copiar todo, verificar el conjunto y retirar originales. Si falla la copia o verificación, conservar todos los originales. Registrar destinos y SHA-256 antes de borrarlos.
+- Mostrar las carpetas finales y recordar la biblioteca central para instalaciones futuras, con aviso si el disco está desconectado. Configurarla como biblioteca preferida sin duplicar modelos.
+- Conservar colores y progreso en consola. Añadir pruebas automáticas Windows/Python 3.12 y 3.13, excluidas del ZIP de descarga.
+
 ## v2.4.0 — 2026-09-26
 
 - Nuevo paso "Extras de interfaz" (por defecto si): rgthree-comfy, que dibuja la barra de progreso verde arriba de la pantalla con la cola, el porcentaje y el nodo que corre, y ComfyUI-Custom-Scripts, con el boton Show Image Feed. Ninguno trae dependencias de Python.

@@ -6,7 +6,8 @@ call :LEER_ARGS %*
 call :SELECT_LANGUAGE
 rem Paquete ~2 GB + portable extraido ~7 GB + aceleradores y margen.
 set "MIN_ESPACIO_GB=15"
-set "VERSION=2.4.0"
+set "VERSION=2.5.0"
+set "RC=1"
 set "CIA_DIR=%~dp0"
 call :LOAD_TEXT
 title !T_TITLE!
@@ -34,6 +35,7 @@ echo.
 if exist "%PY%" if exist "%MAIN%" (
     echo   !T_ALREADY!
     "%PY%" -s "%~dp0src\instalador.py" "%DESTINO%"
+    set "RC=!errorlevel!"
     goto :fin
 )
 call :PASO "!T_STEP_CHECK!"
@@ -110,8 +112,8 @@ if not exist "!PAQUETE!" (
     call :VERIFICAR_HASH "!PAQUETE!"
     if errorlevel 1 (echo   [X] !T_HASH_FAIL!&del /Q "!PAQUETE!" >nul 2>&1&goto :fin)
 )
-call :PASO_OK "!PAQUETE! - !T_STEP_VERIFIED!"
-if exist "%DESTINO%" if not exist "%PY%" (
+call :PASO_OK "!PAQUETE! - !VERIFY_DETAIL!"
+if exist "%DESTINO%" (
     echo.
     echo   !T_INCOMPLETE!
     set /p "REPARAR=   !T_BACKUP_REINSTALL! "
@@ -119,12 +121,22 @@ if exist "%DESTINO%" if not exist "%PY%" (
     if /I "!REPARAR!"=="NO" goto :fin
     for /f %%T in ('powershell -NoProfile -Command "Get-Date -Format yyyyMMdd-HHmmss"') do set "MARCA=%%T"
     ren "%DESTINO%" "ComfyUI_incompleto_!MARCA!"
+    if errorlevel 1 goto :fin
 )
 call :PASO "!T_STEP_EXTRACT!"
-if exist "%~dp0ComfyUI_windows_portable" rmdir /S /Q "%~dp0ComfyUI_windows_portable"
-"7zr.exe" x "!PAQUETE!" -o"%~dp0" -y -bso0 -bsp1
+rem Extraer en una carpeta NUEVA: nunca borrar otro portable que ya exista.
+set "EXTRACT=%~dp0_cineconia_extract_!RANDOM!_!RANDOM!"
+if exist "!EXTRACT!" goto :fin
+mkdir "!EXTRACT!"
+if errorlevel 1 goto :fin
+"7zr.exe" x "!PAQUETE!" -o"!EXTRACT!" -y -bso0 -bsp1
 if errorlevel 1 (echo   [X] !T_EXTRACT_FAIL!&goto :fin)
-if exist "%~dp0ComfyUI_windows_portable\python_embeded\python.exe" if not exist "%DESTINO%" ren "%~dp0ComfyUI_windows_portable" "ComfyUI"
+if not exist "!EXTRACT!\ComfyUI_windows_portable\python_embeded\python.exe" (echo   [X] !T_NO_EMBEDDED!&goto :fin)
+if exist "%DESTINO%" goto :fin
+move "!EXTRACT!\ComfyUI_windows_portable" "%DESTINO%" >nul
+if errorlevel 1 goto :fin
+rem Solo eliminar el directorio de extraccion si quedo vacio.
+rmdir "!EXTRACT!" >nul 2>&1
 if not exist "%PY%" (echo   [X] !T_NO_EMBEDDED!&goto :fin)
 if not exist "%MAIN%" (echo   [X] !T_NO_MAIN!&goto :fin)
 rem El paquete ya no hace falta: libera ~2 GB.
@@ -133,6 +145,7 @@ call :PASO_OK "!T_STEP_READY!"
 rem src\instalador.py sigue la numeracion y pone estos pasos en su resumen.
 set "CIA_PASOS_BAT=!PASO_N!"
 "%PY%" -s "%~dp0src\instalador.py" "%DESTINO%" "!FABRICANTE!" "!VARIANTE!"
+set "RC=!errorlevel!"
 goto :fin
 :PASO
 rem Abre un paso: "[n/12] titulo" en ambar.
@@ -160,12 +173,14 @@ for /f "delims=" %%H in ('powershell -NoProfile -Command "$ErrorActionPreference
 if not defined DIGEST (
     echo   [^^!] !T_NO_DIGEST!
     "7zr.exe" t "%~1" -bso0 -bsp1
-    exit /b !errorlevel!
+    set "HASH_RC=!errorlevel!"
+    set "VERIFY_DETAIL=7-Zip OK"
+    exit /b !HASH_RC!
 )
 set "ESPERADO=!DIGEST:sha256:=!"
 set "REAL="
 for /f "delims=" %%H in ('powershell -NoProfile -Command "(Get-FileHash -Algorithm SHA256 -LiteralPath '%~1').Hash.ToLower()"') do set "REAL=%%H"
-if /I "!REAL!"=="!ESPERADO!" exit /b 0
+if /I "!REAL!"=="!ESPERADO!" (set "VERIFY_DETAIL=!T_STEP_VERIFIED!"&exit /b 0)
 exit /b 1
 :ELEGIR_NVIDIA
 rem Dos portables oficiales: nvidia (CUDA 13, Python 3.13) y nvidia_cu126
@@ -421,3 +436,4 @@ exit /b 0
 echo.
 echo   !T_EXIT!
 pause >nul
+exit /b !RC!

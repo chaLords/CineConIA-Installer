@@ -32,6 +32,40 @@ MARCA_INICIO="# BEGIN CINECONIA MODEL LIBRARY"
 MARCA_FIN="# END CINECONIA MODEL LIBRARY"
 BLOQUE_NOMBRE="cineconia_model_library"
 
+def ruta_registro():
+    base=os.environ.get("LOCALAPPDATA") or os.path.expanduser("~/.local/share")
+    return os.path.join(base,"CineConIA","bibliotecas.json")
+
+def bibliotecas_guardadas():
+    try:
+        with open(ruta_registro(),encoding="utf-8") as f:
+            datos=json.load(f)
+        rutas=datos.get("bibliotecas",[]) if isinstance(datos,dict) else []
+        if not isinstance(rutas,list):
+            return []
+        return [p for p in rutas if isinstance(p,str) and os.path.isabs(p)]
+    except (OSError,ValueError):
+        return []
+
+def registrar_biblioteca(models):
+    """Preferencia local del usuario: sigue disponible al descargar otro instalador."""
+    models=os.path.realpath(models)
+    anteriores=[p for p in bibliotecas_guardadas() if os.path.normcase(os.path.realpath(p))!=os.path.normcase(models)]
+    ruta=ruta_registro()
+    os.makedirs(os.path.dirname(ruta),exist_ok=True)
+    temporal=ruta+".part"
+    with open(temporal,"w",encoding="utf-8") as f:
+        json.dump({"bibliotecas":[models]+anteriores},f,ensure_ascii=False,indent=2)
+        f.flush()
+        os.fsync(f.fileno())
+    os.replace(temporal,ruta)
+    return ruta
+
+def es_central(models):
+    clave=os.path.normcase(os.path.realpath(models))
+    return (any(os.path.normcase(os.path.realpath(p))==clave for p in bibliotecas_guardadas())
+            or os.path.isdir(os.path.join(models,"_cineconia_migracion")))
+
 def categoria_de(nombre_carpeta):
     """Categoria de ComfyUI para una subcarpeta de models, o None."""
     n=nombre_carpeta.lower()
@@ -65,6 +99,11 @@ def discos_fijos():
 
 def detectar_instalaciones(profundidad=5,max_directorios=25000,max_resultados=10):
     candidatos,vistos=[],set()
+    for carpeta in bibliotecas_guardadas():
+        clave=os.path.normcase(os.path.realpath(carpeta))
+        if clave not in vistos and mapa_categorias(carpeta) and len(candidatos)<max_resultados:
+            vistos.add(clave)
+            candidatos.append(carpeta)
     raices=[os.path.expanduser("~/Documents"),os.path.expanduser("~/Desktop"),
             os.path.expanduser("~/Downloads")]+discos_fijos()
     visitados=0
@@ -83,7 +122,7 @@ def detectar_instalaciones(profundidad=5,max_directorios=25000,max_resultados=10
             if nombre in IGNORAR or nombre.startswith("."): continue
             if nombre=="models":
                 real=os.path.normpath(e.path)
-                clave=os.path.normcase(real)
+                clave=os.path.normcase(os.path.realpath(real))
                 if clave not in vistos and mapa_categorias(real):
                     vistos.add(clave); candidatos.append(real)
                 continue
@@ -110,6 +149,8 @@ def bloque_yaml(models,mapa=None):
     mapa=mapa or {c:c for c in CARPETAS}
     base=json.dumps(models.replace("\\","/"),ensure_ascii=False)
     lineas=[MARCA_INICIO,f"{BLOQUE_NOMBRE}:",f"    base_path: {base}"]
+    if es_central(models):
+        lineas.append("    is_default: true")
     for c in CARPETAS:
         if c in mapa:
             lineas.append(f"    {c}: {json.dumps(mapa[c],ensure_ascii=False)}")
@@ -123,7 +164,7 @@ def actualizar_yaml(comfy_root,models,mapa=None):
     if os.path.isfile(ruta):
         with open(ruta,"r",encoding="utf-8") as f:
             previo=f.read()
-        backup=ruta+datetime.now().strftime(".bak-%Y%m%d-%H%M%S")
+        backup=ruta+datetime.now().strftime(".bak-%Y%m%d-%H%M%S-%f")
         shutil.copy2(ruta,backup)
     nuevo_bloque=bloque_yaml(models,mapa)
     patron=re.compile(re.escape(MARCA_INICIO)+r".*?"+re.escape(MARCA_FIN),flags=re.DOTALL)
@@ -132,6 +173,10 @@ def actualizar_yaml(comfy_root,models,mapa=None):
     else:
         separador="" if not previo else ("\n" if previo.endswith("\n") else "\n\n")
         nuevo=previo+separador+nuevo_bloque+"\n"
-    with open(ruta,"w",encoding="utf-8",newline="\n") as f:
+    temporal=ruta+".cineconia-part"
+    with open(temporal,"w",encoding="utf-8",newline="\n") as f:
         f.write(nuevo)
+        f.flush()
+        os.fsync(f.fileno())
+    os.replace(temporal,ruta)
     return ruta,backup

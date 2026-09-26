@@ -1,9 +1,8 @@
 """Migrador seguro de bibliotecas de modelos de ComfyUI.
 
 Siempre simula antes de escribir. Nunca sobrescribe un archivo distinto.
-En modo mover: si origen y destino estan en el mismo disco se renombra
-(instantaneo, sin duplicar datos); si no, copia, verifica SHA-256 y solo
-entonces elimina el original.
+En modo mover: copia toda la operacion, verifica el conjunto con SHA-256 y
+solo despues elimina originales, comprobando cada pareja una vez mas.
 """
 from __future__ import annotations
 
@@ -180,8 +179,8 @@ def normalizar_destino(seleccion):
 
 
 def rutas_se_solapan(a, b):
-    a = os.path.normcase(os.path.abspath(a))
-    b = os.path.normcase(os.path.abspath(b))
+    a = os.path.normcase(os.path.realpath(a))
+    b = os.path.normcase(os.path.realpath(b))
     try:
         comun = os.path.commonpath([a, b])
     except ValueError:
@@ -334,6 +333,11 @@ def mostrar_simulacion(plan, fuentes, destino):
             print(f"       -> {x['destino']}")
 
     print("\n   "+t("migrator.standard_folders"))
+    print(f"   {destino}")
+    for categoria in CATEGORIAS + ["_sin_clasificar"]:
+        cantidad=sum(1 for x in plan if x["categoria"]==categoria)
+        print(f"     +-- {categoria}/"+(f"  ({cantidad})" if cantidad else ""))
+    print("\n   "+t("migrator.shared_library"))
 
 
 def ancestro_existente(ruta):
@@ -348,12 +352,8 @@ def ancestro_existente(ruta):
 
 def espacio_requerido(plan, destino, modo):
     nuevos = [x for x in plan if x["accion"] != "duplicado"]
-    if modo == "copiar":
-        return sum(x["tamano"] for x in nuevos) + MARGEN_BYTES
-
-    # En el mismo disco se renombra: no ocupa espacio adicional.
-    cruzan = sum(x["tamano"] for x in nuevos if not mismo_volumen(x["origen"], destino))
-    return cruzan + MARGEN_BYTES
+    # Ambos modos copian TODO antes de borrar: tambien en el mismo disco.
+    return sum(x["tamano"] for x in nuevos) + MARGEN_BYTES
 
 
 def comprobar_espacio(plan, destino, modo):
@@ -361,7 +361,7 @@ def comprobar_espacio(plan, destino, modo):
         libre = shutil.disk_usage(ancestro_existente(destino)).free
     except OSError:
         print("   "+t("migrator.space_unknown"))
-        return True
+        return False
     requerido = espacio_requerido(plan, destino, modo)
     print("\n   "+t("migrator.space_free",size=human_bytes(libre)))
     print("   "+t("migrator.space_estimate",size=human_bytes(requerido)))
@@ -381,7 +381,9 @@ def copiar_verificar(origen, destino, cache):
         if os.path.exists(temporal):
             os.remove(temporal)
         shutil.copy2(origen, temporal)
-        if sha256(origen, cache) != sha256(temporal, {}):
+        with open(temporal,"rb+") as archivo:
+            os.fsync(archivo.fileno())
+        if sha256(origen, {}) != sha256(temporal, {}):
             raise IOError(t("migrator.hash_mismatch"))
 
         if os.path.exists(final):
@@ -400,21 +402,6 @@ def copiar_verificar(origen, destino, cache):
         raise
 
 
-def mismo_volumen(a, b):
-    unidad = lambda p: os.path.splitdrive(os.path.abspath(p))[0].lower()
-    return unidad(a) == unidad(ancestro_existente(b))
-
-
-def mover_directo(origen, destino):
-    """Mismo disco: renombrar es instantaneo y no duplica datos.
-
-    os.rename falla si el destino ya existe, asi que nunca sobrescribe.
-    """
-    os.makedirs(os.path.dirname(destino), exist_ok=True)
-    os.rename(origen, destino)
-    return destino, "copiado"
-
-
 def limpiar_vacios(root):
     for base, dirs, files in os.walk(root, topdown=False):
         if os.path.normcase(base) == os.path.normcase(root):
@@ -426,7 +413,7 @@ def limpiar_vacios(root):
             pass
 
 
-def ejecutar_plan(plan, modo, cache):
+def ejecutar_plan(plan, modo, cache, antes_de_borrar=None):
     total = len(plan)
     resultado = {
         "copiados": 0,
@@ -434,28 +421,25 @@ def ejecutar_plan(plan, modo, cache):
         "duplicados": 0,
         "conflictos": 0,
         "errores": [],
+        "archivos": [],
     }
-
+    # Fase 1: copiar y verificar toda la biblioteca. Nunca borrar aqui.
+    print("\n"+t("migrator.copy_phase"))
     for i, item in enumerate(plan, 1):
         origen = item["origen"]
         destino = item["destino"]
         print(f"\n   [{i}/{total}] {os.path.basename(origen)}")
         try:
+            if rutas_se_solapan(origen,destino):
+                raise IOError(t("migrator.overlap",path=origen))
             if item["accion"] == "duplicado":
-                if not os.path.exists(destino) or not mismo_contenido(origen, destino, cache):
+                if not os.path.exists(destino) or not mismo_contenido(origen, destino, {}):
                     raise IOError(t("migrator.duplicate_changed"))
                 resultado["duplicados"] += 1
-                if modo == "mover":
-                    os.remove(origen)
-                    resultado["eliminados_origen"] += 1
+                resultado["archivos"].append({"origen":origen,"destino":destino,"estado":"duplicado"})
                 print("      "+t("migrator.duplicate_verified"))
                 continue
-
-            directo = modo == "mover" and not os.path.exists(destino) and mismo_volumen(origen, destino)
-            if directo:
-                final, estado = mover_directo(origen, destino)
-            else:
-                final, estado = copiar_verificar(origen, destino, cache)
+            final, estado = copiar_verificar(origen, destino, {})
             if estado == "duplicado":
                 resultado["duplicados"] += 1
             else:
@@ -463,10 +447,7 @@ def ejecutar_plan(plan, modo, cache):
                 if item["accion"] == "conflicto" or "__conflicto_" in os.path.basename(final):
                     resultado["conflictos"] += 1
 
-            if modo == "mover":
-                if not directo:
-                    os.remove(origen)
-                resultado["eliminados_origen"] += 1
+            resultado["archivos"].append({"origen":origen,"destino":final,"estado":estado})
             print(f"      OK -> {final}")
 
         except Exception as e:
@@ -477,13 +458,52 @@ def ejecutar_plan(plan, modo, cache):
             })
             print(f"      [X] {type(e).__name__}: {e}")
 
+    if modo!="mover":
+        return resultado
+    if resultado["errores"]:
+        print("\n"+t("migrator.all_originals_kept"))
+        return resultado
+    # Fase 2: comprobar de nuevo todas las parejas, sin caches del plan.
+    print("\n"+t("migrator.verify_phase"))
+    for item in resultado["archivos"]:
+        try:
+            digest=sha256(item["origen"],{})
+            if digest!=sha256(item["destino"],{}):
+                raise IOError(t("migrator.hash_mismatch"))
+            item["sha256"]=digest
+        except OSError as e:
+            resultado["errores"].append({**item,"error":str(e)})
+    if resultado["errores"]:
+        print("\n"+t("migrator.all_originals_kept"))
+        return resultado
+    # Registrar los destinos y sus hashes antes de eliminar cualquier origen.
+    if antes_de_borrar:
+        try:
+            antes_de_borrar(resultado)
+        except OSError as e:
+            resultado["errores"].append({"error":str(e)})
+            print("\n"+t("migrator.all_originals_kept"))
+            return resultado
+    # Fase 3: cada origen se borra solo si ambas copias aun coinciden.
+    print("\n"+t("migrator.delete_phase"))
+    for item in resultado["archivos"]:
+        try:
+            if (sha256(item["origen"],{})!=item["sha256"] or
+                    sha256(item["destino"],{})!=item["sha256"]):
+                raise IOError(t("migrator.hash_mismatch"))
+            os.remove(item["origen"])
+            item["original_eliminado"]=True
+            resultado["eliminados_origen"]+=1
+        except OSError as e:
+            resultado["errores"].append({**item,"error":str(e)})
+            break
     return resultado
 
 
 def guardar_reporte(destino, fuentes, modo, plan, resultado, yaml_actualizados):
     carpeta = os.path.join(destino, "_cineconia_migracion")
     os.makedirs(carpeta, exist_ok=True)
-    marca = datetime.now().strftime("%Y%m%d-%H%M%S")
+    marca = datetime.now().strftime("%Y%m%d-%H%M%S-%f")
     ruta = os.path.join(carpeta, f"migracion-{marca}.json")
     data = {
         "fecha": datetime.now().isoformat(timespec="seconds"),
@@ -496,6 +516,8 @@ def guardar_reporte(destino, fuentes, modo, plan, resultado, yaml_actualizados):
     }
     with open(ruta, "w", encoding="utf-8") as f:
         json.dump(data, f, ensure_ascii=False, indent=2)
+        f.flush()
+        os.fsync(f.fileno())
     return ruta
 
 
@@ -549,13 +571,21 @@ def main(encontrados=None, instalaciones_extra=()):
     print("\n"+t("migrator.confirm",word=word))
     if input("   "+t("migrator.confirm_prompt")).strip() != word:
         print("\n"+t("migrator.cancelled"))
-        return 0
+        return None
 
     os.makedirs(destino, exist_ok=True)
     for c in CATEGORIAS + ["_sin_clasificar"]:
         os.makedirs(os.path.join(destino, c), exist_ok=True)
 
-    resultado = ejecutar_plan(plan, modo, cache)
+    resultado = ejecutar_plan(plan, modo, cache, antes_de_borrar=lambda estado:
+        guardar_reporte(destino,fuentes,modo,plan,estado,[]))
+
+    if not resultado["errores"]:
+        try:
+            modelos_enlace.registrar_biblioteca(destino)
+            print("\n"+t("migrator.library_remembered",path=destino))
+        except OSError as e:
+            resultado["errores"].append({"registro":destino,"error":str(e)})
 
     if modo == "mover":
         for fuente in fuentes:
@@ -571,7 +601,7 @@ def main(encontrados=None, instalaciones_extra=()):
                 vistos.add(clave)
                 roots.append(root)
 
-    if roots and pedir_si_no(
+    if not resultado["errores"] and roots and pedir_si_no(
         "\n"+t("migrator.update_comfy"), True
     ):
         for root in roots:
@@ -583,6 +613,7 @@ def main(encontrados=None, instalaciones_extra=()):
                     print("      "+t("migrator.backup",path=backup))
             except Exception as e:
                 print(f"   [X] {root}: {type(e).__name__}: {e}")
+                resultado["errores"].append({"comfyui":root,"error":str(e)})
 
     reporte = guardar_reporte(destino, fuentes, modo, plan, resultado, yaml_actualizados)
 

@@ -1,0 +1,56 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="620" height="516" viewBox="0 0 620 516" role="img" aria-labelledby="title desc">
+<title id="title">Instalar ComfyUI o migrar modelos</title>
+<desc id="desc">Para una instalación nueva: instala ComfyUI, decide qué hacer con modelos anteriores si aparecen y prueba y cierra ComfyUI. Si quieres reunir modelos, ejecuta el migrador. Si ya tienes ComfyUI, ciérralo y entra al migrador directamente. Elige origen y destino, revisa la simulación, confirma MIGRAR y enlaza la biblioteca.</desc>
+<text x="158" y="29" fill="#57606a" text-anchor="middle" font-family="Segoe UI,Arial,sans-serif" font-size="11" font-weight="500">INSTALACIÓN NUEVA</text>
+<text x="460" y="29" fill="#57606a" text-anchor="middle" font-family="Segoe UI,Arial,sans-serif" font-size="11" font-weight="500">YA TIENES COMFYUI</text>
+<rect x="28" y="49" width="260" height="54" rx="7" fill="none" stroke="#8c959f"/>
+<text x="158" y="72" fill="#24292f" text-anchor="middle" font-family="Segoe UI,Arial,sans-serif" font-size="14" font-weight="500">1 · Instalar ComfyUI</text>
+<text x="158" y="92" fill="#57606a" text-anchor="middle" font-family="Segoe UI,Arial,sans-serif" font-size="12" font-weight="400">Instalar-ComfyUI.bat</text>
+<polyline points="158,103 158,128" fill="none" stroke="#8c959f" stroke-width="1.2" stroke-linejoin="round"/>
+<polygon points="158,128 154,122 162,122" fill="#8c959f"/>
+<rect x="28" y="128" width="260" height="54" rx="7" fill="none" stroke="#8c959f"/>
+<text x="158" y="151" fill="#24292f" text-anchor="middle" font-family="Segoe UI,Arial,sans-serif" font-size="14" font-weight="500">Modelos anteriores · si aparecen</text>
+<text x="158" y="171" fill="#57606a" text-anchor="middle" font-family="Segoe UI,Arial,sans-serif" font-size="12" font-weight="400">Enlazar · migrar · omitir</text>
+<polyline points="158,182 158,208" fill="none" stroke="#8c959f" stroke-width="1.2" stroke-linejoin="round"/>
+<polygon points="158,208 154,202 162,202" fill="#8c959f"/>
+<rect x="28" y="208" width="260" height="54" rx="7" fill="none" stroke="#8c959f"/>
+<text x="158" y="231" fill="#24292f" text-anchor="middle" font-family="Segoe UI,Arial,sans-serif" font-size="14" font-weight="500">2 · Probar y cerrar ComfyUI</text>
+<text x="158" y="251" fill="#57606a" text-anchor="middle" font-family="Segoe UI,Arial,sans-serif" font-size="12" font-weight="400">Abre el acceso directo del escritorio</text>
+<polyline points="158,262 158,296" fill="none" stroke="#8c959f" stroke-width="1.2" stroke-linejoin="round"/>
+<polygon points="158,296 154,290 162,290" fill="#8c959f"/>
+<polygon points="158,296 280,334 158,372 36,334" fill="none" stroke="#326a9d"/>
+<text x="158" y="339" fill="#24292f" text-anchor="middle" font-family="Segoe UI,Arial,sans-serif" font-size="14" font-weight="500">¿Reunir modelos?</text>
+<polyline points="158,372 158,463" fill="none" stroke="#8c959f" stroke-width="1.2" stroke-linejoin="round"/>
+<polygon points="158,463 154,457 162,457" fill="#8c959f"/>
+<text x="171" y="411" fill="#57606a" text-anchor="start" font-family="Segoe UI,Arial,sans-serif" font-size="12" font-weight="400">No</text>
+<polyline points="280,334 307,334 307,155 330,155" fill="none" stroke="#326a9d" stroke-width="1.2" stroke-linejoin="round"/>
+<polygon points="330,155 324,151 324,159" fill="#326a9d"/>
+<text x="292" y="321" fill="#326a9d" text-anchor="middle" font-family="Segoe UI,Arial,sans-serif" font-size="12" font-weight="400">Sí</text>
+<rect x="330" y="49" width="260" height="54" rx="7" fill="none" stroke="#8c959f"/>
+<text x="460" y="72" fill="#24292f" text-anchor="middle" font-family="Segoe UI,Arial,sans-serif" font-size="14" font-weight="500">Cierra ComfyUI</text>
+<text x="460" y="92" fill="#57606a" text-anchor="middle" font-family="Segoe UI,Arial,sans-serif" font-size="12" font-weight="400">Solo necesitas el migrador</text>
+<polyline points="460,103 460,128" fill="none" stroke="#8c959f" stroke-width="1.2" stroke-linejoin="round"/>
+<polygon points="460,128 456,122 464,122" fill="#8c959f"/>
+<rect x="330" y="128" width="260" height="54" rx="7" fill="none" stroke="#8c959f"/>
+<text x="460" y="151" fill="#24292f" text-anchor="middle" font-family="Segoe UI,Arial,sans-serif" font-size="14" font-weight="500">3 · Migrar modelos</text>
+<text x="460" y="171" fill="#57606a" text-anchor="middle" font-family="Segoe UI,Arial,sans-serif" font-size="12" font-weight="400">Migrar-Modelos-ComfyUI.bat</text>
+<polyline points="460,182 460,208" fill="none" stroke="#8c959f" stroke-width="1.2" stroke-linejoin="round"/>
+<polygon points="460,208 456,202 464,202" fill="#8c959f"/>
+<rect x="330" y="208" width="260" height="54" rx="7" fill="none" stroke="#8c959f"/>
+<text x="460" y="231" fill="#24292f" text-anchor="middle" font-family="Segoe UI,Arial,sans-serif" font-size="14" font-weight="500">Elegir origen y destino</text>
+<text x="460" y="251" fill="#57606a" text-anchor="middle" font-family="Segoe UI,Arial,sans-serif" font-size="12" font-weight="400">Una o varias bibliotecas</text>
+<polyline points="460,262 460,288" fill="none" stroke="#8c959f" stroke-width="1.2" stroke-linejoin="round"/>
+<polygon points="460,288 456,282 464,282" fill="#8c959f"/>
+<rect x="330" y="288" width="260" height="54" rx="7" fill="none" stroke="#8c959f"/>
+<text x="460" y="311" fill="#24292f" text-anchor="middle" font-family="Segoe UI,Arial,sans-serif" font-size="14" font-weight="500">Simular → confirmar MIGRAR</text>
+<text x="460" y="331" fill="#57606a" text-anchor="middle" font-family="Segoe UI,Arial,sans-serif" font-size="12" font-weight="400">Copiar o mover con verificación</text>
+<polyline points="460,342 460,368" fill="none" stroke="#8c959f" stroke-width="1.2" stroke-linejoin="round"/>
+<polygon points="460,368 456,362 464,362" fill="#8c959f"/>
+<rect x="330" y="368" width="260" height="54" rx="7" fill="none" stroke="#8c959f"/>
+<text x="460" y="391" fill="#24292f" text-anchor="middle" font-family="Segoe UI,Arial,sans-serif" font-size="14" font-weight="500">Enlazar la biblioteca</text>
+<text x="460" y="411" fill="#57606a" text-anchor="middle" font-family="Segoe UI,Arial,sans-serif" font-size="12" font-weight="400">Con respaldo de la configuración</text>
+<polyline points="460,422 460,463" fill="none" stroke="#8c959f" stroke-width="1.2" stroke-linejoin="round"/>
+<polygon points="460,463 456,457 464,457" fill="#8c959f"/>
+<rect x="28" y="463" width="562" height="38" rx="7" fill="none" stroke="#286a3b"/>
+<text x="310" y="488" fill="#286a3b" text-anchor="middle" font-family="Segoe UI,Arial,sans-serif" font-size="14" font-weight="500">Listo para crear en ComfyUI</text>
+</svg>

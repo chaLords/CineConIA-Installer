@@ -12,6 +12,23 @@ from datetime import datetime
 
 PAQUETES=("torch","torchvision","torchaudio")
 
+class EntornoNoRecuperado(RuntimeError):
+    """No continuar instalando extras sobre un PyTorch que no pudo recuperarse."""
+
+
+def restricciones(destino, versiones_base):
+    """Evita reemplazar el backend (tambien AMD/Intel) al resolver dependencias."""
+    if not versiones_base.get("torch"):
+        raise EntornoNoRecuperado("No se pudo registrar la version de PyTorch.")
+    carpeta=os.path.join(destino,"_cineconia")
+    os.makedirs(carpeta,exist_ok=True)
+    ruta=os.path.join(carpeta,"torch-constraints.txt")
+    with open(ruta,"w",encoding="utf-8") as f:
+        for paquete in PAQUETES:
+            if paquete in versiones_base:
+                f.write(f"{paquete}=={versiones_base[paquete]}\n")
+    return ruta
+
 # Lo minimo que ComfyUI necesita para arrancar despues de tocar PyTorch.
 PRUEBA_ARRANQUE = r'''
 import torch, torchvision, torchaudio
@@ -34,7 +51,7 @@ def versiones(py):
 
 def indice(version_torch):
     """Indice oficial de PyTorch para esta build (+cu130 -> .../whl/cu130)."""
-    m=re.search(r"\+(cu\d+)$",version_torch or "")
+    m=re.search(r"\+(cu\d+|xpu)$",version_torch or "")
     return f"https://download.pytorch.org/whl/{m.group(1)}" if m else None
 
 def instalar(py,objetivo,pip):
@@ -81,6 +98,8 @@ def cambiar_rama(py,rama,version_actual,pip):
     coincidan con esa rama de torch.
     """
     antes=versiones(py)
+    if not antes.get("torch"):
+        return False,"no se pudo registrar PyTorch antes del cambio"
     url=indice(version_actual)
     if not url:
         return False,"sin indice de PyTorch para "+str(version_actual)
@@ -88,5 +107,6 @@ def cambiar_rama(py,rama,version_actual,pip):
     listo,detalle=arranca(py) if ok else (False,"pip")
     if listo and detalle.startswith(f"{rama[0]}.{rama[1]}."):
         return True,detalle
-    instalar(py,antes,pip)
+    if not instalar(py,antes,pip) or versiones(py)!=antes or not arranca(py)[0]:
+        raise EntornoNoRecuperado("PyTorch no pudo recuperarse tras el cambio de rama: "+detalle)
     return False,detalle
