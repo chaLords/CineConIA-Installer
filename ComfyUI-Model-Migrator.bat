@@ -8,6 +8,7 @@ title !T_TITLE!
 set "SCRIPT=%~dp0src\migrar_modelos.py"
 set "PYEXE="
 set "PYARGS="
+set "RC=1"
 echo.
 echo   ============================================================
 echo     !T_BANNER!
@@ -43,7 +44,7 @@ if not "!RC!"=="0" (echo.&echo   [X] !T_EXIT_CODE! !RC!.)
 echo.
 echo   !T_EXIT!
 pause >nul
-exit /b
+exit /b !RC!
 :SELECT_LANGUAGE
 rem Idioma automatico: espanol si la interfaz o el formato regional de Windows
 rem estan en espanol; si no, ingles. --lang es / --lang en lo fuerza.

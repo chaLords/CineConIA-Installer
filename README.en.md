@@ -24,7 +24,7 @@
 
 <p align="center">
   <sub>No sponsors · No promotional shortcuts · No unnecessary software · No required models</sub><br>
-  <sub>Made by <a href="https://www.youtube.com/@cineconia.oficial">Cine con IA</a> · Independent project, not affiliated with Comfy Org</sub>
+  <sub>Made by <a href="https://www.youtube.com/@cineconia.oficial">Cine con IA · YouTube</a> · Independent project, not affiliated with Comfy Org</sub>
 </p>
 
 ---
@@ -79,45 +79,12 @@ For a new installation, the recommended order is:
 
 In short:
 
-```mermaid
-%%{init: {"flowchart": {"wrappingWidth": 420, "nodeSpacing": 30, "rankSpacing": 40}}}%%
-flowchart TD
-    fresh(["New installation"])
-    existing(["You already have ComfyUI and only want<br/>to organize or move its models"])
-
-    fresh --> s1["<b>1 · Run ComfyUI-Setup.bat</b><br/>Installs ComfyUI with the right CUDA<br/>and accelerators for your GPU.<br/>If you accept: Manager, Cine con IA nodes, resource monitor,<br/>green progress bar and community nodes.<br/>Creates the <b>ComfyUI</b> desktop shortcut."]
-    s1 --> found{{"Did it find models from<br/>another installation?"}}
-    found -- "No" --> s2
-    found -- "Yes" --> ask["It asks what to do:<br/>• use them where they are (linked, not copied)<br/>• move them to a library on another drive<br/>• do nothing"]
-    ask --> s2["<b>2 · Open the ComfyUI shortcut</b><br/>Check that the interface loads."]
-    s2 --> s3["<b>3 · Close ComfyUI</b>"]
-    s3 --> gather{{"Gather your models<br/>on another drive?"}}
-    gather -- "No" --> done(["✓ Done: ComfyUI is ready to use"])
-    gather -- "Yes" --> m0
-
-    existing -. "close ComfyUI first" .-> m0
-
-    subgraph migrator [" "]
-        direction TB
-        m0["<b>4 · Run ComfyUI-Model-Migrator.bat</b>"]
-        m0 --> m1["Choose where the models come from<br/>(one or several installations)<br/>and the destination folder."]
-        m1 --> m2["<b>Simulation</b>: files, size, duplicates and conflicts.<br/>Nothing changes yet."]
-        m2 --> m3["Type <b>MIGRAR</b> to confirm.<br/>Copy: the originals stay untouched.<br/>Safe move: each original is deleted only<br/>after its copy is verified (SHA-256)."]
-        m3 --> m4["Links the new library in<br/>extra_model_paths.yaml<br/>(saves a .bak copy first)."]
-    end
-
-    m4 --> done
-
-    classDef step fill:#eaf2ff,stroke:#3b6fd8,color:#10213f
-    classDef question fill:#fff4dc,stroke:#d69a1e,color:#3d2a00
-    classDef finish fill:#e5f6eb,stroke:#2f9e57,color:#0f3320
-    classDef entry fill:#f1f1f4,stroke:#8a8f99,color:#22252b
-    class s1,s2,s3,ask,m0,m1,m2,m3,m4 step
-    class found,gather question
-    class done finish
-    class fresh,existing entry
-    style migrator fill:#f6f8fa,stroke:#8a8f99,stroke-dasharray:4 3
-```
+<p align="center">
+  <picture>
+    <source media="(prefers-color-scheme: dark)" srcset=".github/assets/installation-flow-en-dark.svg">
+    <img src=".github/assets/installation-flow-en-light.svg" alt="Install ComfyUI or migrate models" width="620">
+  </picture>
+</p>
 
 If you are starting from scratch and have no old models, you do not need to run the migrator.
 
@@ -206,11 +173,11 @@ When compatible, advanced mode can offer:
 
 ### PyTorch protection
 
-Some nodes list a different PyTorch in their requirements and, once installed, leave ComfyUI without GPU or unable to start. The installer records the PyTorch version before each extra or node and, if anything changes it, restores the previous one and says so. If a requirement cannot be installed (for example because it needs compiling), the rest are installed one by one and the missing one is reported. At the end it runs pip check and shows any conflicts.
+Extras are installed with constraints preserving the portable's torch, torchvision and torchaudio versions, including AMD and Intel builds. Incompatible requirements are reported. If PyTorch still changes, recovery is attempted; an unsuccessful recovery stops installation. Automatic recovery requires a compatible source for the original build and is not assumed for custom AMD builds.
 
-A successful pip install is not enough. SageAttention and FlashAttention are tested by running a real attention operation on the GPU; everything else is imported in a separate process. If the test fails, the component is not marked as operational and its launcher is not created.
+A downloaded folder is not considered a working node. Dependency errors remain visible, and rerunning the installer rechecks existing node requirements. Incomplete folders are backed up before replacement.
 
-Running the installer again re-verifies whatever already worked, so repeating the installation never downgrades the desktop shortcut.
+After all extras, the installer runs pip check, accelerator tests, and a ComfyUI startup check without opening a browser or leaving a server running. Node packages must appear in the import log. Errors are not presented as a complete installation. This checks loading, not image or video generation through every node. SageAttention and FlashAttention also run a real GPU attention operation; only verified accelerators receive a launcher.
 
 ## ComfyUI-Manager
 
@@ -279,6 +246,16 @@ Installation runs in 14 numbered steps (`[5/14] Accelerators`). Each step closes
 
 The installer does **not download models**.
 
+After a successful migration, the central library path is remembered for this
+Windows user in `%LOCALAPPDATA%\CineConIA\bibliotecas.json`. A freshly downloaded
+installer offers that library first, even on another drive or outside the search
+depth. Choose **Use them where they are** to link the new ComfyUI without copying
+models. The central library is marked `is_default`, so components that respect
+this configuration use it as their preferred location, including downloads.
+If the drive is disconnected or its letter changed, the installer shows a warning.
+The registry belongs to this Windows user and computer; on another computer,
+select the library through the migrator. No second copy is created automatically.
+
 It automatically searches your local drives for model folders from previous installations. Only if it finds one does it ask what to do:
 
 1. **Use them where they are**: links them through extra_model_paths.yaml without copying or moving anything.
@@ -307,8 +284,10 @@ Recommended flow:
    D:\AI\Models\ComfyUI\models
 7. Choose:
    - **Copy** — keeps all originals.
-   - **Safe move** — on the same drive files are renamed (instant, no extra space);
-     across drives each file is copied, verified with SHA-256, and only then is the original removed.
+   - **Safe move** — copies the entire library, even on the same drive, verifies
+     every copy with SHA-256, then rechecks the full operation before deleting
+     any originals. Requires room for both copies. A copy or verification error
+     preserves every original.
 8. Review the **SIMULATION** before anything changes.
 9. Type **MIGRATE** to confirm in English mode.
 10. The migrator can update extra_model_paths.yaml for recognized ComfyUI installations.
@@ -341,7 +320,7 @@ The internal folder _sin_clasificar remains language-independent so the same mod
 
 - Possible duplicates are confirmed with SHA-256.
 - Same filename but different content is never overwritten; the conflict is preserved with a suffix such as __conflicto_2.
-- In safe-move mode across drives, an original is removed only after the copied file is verified.
+- In safe-move mode, no originals are removed until the entire operation has been copied and verified. Each pair is checked again immediately before deletion.
 - If an error occurs, that original remains untouched.
 
 ### extra_model_paths.yaml
@@ -365,6 +344,11 @@ Every confirmed migration stores a JSON report under:
 It records sources, destination, migration mode, duplicates, conflicts, errors, and updated extra_model_paths.yaml files.
 
 ## Compatibility philosophy
+
+Version 2.5.0 was tested on Windows 11 with an RTX 4060 Ti: startup, loading
+14 node packages, GPU SageAttention and a second installer run. Physical AMD,
+Intel and Nunchaku profile tests are still pending.
+[See the validation scope](.github/VALIDATION.md).
 
 Compatible → install and verify.
 Uncertain → skip.

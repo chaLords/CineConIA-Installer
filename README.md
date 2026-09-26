@@ -24,7 +24,7 @@
 
 <p align="center">
   <sub>Sin sponsors · Sin accesos promocionales · Sin software innecesario · Sin modelos obligatorios</sub><br>
-  <sub>Desarrollado por <a href="https://www.youtube.com/@cineconia.oficial">Cine con IA</a> · Proyecto independiente, no afiliado a Comfy Org</sub>
+  <sub>Desarrollado por <a href="https://www.youtube.com/@cineconia.oficial">Cine con IA · YouTube</a> · Proyecto independiente, no afiliado a Comfy Org</sub>
 </p>
 
 ---
@@ -79,45 +79,12 @@ Para una instalación nueva, el orden recomendado es este:
 
 En forma resumida:
 
-```mermaid
-%%{init: {"flowchart": {"wrappingWidth": 420, "nodeSpacing": 30, "rankSpacing": 40}}}%%
-flowchart TD
-    nuevo(["Instalación nueva"])
-    existente(["Ya tienes ComfyUI y solo quieres<br/>ordenar o mover sus modelos"])
-
-    nuevo --> p1["<b>1 · Ejecuta Instalar-ComfyUI.bat</b><br/>Instala ComfyUI con la CUDA<br/>y los aceleradores de tu GPU.<br/>Si aceptas: Manager, nodos Cine con IA, monitor de recursos,<br/>barra de progreso verde y nodos de la comunidad.<br/>Crea el acceso directo <b>ComfyUI</b> en el escritorio."]
-    p1 --> hay{{"¿Encontró modelos de<br/>otra instalación?"}}
-    hay -- "No" --> p2
-    hay -- "Sí" --> elige["Te pregunta qué hacer:<br/>• usarlos donde están (se enlazan, sin copiar)<br/>• llevarlos a una biblioteca en otro disco<br/>• no hacer nada"]
-    elige --> p2["<b>2 · Abre el acceso directo ComfyUI</b><br/>Comprueba que la interfaz carga bien."]
-    p2 --> p3["<b>3 · Cierra ComfyUI</b>"]
-    p3 --> reunir{{"¿Quieres reunir tus modelos<br/>en otro disco?"}}
-    reunir -- "No" --> listo(["✓ Listo: ya puedes usar ComfyUI"])
-    reunir -- "Sí" --> m0
-
-    existente -. "cierra ComfyUI antes" .-> m0
-
-    subgraph migrar [" "]
-        direction TB
-        m0["<b>4 · Ejecuta Migrar-Modelos-ComfyUI.bat</b>"]
-        m0 --> m1["Eliges de dónde salen los modelos<br/>(una o varias instalaciones)<br/>y la carpeta del disco de destino."]
-        m1 --> m2["<b>Simulación</b>: archivos, tamaño, duplicados y conflictos.<br/>Todavía no cambia nada."]
-        m2 --> m3["Escribes <b>MIGRAR</b> para confirmar.<br/>Copiar: los originales quedan intactos.<br/>Mover seguro: borra cada original solo<br/>después de verificar la copia (SHA-256)."]
-        m3 --> m4["Enlaza la biblioteca nueva en<br/>extra_model_paths.yaml<br/>(antes guarda una copia .bak)."]
-    end
-
-    m4 --> listo
-
-    classDef paso fill:#eaf2ff,stroke:#3b6fd8,color:#10213f
-    classDef pregunta fill:#fff4dc,stroke:#d69a1e,color:#3d2a00
-    classDef fin fill:#e5f6eb,stroke:#2f9e57,color:#0f3320
-    classDef entrada fill:#f1f1f4,stroke:#8a8f99,color:#22252b
-    class p1,p2,p3,elige,m0,m1,m2,m3,m4 paso
-    class hay,reunir pregunta
-    class listo fin
-    class nuevo,existente entrada
-    style migrar fill:#f6f8fa,stroke:#8a8f99,stroke-dasharray:4 3
-```
+<p align="center">
+  <picture>
+    <source media="(prefers-color-scheme: dark)" srcset=".github/assets/installation-flow-es-dark.svg">
+    <img src=".github/assets/installation-flow-es-light.svg" alt="Instalar ComfyUI o migrar modelos" width="620">
+  </picture>
+</p>
 
 **Si empiezas desde cero y no tienes modelos antiguos, no necesitas ejecutar
 Migrar-Modelos-ComfyUI.bat.**
@@ -223,20 +190,26 @@ Permite seleccionar, cuando el equipo lo soporta:
 
 ### Protección de PyTorch
 
-Algunos nodos traen en sus requisitos un PyTorch distinto y, al instalarlos,
-dejan ComfyUI sin GPU o sin arrancar. El instalador anota la versión de
-PyTorch antes de cada extra o nodo y, si algo la cambia, restaura la anterior
-y lo avisa. Si un requisito no se puede instalar (por ejemplo, porque necesita
-compilarse), se instalan los demás uno por uno y se indica cuál faltó. Al
-final se ejecuta pip check y se muestran los conflictos que haya.
+Los extras se instalan con restricciones que conservan las versiones de
+PyTorch, torchvision y torchaudio del portable, también en AMD e Intel. Si un
+requisito exige versiones incompatibles, se informa del conflicto. Si aun así
+PyTorch cambia, se intenta recuperarlo; si no se consigue, el instalador se
+detiene. La recuperación automática depende de que exista una fuente compatible
+para la versión original (no se presupone para builds AMD personalizadas).
 
-Un pip install exitoso no basta. SageAttention y FlashAttention se prueban
-ejecutando una operación real de atención en la GPU; el resto se importa en un
-proceso separado. Si la prueba falla, el componente no se considera operativo y
-no se crea su BAT.
+Una carpeta descargada no basta para dar un nodo por instalado. Los fallos de
+dependencias se marcan como incidencias y, al repetir el instalador, se vuelven
+a revisar los requisitos de los nodos existentes. Las carpetas incompletas se
+conservan como respaldo antes de reemplazarlas.
 
-Si vuelves a ejecutar el instalador, lo que ya funcionaba se vuelve a verificar,
-así que repetir la instalación nunca degrada el acceso directo.
+Al final, después de todos los extras, se ejecutan `pip check`, las pruebas de
+aceleradores y un arranque de comprobación de ComfyUI sin abrir el navegador ni
+dejar un servidor activo. Se comprueba que los paquetes de nodos aparezcan en el
+registro de carga; los errores no se presentan como una instalación completa.
+Esta prueba comprueba la carga, no genera imágenes ni videos con cada nodo.
+
+SageAttention y FlashAttention se prueban con una operación real en la GPU.
+Solo los aceleradores que superan la prueba reciben su lanzador.
 
 ## ComfyUI-Manager
 
@@ -356,6 +329,21 @@ La búsqueda:
 Si extra_model_paths.yaml ya existe, crea antes una copia .bak y solo modifica
 el bloque administrado por CineConIA.
 
+### Tu biblioteca para futuras instalaciones
+
+Después de una migración correcta, el instalador recuerda la ruta en
+`%LOCALAPPDATA%\CineConIA\bibliotecas.json` para este usuario de Windows.
+Al descargar el instalador de nuevo para otro ComfyUI, esa biblioteca aparece
+primero, incluso en otro disco o fuera del alcance de la búsqueda automática.
+Elige **Usarlos donde están**: se configura `extra_model_paths.yaml` y no se
+copian modelos. La biblioteca central se marca como preferida (`is_default`).
+Los componentes que respetan esta configuración también la usan como destino
+predeterminado de descarga.
+
+Si el disco está desconectado o cambió de letra, aparece un aviso. El registro
+es local a este usuario y equipo; en otro equipo puedes seleccionar la biblioteca
+con el migrador. No se crea una segunda copia automáticamente.
+
 ## Migrar modelos de un ComfyUI que ya existe
 
 Si ya tienes ComfyUI y acumulaste muchos modelos, usa **Migrar-Modelos-ComfyUI.bat**.
@@ -375,9 +363,10 @@ sobrescribir archivos ni borrar originales antes de verificar.
    D:\IA\Modelos\ComfyUI\models
 7. Elige:
    - **Copiar:** deja intactos todos los originales.
-   - **Mover seguro:** en el mismo disco se renombra (instantáneo, sin ocupar
-     espacio extra); entre discos copia cada archivo, verifica SHA-256 y solo
-     entonces elimina el original.
+   - **Mover seguro:** copia toda la biblioteca, incluso en el mismo disco.
+     Verifica cada copia con SHA-256 y vuelve a comprobar el conjunto antes de
+     borrar cualquier original. Necesita espacio para conservar ambas copias.
+     Si falla la copia o la verificación, no borra ningún original.
 8. Primero aparece una **SIMULACIÓN**. Muestra archivos, tamaño, duplicados,
    conflictos y elementos sin clasificar.
 9. Nada cambia hasta escribir exactamente **MIGRAR**.
@@ -419,8 +408,8 @@ portable se ignoran.
 - Un posible duplicado se confirma por **SHA-256**.
 - Si el mismo nombre tiene contenido diferente, no se sobrescribe: se conserva
   con un nombre como __conflicto_2.
-- En modo mover entre discos, el original se elimina solo después de verificar
-  la copia.
+- En modo mover, ningún original se borra hasta copiar y verificar toda la
+  operación. Justo antes de borrar cada archivo se vuelve a comprobar su copia.
 - Si aparece un error, ese original no se borra.
 
 ### extra_model_paths.yaml
@@ -445,6 +434,11 @@ Incluye orígenes, destino, modo, duplicados, conflictos, errores y configuracio
 extra_model_paths.yaml actualizadas.
 
 ## Filosofía de compatibilidad
+
+La v2.5.0 se probó con Windows 11 y RTX 4060 Ti: arranque, carga de 14 paquetes
+de nodos, SageAttention en GPU y segunda ejecución del instalador. Las pruebas
+de AMD, Intel y el perfil Nunchaku siguen pendientes.
+[Ver el alcance de las comprobaciones](.github/VALIDATION.md).
 
 Compatible → instalar y verificar.
 Dudoso → omitir.

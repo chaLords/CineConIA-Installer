@@ -53,14 +53,14 @@ def registrar(etiqueta, texto):
             pass
 
 
-def correr(cmd, etiqueta, entorno=None):
+def correr(cmd, etiqueta, entorno=None, cwd=None, timeout=None, completo=False):
     """Ejecuta cmd mostrando un indicador en una sola linea. (ok, ultimas lineas)."""
     salida = []
     env = dict(os.environ, GIT_TERMINAL_PROMPT="0", PIP_PROGRESS_BAR="off", **(entorno or {}))
     try:
         p = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.STDOUT,
                              stdin=subprocess.DEVNULL, env=env, text=True,
-                             encoding="utf-8", errors="replace")
+                             encoding="utf-8", errors="replace", cwd=cwd)
     except OSError as e:
         return False, [str(e)]
     import threading
@@ -68,12 +68,18 @@ def correr(cmd, etiqueta, entorno=None):
     hilo.start()
     t0, i = time.time(), 0
     while p.poll() is None:
+        if timeout is not None and time.time()-t0>timeout:
+            p.kill()
+            p.wait()
+            salida.append("\nTIMEOUT: " + etiqueta + "\n")
+            break
         seg = int(time.time() - t0)
         sys.stdout.write(f"\r   {A}{GIRO[i % 4]}{X} {etiqueta}  {G}{seg // 60}:{seg % 60:02d}{X}   ")
         sys.stdout.flush()
         time.sleep(0.2)
         i += 1
     hilo.join(timeout=5)
+    p.stdout.close()
     sys.stdout.write("\r\033[2K")
     sys.stdout.flush()
     texto = "".join(salida)
@@ -83,7 +89,7 @@ def correr(cmd, etiqueta, entorno=None):
                 f.write(f"\n===== {etiqueta} :: {' '.join(map(str, cmd))}\n{texto}")
         except OSError:
             pass
-    return p.returncode == 0, _cola(texto)
+    return p.returncode == 0, (texto.splitlines() if completo else _cola(texto))
 
 
 class Pasos:

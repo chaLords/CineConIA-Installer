@@ -65,7 +65,7 @@ try:
     if d["cuda_available"]:
         try:
             d["gpu"]=torch.cuda.get_device_name(0)
-            d["vram_gb"]=round(torch.cuda.get_device_properties(0).total_memory/1e9,1)
+            d["vram_gb"]=round(torch.cuda.get_device_properties(0).total_memory/(1024**3),1)
             d["cap"]=list(torch.cuda.get_device_capability(0))
         except Exception: pass
     xpu=getattr(torch,"xpu",None)
@@ -120,8 +120,10 @@ def informe(python_exe=None, ruta_destino=None, fabricante_hint=None, variante=N
         gpu = " | ".join(str(x.get("Name","")) for x in adaptadores if x.get("Name"))
     # PyTorch compilado para GPU que no puede usarla: casi siempre es un
     # driver demasiado antiguo para la version de CUDA/ROCm del portable.
-    gpu_inutilizable = (bool(torch.get("torch")) and bool(torch.get("cuda") or torch.get("hip"))
-                        and not torch.get("cuda_available"))
+    gpu_inutilizable = bool(torch.get("torch")) and (
+        (bool(torch.get("cuda") or torch.get("hip")) and not torch.get("cuda_available"))
+        or (fabricante=="intel" and not torch.get("xpu_available"))
+        or (fabricante in ("nvidia","amd") and not torch.get("cuda_available")))
     return {
         "gpu_inutilizable": gpu_inutilizable,
         "gpu_error": torch.get("gpu_error"),
