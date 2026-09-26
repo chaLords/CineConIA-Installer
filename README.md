@@ -120,8 +120,8 @@ No se crean accesos al canal, launchers promocionales ni branding de Cine con IA
 - Tarjeta moderna con driver anterior al 580: ya no baja a CUDA 12.6 por su
   cuenta. Recomienda actualizar el driver (abre la página de NVIDIA y cierra el
   instalador) y deja elegir entre instalar CUDA 13 igual o CUDA 12.6.
-- Antes de descargar muestra la CUDA recomendada y da 10 segundos para cambiarla
-  con la tecla **C**. Tiene protecciones: CUDA 13 no se instala en tarjetas
+- Antes de descargar muestra las dos versiones de CUDA con la recomendada
+  marcada; **Enter** la acepta. Tiene protecciones: CUDA 13 no se instala en tarjetas
   anteriores a la serie 16/20, y CUDA 12.6 no se instala en la serie 50, que solo
   funciona con CUDA 13.
 - También se puede fijar al ejecutarlo: **ComfyUI-Setup.bat --cuda 12.6** o

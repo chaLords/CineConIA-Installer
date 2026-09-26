@@ -1,5 +1,10 @@
 # Changelog
 
+## v2.2.2 — 2026-09-26
+
+- La eleccion de CUDA pasa a ser una lista como las demas preguntas: CUDA 13 (la mas usada, ~84 % de las descargas NVIDIA del portable oficial) y CUDA 12.6, con la recomendada marcada; Enter la acepta. Reemplaza la cuenta atras de 10 segundos con la tecla C.
+- Lo que la tarjeta no soporta aparece como "(no compatible con tu tarjeta)" y, si se elige, se mantiene la recomendada.
+
 ## v2.2.1 — 2026-09-25
 
 - El grupo "nodos para video" instala tambien el escalador latente de H3 (LBH-123-AI/Comfyui_Minimax_h3_latent_Upscaler). Sin el, "Escalar y refinar" de Cine con IA no subia la resolucion: el video salia del tamano del primer pase.

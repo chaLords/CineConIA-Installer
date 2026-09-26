@@ -118,8 +118,8 @@ The installer does not create promotional channel shortcuts or replace ComfyUI b
 - Modern card with a driver older than 580: the installer no longer falls back to
   CUDA 12.6 on its own. It recommends updating the driver (opens the NVIDIA page
   and closes the installer) and lets you install CUDA 13 anyway or CUDA 12.6.
-- Before downloading it shows the recommended CUDA and gives you 10 seconds to
-  change it with the **C** key. It has guards: CUDA 13 is never installed on cards
+- Before downloading it lists both CUDA versions with the recommended one
+  marked; **Enter** accepts it. It has guards: CUDA 13 is never installed on cards
   older than the 16/20 series, and CUDA 12.6 is never installed on the 50 series,
   which only works with CUDA 13.
 - You can also set it when running it: **ComfyUI-Setup.bat --cuda 12.6** or

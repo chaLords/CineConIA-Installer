@@ -6,7 +6,7 @@ call :LEER_ARGS %*
 call :SELECT_LANGUAGE
 rem Paquete ~2 GB + portable extraido ~7 GB + aceleradores y margen.
 set "MIN_ESPACIO_GB=15"
-set "VERSION=2.2.1"
+set "VERSION=2.2.2"
 set "CIA_DIR=%~dp0"
 call :LOAD_TEXT
 title !T_TITLE!
@@ -192,16 +192,24 @@ if "!OPC!"=="3" (set "VARIANTE=nvidia_cu126"&exit /b 0)
 echo   [^^!] !T_CU13_NEEDS_580!
 exit /b 0
 :NV_RECOMENDADA
-call :NV_ETIQUETA "!VARIANTE!"
-echo   !T_CUDA_RECOMMENDED!: !NV_TXT!
-choice /C AC /N /T 10 /D A /M "   !T_CUDA_ACCEPT_OR_CHANGE! "
-if not errorlevel 2 exit /b 0
+rem Lista con la recomendada marcada; Enter la acepta, como las demas preguntas.
+rem Lo que la tarjeta no soporta se marca y, si se elige, lo frena :NV_PEDIDA.
+set "M13="
+set "M126="
+set "DEF=1"
+if "!VARIANTE!"=="nvidia_cu126" set "DEF=2"
+if "!DEF!"=="1" (set "M13= !T_RECOMMENDED!") else (set "M126= !T_RECOMMENDED!")
+if "!LEGACY!"=="1" set "M13= !T_NOT_COMPATIBLE!"
+if "!BLACKWELL!"=="1" set "M126= !T_NOT_COMPATIBLE!"
 echo.
 echo   !T_CUDA_MENU!
-echo     1^) CUDA 13   - Python 3.13 - !T_CU13_DESC!
-echo     2^) CUDA 12.6 - Python 3.12 - !T_CU126_DESC!
-choice /C 12 /N /M "   !T_CHOOSE_GPU! [1-2]: "
-if errorlevel 2 (set "CUDA_PEDIDA=12.6") else (set "CUDA_PEDIDA=13")
+echo     1^) CUDA 13   - Python 3.13 - !T_CU13_DESC!!M13!
+echo     2^) CUDA 12.6 - Python 3.12 - !T_CU126_DESC!!M126!
+set "OPC="
+set /p "OPC=   !T_CHOOSE_GPU! [!DEF!]: "
+if not defined OPC exit /b 0
+if "!OPC!"=="!DEF!" exit /b 0
+if "!OPC!"=="1" (set "CUDA_PEDIDA=13") else if "!OPC!"=="2" (set "CUDA_PEDIDA=12.6") else exit /b 0
 :NV_PEDIDA
 rem Eleccion manual (menu o --cuda), con protecciones por compute capability.
 set "PEDIDA="
@@ -298,11 +306,11 @@ if /I "%CINECONIA_LANG%"=="es" (
  set "T_OPT_CU126_NOW=Instalar CUDA 12.6: funciona con tu driver actual, pero es la version antigua (Python 3.12)."
  set "T_DRIVER_THEN_RERUN=Instala el driver nuevo, reinicia el PC y vuelve a ejecutar este instalador."
  set "T_CU13_NEEDS_580=CUDA 13 necesita el driver 580 o superior: actualizalo antes de abrir ComfyUI desde https://www.nvidia.com/drivers"
- set "T_CUDA_RECOMMENDED=Version recomendada para tu tarjeta"
- set "T_CUDA_ACCEPT_OR_CHANGE=[A] aceptar (automatico en 10 s)   [C] elegir otra CUDA:"
- set "T_CUDA_MENU=Elige la version de CUDA:"
- set "T_CU13_DESC=moderna: serie 16/20 o superior, driver 580+"
- set "T_CU126_DESC=compatible: serie 10 o anterior, o driver viejo (no serie 50)"
+ set "T_CUDA_MENU=Version de CUDA (Enter = recomendada):"
+ set "T_CU13_DESC=la mas usada; serie 16/20 o superior, driver 580+"
+ set "T_CU126_DESC=compatibilidad: serie 10 o anterior, o nodos que piden CUDA 12"
+ set "T_RECOMMENDED=(recomendado)"
+ set "T_NOT_COMPATIBLE=(no compatible con tu tarjeta)"
  set "T_CU13_BLOCKED=Tu tarjeta no soporta CUDA 13 (necesita compute capability 7.5 o mas). Se mantiene CUDA 12.6."
  set "T_CU126_BLOCKED=Tu tarjeta serie 50 no funciona con CUDA 12.6. Se mantiene CUDA 13."
  set "T_CC_UNKNOWN=No se pudo leer la compute capability de la tarjeta: se usa tu eleccion sin comprobarla."
@@ -351,11 +359,11 @@ if /I "%CINECONIA_LANG%"=="es" (
  set "T_OPT_CU126_NOW=Install CUDA 12.6: works with your current driver, but it is the older build (Python 3.12)."
  set "T_DRIVER_THEN_RERUN=Install the new driver, restart the PC and run this installer again."
  set "T_CU13_NEEDS_580=CUDA 13 needs driver 580 or newer: update it before opening ComfyUI from https://www.nvidia.com/drivers"
- set "T_CUDA_RECOMMENDED=Recommended build for your card"
- set "T_CUDA_ACCEPT_OR_CHANGE=[A] accept (automatic in 10 s)   [C] choose another CUDA:"
- set "T_CUDA_MENU=Choose the CUDA version:"
- set "T_CU13_DESC=modern: 16/20 series or newer, driver 580+"
- set "T_CU126_DESC=compatible: 10 series or older, or an old driver (not 50 series)"
+ set "T_CUDA_MENU=CUDA version (Enter = recommended):"
+ set "T_CU13_DESC=most used; 16/20 series or newer, driver 580+"
+ set "T_CU126_DESC=compatibility: 10 series or older, or nodes that need CUDA 12"
+ set "T_RECOMMENDED=(recommended)"
+ set "T_NOT_COMPATIBLE=(not compatible with your card)"
  set "T_CU13_BLOCKED=Your card does not support CUDA 13 (it needs compute capability 7.5 or higher). Keeping CUDA 12.6."
  set "T_CU126_BLOCKED=Your 50-series card does not work with CUDA 12.6. Keeping CUDA 13."
  set "T_CC_UNKNOWN=The card's compute capability could not be read: your choice is used without checking it."
