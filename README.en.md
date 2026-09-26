@@ -75,21 +75,45 @@ For a new installation, the recommended order is:
 
 In short:
 
-    ComfyUI-Setup.bat
-            |
-            v
-       Test ComfyUI
-            |
-            v
-       Close ComfyUI
-            |
-            v
-    Gather models on another drive?
-        /          \
-      No            Yes
-      |              |
-      v              v
-    Done    ComfyUI-Model-Migrator.bat
+```mermaid
+%%{init: {"flowchart": {"wrappingWidth": 420, "nodeSpacing": 30, "rankSpacing": 40}}}%%
+flowchart TD
+    fresh(["New installation"])
+    existing(["You already have ComfyUI and only want<br/>to organize or move its models"])
+
+    fresh --> s1["<b>1 · Run ComfyUI-Setup.bat</b><br/>Installs ComfyUI with the right CUDA<br/>and accelerators for your GPU.<br/>If you accept: Manager, Cine con IA nodes<br/>and resource monitor (CPU, RAM, GPU, VRAM).<br/>Creates the <b>ComfyUI</b> desktop shortcut."]
+    s1 --> found{{"Did it find models from<br/>another installation?"}}
+    found -- "No" --> s2
+    found -- "Yes" --> ask["It asks what to do:<br/>• use them where they are (linked, not copied)<br/>• move them to a library on another drive<br/>• do nothing"]
+    ask --> s2["<b>2 · Open the ComfyUI shortcut</b><br/>Check that the interface loads."]
+    s2 --> s3["<b>3 · Close ComfyUI</b>"]
+    s3 --> gather{{"Gather your models<br/>on another drive?"}}
+    gather -- "No" --> done(["✓ Done: ComfyUI is ready to use"])
+    gather -- "Yes" --> m0
+
+    existing -. "close ComfyUI first" .-> m0
+
+    subgraph migrator [" "]
+        direction TB
+        m0["<b>4 · Run ComfyUI-Model-Migrator.bat</b>"]
+        m0 --> m1["Choose where the models come from<br/>(one or several installations)<br/>and the destination folder."]
+        m1 --> m2["<b>Simulation</b>: files, size, duplicates and conflicts.<br/>Nothing changes yet."]
+        m2 --> m3["Type <b>MIGRAR</b> to confirm.<br/>Copy: the originals stay untouched.<br/>Safe move: each original is deleted only<br/>after its copy is verified (SHA-256)."]
+        m3 --> m4["Links the new library in<br/>extra_model_paths.yaml<br/>(saves a .bak copy first)."]
+    end
+
+    m4 --> done
+
+    classDef step fill:#eaf2ff,stroke:#3b6fd8,color:#10213f
+    classDef question fill:#fff4dc,stroke:#d69a1e,color:#3d2a00
+    classDef finish fill:#e5f6eb,stroke:#2f9e57,color:#0f3320
+    classDef entry fill:#f1f1f4,stroke:#8a8f99,color:#22252b
+    class s1,s2,s3,ask,m0,m1,m2,m3,m4 step
+    class found,gather question
+    class done finish
+    class fresh,existing entry
+    style migrator fill:#f6f8fa,stroke:#8a8f99,stroke-dasharray:4 3
+```
 
 If you are starting from scratch and have no old models, you do not need to run the migrator.
 
