@@ -6,10 +6,19 @@ call :LEER_ARGS %*
 call :SELECT_LANGUAGE
 rem Paquete ~2 GB + portable extraido ~7 GB + aceleradores y margen.
 set "MIN_ESPACIO_GB=15"
-set "VERSION=2.2.2"
+set "VERSION=2.3.0"
 set "CIA_DIR=%~dp0"
 call :LOAD_TEXT
 title !T_TITLE!
+rem Pasos numerados con su cierre en verde (ver :PASO). El visto se pide a
+rem PowerShell para que este archivo siga en ASCII; en la consola clasica, "OK".
+for /f %%E in ('echo prompt $E^| cmd') do set "ESC=%%E"
+set "MK_OK=OK"
+if defined WT_SESSION for /f "delims=" %%C in ('powershell -NoProfile -Command "[Console]::OutputEncoding=[Text.Encoding]::UTF8; [string][char]0x2713"') do set "MK_OK=%%C"
+for /f %%T in ('powershell -NoProfile -Command "[DateTimeOffset]::Now.ToUnixTimeSeconds()"') do set "CIA_INICIO=%%T"
+set "PASO_N=0"
+rem 3 pasos aqui y 9 en src\instalador.py (TITULOS).
+set "PASOS_TOTAL=12"
 set "DESTINO=%~dp0ComfyUI"
 set "PY=%DESTINO%\python_embeded\python.exe"
 set "MAIN=%DESTINO%\ComfyUI\main.py"
@@ -27,6 +36,7 @@ if exist "%PY%" if exist "%MAIN%" (
     "%PY%" -s "%~dp0src\instalador.py" "%DESTINO%"
     goto :fin
 )
+call :PASO "!T_STEP_CHECK!"
 where curl.exe >nul 2>&1 || (echo   [X] !T_NO_CURL!&goto :fin)
 where powershell.exe >nul 2>&1 || (echo   [X] !T_NO_PS!&goto :fin)
 rem OneDrive sincroniza (y puede dejar "solo en la nube") miles de archivos del
@@ -73,12 +83,14 @@ if /I "!FABRICANTE!"=="amd" set "VARIANTE=amd"
 if /I "!FABRICANTE!"=="intel" set "VARIANTE=intel"
 set "PAQUETE=ComfyUI_windows_portable_!VARIANTE!.7z"
 echo   !T_PORTABLE!: !PAQUETE!
-echo.
+call :PASO_OK "!GPU!"
+call :PASO "!T_STEP_DOWNLOAD!"
 if not exist "7zr.exe" (
     echo   !T_DOWNLOAD_7Z!
     if exist "7zr.exe.part" del /Q "7zr.exe.part" >nul 2>&1
     curl.exe --fail --location --retry 5 --retry-delay 2 --progress-bar -o "7zr.exe.part" "https://www.7-zip.org/a/7zr.exe"
     if errorlevel 1 (del /Q "7zr.exe.part" >nul 2>&1&echo   [X] !T_DOWNLOAD_7Z_FAIL!&goto :fin)
+    call :BORRAR_BARRA
     move /Y "7zr.exe.part" "7zr.exe" >nul
 )
 "7zr.exe" i >nul 2>&1
@@ -93,10 +105,12 @@ if not exist "!PAQUETE!" (
     rem Si el .part fuera de otra version, el SHA-256 lo detecta y se descarta.
     curl.exe --fail --location --retry 5 --retry-delay 2 -C - --progress-bar -o "!PAQUETE!.part" "https://github.com/Comfy-Org/ComfyUI/releases/latest/download/!PAQUETE!"
     if errorlevel 1 (echo   [X] !T_DOWNLOAD_COMFY_FAIL!&echo   !T_RESUME_HINT!&goto :fin)
+    call :BORRAR_BARRA
     move /Y "!PAQUETE!.part" "!PAQUETE!" >nul
     call :VERIFICAR_HASH "!PAQUETE!"
     if errorlevel 1 (echo   [X] !T_HASH_FAIL!&del /Q "!PAQUETE!" >nul 2>&1&goto :fin)
 )
+call :PASO_OK "!PAQUETE! - !T_STEP_VERIFIED!"
 if exist "%DESTINO%" if not exist "%PY%" (
     echo.
     echo   !T_INCOMPLETE!
@@ -106,7 +120,7 @@ if exist "%DESTINO%" if not exist "%PY%" (
     for /f %%T in ('powershell -NoProfile -Command "Get-Date -Format yyyyMMdd-HHmmss"') do set "MARCA=%%T"
     ren "%DESTINO%" "ComfyUI_incompleto_!MARCA!"
 )
-echo   !T_EXTRACTING!
+call :PASO "!T_STEP_EXTRACT!"
 if exist "%~dp0ComfyUI_windows_portable" rmdir /S /Q "%~dp0ComfyUI_windows_portable"
 "7zr.exe" x "!PAQUETE!" -o"%~dp0" -y -bso0 -bsp1
 if errorlevel 1 (echo   [X] !T_EXTRACT_FAIL!&goto :fin)
@@ -115,10 +129,30 @@ if not exist "%PY%" (echo   [X] !T_NO_EMBEDDED!&goto :fin)
 if not exist "%MAIN%" (echo   [X] !T_NO_MAIN!&goto :fin)
 rem El paquete ya no hace falta: libera ~2 GB.
 del /Q "!PAQUETE!" >nul 2>&1 && echo   !T_CLEANUP!
-echo.
-echo   !T_BASE_READY!
+call :PASO_OK "!T_STEP_READY!"
+rem src\instalador.py sigue la numeracion y pone estos pasos en su resumen.
+set "CIA_PASOS_BAT=!PASO_N!"
 "%PY%" -s "%~dp0src\instalador.py" "%DESTINO%" "!FABRICANTE!" "!VARIANTE!"
 goto :fin
+:PASO
+rem Abre un paso: "[n/12] titulo" en ambar.
+set /a "PASO_N+=1"
+set "PASO_T=%~1"
+echo.
+echo   !ESC![38;5;179m[!PASO_N!/!PASOS_TOTAL!] !PASO_T!!ESC![0m
+exit /b 0
+:PASO_OK
+rem Cierra el paso en verde con su detalle y lo deja para el resumen final.
+set "PASO_D=%~1"
+set "CIA_PASO!PASO_N!=!PASO_T!|!PASO_D!"
+set "PASO_L=[!PASO_N!/!PASOS_TOTAL!] !PASO_T! ................................................"
+set "PASO_L=!PASO_L:~0,49!"
+echo   !ESC![38;5;71m!PASO_L! !MK_OK! !PASO_D!!ESC![0m
+exit /b 0
+:BORRAR_BARRA
+rem La barra de curl queda en la linea de arriba: se sube y se borra.
+<nul set /p "=!ESC![1A!ESC![2K"
+exit /b 0
 :VERIFICAR_HASH
 rem Sin tuberias: dentro de las comillas de -Command, "^|" llega literal a PowerShell y falla.
 set "DIGEST="
@@ -131,7 +165,7 @@ if not defined DIGEST (
 set "ESPERADO=!DIGEST:sha256:=!"
 set "REAL="
 for /f "delims=" %%H in ('powershell -NoProfile -Command "(Get-FileHash -Algorithm SHA256 -LiteralPath '%~1').Hash.ToLower()"') do set "REAL=%%H"
-if /I "!REAL!"=="!ESPERADO!" (echo   !T_HASH_OK!&exit /b 0)
+if /I "!REAL!"=="!ESPERADO!" exit /b 0
 exit /b 1
 :ELEGIR_NVIDIA
 rem Dos portables oficiales: nvidia (CUDA 13, Python 3.13) y nvidia_cu126
@@ -295,6 +329,11 @@ if /I "%CINECONIA_LANG%"=="es" (
  set "T_BASE_READY=ComfyUI base instalado. Analizando PyTorch y aceleradores reales..."
  set "T_NO_DIGEST=GitHub no entrego digest; se validara el archivo con 7-Zip."
  set "T_HASH_OK=SHA-256 verificado."
+ set "T_STEP_CHECK=Revisando el equipo"
+ set "T_STEP_DOWNLOAD=Descargando ComfyUI"
+ set "T_STEP_EXTRACT=Extrayendo"
+ set "T_STEP_VERIFIED=SHA-256 verificado"
+ set "T_STEP_READY=listo"
  set "T_EXIT=Pulsa una tecla para salir..."
  set "T_ONEDRIVE=Esta carpeta esta dentro de OneDrive. ComfyUI tiene miles de archivos y OneDrive puede romperlo al sincronizar. Mejor mueve el instalador a una carpeta como C:\ComfyUI o D:\ComfyUI."
  set "T_CONTINUE_ANYWAY=Instalar aqui de todos modos? [s/N]:"
@@ -348,6 +387,11 @@ if /I "%CINECONIA_LANG%"=="es" (
  set "T_BASE_READY=Base ComfyUI installed. Inspecting real PyTorch and accelerators..."
  set "T_NO_DIGEST=GitHub did not provide a digest; the archive will be tested with 7-Zip."
  set "T_HASH_OK=SHA-256 verified."
+ set "T_STEP_CHECK=Checking the computer"
+ set "T_STEP_DOWNLOAD=Downloading ComfyUI"
+ set "T_STEP_EXTRACT=Extracting"
+ set "T_STEP_VERIFIED=SHA-256 verified"
+ set "T_STEP_READY=done"
  set "T_EXIT=Press any key to exit..."
  set "T_ONEDRIVE=This folder is inside OneDrive. ComfyUI has thousands of files and OneDrive syncing can break it. Move the installer to a folder such as C:\ComfyUI or D:\ComfyUI."
  set "T_CONTINUE_ANYWAY=Install here anyway? [y/N]:"

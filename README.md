@@ -275,6 +275,15 @@ Luego ofrece instalar:
     latente de H3. Sin él, "Escalar y refinar" de Cine con IA no puede subir la
     resolución del segundo pase.
 
+### Progreso en pantalla
+
+La instalación avanza en 12 pasos numerados (`[5/12] Aceleradores`). Cada paso
+cierra con su propia línea: ✓ si quedó listo, un guion si se omitió y ✗ si
+falló. Las barras de pip y git no quedan a medias en pantalla: se ve un
+indicador que desaparece al terminar, y el detalle completo queda en
+`ComfyUI\_cineconia\instalacion.log`. Al final, un resumen con todos los pasos
+y el tiempo total.
+
 ## Modelos
 
 El instalador **no descarga modelos**.

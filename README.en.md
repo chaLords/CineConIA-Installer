@@ -235,6 +235,10 @@ It then offers to install:
   - https://github.com/facok/comfyui-SelfLift — progressive rendering for H3: first steps at low resolution, the rest at full resolution.
   - https://github.com/LBH-123-AI/Comfyui_Minimax_h3_latent_Upscaler — the H3 latent upscaler. Without it, Cine con IA's "Escalar y refinar" cannot raise the resolution of the second pass.
 
+### On-screen progress
+
+Installation runs in 12 numbered steps (`[5/12] Accelerators`). Each step closes with its own line: ✓ when done, a dash when skipped and ✗ when it failed. pip and git progress bars never stay half-drawn on screen: a small indicator shows while they run and disappears when they finish, and the full output goes to `ComfyUI\_cineconia\instalacion.log`. At the end, a summary lists every step and the total time.
+
 ## Models
 
 The installer does **not download models**.

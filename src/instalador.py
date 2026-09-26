@@ -2,7 +2,7 @@
 from __future__ import annotations
 import os, subprocess, sys
 sys.path.insert(0,os.path.dirname(os.path.abspath(__file__)))
-import catalogo, deteccion, entorno_torch, i18n, lanzadores, modelos_enlace, preflight, rutas_largas
+import catalogo, deteccion, entorno_torch, i18n, lanzadores, modelos_enlace, pasos, preflight, rutas_largas
 
 # Nodos opcionales. "carpetas": nombres con que puede estar ya instalado;
 # el primero es el que se usa al clonar.
@@ -73,7 +73,6 @@ def marcar(texto,opciones):
             if x.isdigit() and 1<=int(x)<=len(opciones)]
 
 def mostrar_equipo(inf):
-    titulo(t("installer.detected_environment"))
     print(f"   GPU          {inf['gpu']}")
     if inf.get("vram_gb") is not None:
         print(f"   VRAM         {inf['vram_gb']} GB")
@@ -135,10 +134,10 @@ def elegir_perfiles(vram):
         opts.append((t(f"profile.{clave}.name")+aviso,t(f"profile.{clave}.detail")))
     return [claves[i-1] for i in marcar(t("installer.select_extras"),opts)]
 
-def mostrar_plan(pasos):
-    titulo(t("installer.accelerator_plan"))
+def mostrar_plan(plan):
+    print(f"\n   {A}{t('installer.accelerator_plan')}{X}")
     n=0
-    for p in pasos:
+    for p in plan:
         print(f"\n   {A}{p['nombre']}{X}")
         if p["url"]:
             print("      wheel: "+os.path.basename(p["url"]))
@@ -152,13 +151,17 @@ def mostrar_plan(pasos):
     return n
 
 def pip_instalar(py,args,nombre):
-    print(f"\n{A}>> {nombre}{X}")
-    try:
-        return subprocess.run(
-            [py,"-s","-m","pip","install","--no-cache-dir","--timeout","600","--retries","5"]+args
-        ).returncode==0
-    except OSError:
-        return False
+    """pip con indicador de una linea; el detalle completo va a instalacion.log."""
+    ok,cola=pasos.correr(
+        [py,"-s","-m","pip","install","--no-cache-dir","--timeout","600","--retries","5"]+args,
+        f"pip: {nombre}")
+    if ok:
+        print(f"   {pasos.V}{pasos.MARCAS['ok'][0]}{X} {nombre}")
+    else:
+        print(f"   {R}{pasos.MARCAS['fallo'][0]} {nombre}{X}")
+        for linea in cola[-3:]:
+            print(f"      {G}{linea[:110]}{X}")
+    return ok
 
 def ejecutar(pasos,py):
     ok,omitidos,fallidos=[],[],[]
@@ -270,17 +273,19 @@ def clonar_nodo(destino,py,clave,torch_base=None):
     custom=os.path.join(destino,"ComfyUI","custom_nodes")
     os.makedirs(custom,exist_ok=True)
     ruta=os.path.join(custom,nodo["carpetas"][0])
-    try:
-        if subprocess.run([git,"clone","--depth","1",nodo["repo"],ruta]).returncode!=0:
-            return False
-    except OSError:
+    ok,cola=pasos.correr([git,"clone","--depth","1",nodo["repo"],ruta],f"git clone {nodo['carpetas'][0]}")
+    if not ok:
+        print(f"   {R}{pasos.MARCAS['fallo'][0]} {nodo['carpetas'][0]}{X}")
+        for linea in cola[-3:]:
+            print(f"      {G}{linea[:110]}{X}")
         return False
+    print(f"   {pasos.V}{pasos.MARCAS['ok'][0]}{X} {nodo['carpetas'][0]}")
     req=os.path.join(ruta,"requirements.txt")
     if os.path.isfile(req):
         for paquete in instalar_requisitos(py,req,nodo["carpetas"][0]):
             print(f"   {R}{t('installer.req_failed',package=paquete,node=nodo['carpetas'][0])}{X}")
     if nodo.get("sobrante"):
-        subprocess.run([py,"-s","-m","pip","uninstall","-y","-q",nodo["sobrante"]])
+        pasos.correr([py,"-s","-m","pip","uninstall","-y",nodo["sobrante"]],f"pip uninstall {nodo['sobrante']}")
     proteger_torch(py,torch_base)
     return True
 
@@ -344,7 +349,6 @@ def ofrecer_enlace_modelos(destino):
     destino_comfy=os.path.join(destino,"ComfyUI")
     real=lambda p:os.path.normcase(os.path.realpath(p))
     propia=real(os.path.join(destino_comfy,"models"))
-    titulo(t("installer.models_title"))
     print(f"   {G}{t('installer.searching_models')}{X}")
     encontradas=[p for p in modelos_enlace.detectar_instalaciones() if real(p)!=propia]
     # La biblioteca central que dejo el migrador va primero: es la que deben
@@ -354,7 +358,7 @@ def ofrecer_enlace_modelos(destino):
     con_tamano=sorted([x for x in con_tamano if x[1]>0],key=lambda x:(not central(x[0]),-x[1]))[:5]
     if not con_tamano:
         print(f"   {G}{t('installer.no_models_found')}{X}")
-        return
+        return None
     etiqueta=lambda p,gb:f"{gb:.1f} GB - {p}"+(f" {A}[{t('installer.central_library')}]{X}" if central(p) else "")
     print("   "+t("installer.models_found"))
     for p,gb in con_tamano:
@@ -365,13 +369,13 @@ def ofrecer_enlace_modelos(destino):
         (t("installer.models_nothing"),t("installer.search_models_no")),
     ],1)
     if accion==3:
-        return
+        return None
     if accion==2:
         # El mismo migrador del BAT, con simulacion y confirmacion MIGRAR.
         # Al terminar tambien enlaza este ComfyUI a la biblioteca nueva.
         import migrar_modelos
         migrar_modelos.main(encontrados=[p for p,_ in con_tamano],instalaciones_extra=[destino_comfy])
-        return
+        return "migrated"
     models=con_tamano[0][0]
     if len(con_tamano)>1:
         eleccion=preguntar(t("installer.which_models"),[(etiqueta(p,gb),None) for p,gb in con_tamano],1)
@@ -380,12 +384,19 @@ def ofrecer_enlace_modelos(destino):
         _,backup=modelos_enlace.actualizar_yaml(destino_comfy,models,modelos_enlace.mapa_categorias(models))
     except OSError as e:
         print(f"   {R}{t('installer.no_changes',error=e)}{X}")
-        return
+        return None
     print(f"   {A}{t('installer.models_linked')}{X}")
     if backup:
         print(f"   {G}{backup}{X}")
     if not central(models):
         print(f"   {G}{t('installer.migrator_hint')}{X}")
+    return "linked"
+
+# Pasos que muestra este script; los del .bat (equipo, descarga, extraccion)
+# se suman delante. Ver pasos.py.
+TITULOS=["installer.step_environment","installer.step_accelerators","installer.step_verify",
+         "installer.step_manager","installer.step_nodes","installer.step_monitor",
+         "installer.step_video","installer.step_models","installer.step_launchers"]
 
 def main():
     os.system("")  # activa los colores ANSI en la consola clasica de Windows 10
@@ -393,15 +404,26 @@ def main():
     fabricante=sys.argv[2] if len(sys.argv)>2 else None
     variante=sys.argv[3] if len(sys.argv)>3 else None
     py=os.path.join(destino,"python_embeded","python.exe")
+    pasos.usar_log(destino)
+    P=pasos.Pasos([t(k) for k in TITULOS])
     if not preflight_usuario(destino):
         return 1
+
+    P.empezar(t("installer.step_environment"))
     inf=deteccion.informe(py,destino,fabricante,variante)
     mostrar_equipo(inf)
     if not inf["torch"].get("torch"):
         print(f"\n   {R}{t('installer.pytorch_broken')}{X}")
+        P.cerrar("fallo","PyTorch")
+        P.resumen()
         return 1
     if not gpu_utilizable(inf):
+        P.cerrar("fallo",inf["gpu"])
+        P.resumen()
         return 1
+    P.cerrar("ok",f"{inf['gpu']} · {inf['backend']}")
+
+    P.empezar(t("installer.step_accelerators"))
     perfiles=["sage"] if inf["fabricante"]=="nvidia" and not inf.get("gpu_inutilizable") else []
     opciones=[
         (t("installer.auto"),t("installer.auto_desc")),
@@ -415,51 +437,71 @@ def main():
         mostrar_equipo(inf)
     # Version de PyTorch "buena": ningun extra ni nodo puede cambiarla sin permiso.
     torch_base=entorno_torch.versiones(py)
+    cierre=("omitido",t("installer.not_applicable") if inf["fabricante"]!="nvidia" else t("installer.skipped"))
     if herramientas:
-        pasos=catalogo.plan(herramientas,inf,f"cp{sys.version_info.major}{sys.version_info.minor}")
-        if mostrar_plan(pasos) and preguntar(t("installer.install_compatible"),SI_NO(),1)==1:
-            instalados,omitidos,fallidos=ejecutar(pasos,py)
+        plan=catalogo.plan(herramientas,inf,f"cp{sys.version_info.major}{sys.version_info.minor}")
+        if mostrar_plan(plan) and preguntar(t("installer.install_compatible"),SI_NO(),1)==1:
+            instalados,omitidos,fallidos=ejecutar(plan,py)
             proteger_torch(py,torch_base)
             for nombre,motivo in omitidos+fallidos:
                 print(f"   {R}{nombre}{X}: {motivo}")
             if any(p["clave"]=="nunchaku" for p in instalados) and not nodo_instalado(destino,"nunchaku"):
                 clonar_nodo(destino,py,"nunchaku",torch_base)
+            nombres=", ".join(p["nombre"] for p in instalados) or t("common.none")
+            cierre=("fallo" if fallidos else ("ok" if instalados else "omitido"),nombres)
+    P.cerrar(*cierre)
+
     # Se verifica todo lo que haya, instalado ahora o en una ejecucion anterior:
     # asi repetir el instalador nunca degrada el acceso directo.
-    titulo(t("installer.real_verification"))
+    P.empezar(t("installer.step_verify"))
     if _presente(py,"triton"):
         # Este script corre con el python_embeded del portable: su version es la nuestra.
         ok,msg=catalogo.cabeceras_python(os.path.dirname(py),sys.version_info)
         if msg:
             print(f"   {A if ok else R}{msg}{X}")
-    verificados,_=verificar(list(catalogo.HERRAMIENTAS),py,solo_presentes=True)
+    verificados,fallos=verificar(list(catalogo.HERRAMIENTAS),py,solo_presentes=True)
+    probados=[catalogo.HERRAMIENTAS[c]["nombre"] for c in catalogo.HERRAMIENTAS
+              if c in verificados and catalogo.HERRAMIENTAS[c].get("modulo")]
+    P.cerrar("fallo" if fallos else ("ok" if probados else "omitido"),", ".join(probados) or t("common.none"))
+
+    P.empezar(t("installer.step_manager"))
     manager=ofrecer_manager(destino,py,torch_base)
+    P.cerrar("ok" if manager else "omitido",t("installer.manager_"+manager) if manager else t("common.not_active"))
+
+    P.empezar(t("installer.step_nodes"))
     nodos_ok=instalar_nodo(destino,py,"cineconia",torch_base)
+    P.cerrar("ok" if nodos_ok else "omitido",t("installer.installed") if nodos_ok else t("common.not_installed"))
+
+    P.empezar(t("installer.step_monitor"))
     monitor_ok=instalar_nodo(destino,py,"monitor",torch_base)
+    P.cerrar("ok" if monitor_ok else "omitido",t("installer.installed") if monitor_ok else t("common.not_installed"))
+
+    P.empezar(t("installer.step_video"))
     video=instalar_grupo(destino,py,"video",torch_base)
+    del_grupo=[c for c,n in NODOS.items() if n.get("grupo")=="video"]
+    estado="ok" if len(video)==len(del_grupo) else ("omitido" if not video else "fallo")
+    P.cerrar(estado,t("installer.n_of_m",n=len(video),m=len(del_grupo)))
     problemas=conflictos_pip(py)
-    ofrecer_enlace_modelos(destino)
-    titulo(t("installer.creating_launchers"))
+
+    P.empezar(t("installer.step_models"))
+    modelos=ofrecer_enlace_modelos(destino)
+    P.cerrar("ok" if modelos else "omitido",t(f"installer.step_models_{modelos or 'none'}"))
+
+    P.empezar(t("installer.step_launchers"))
     creados,preferido=lanzadores.crear_lanzadores(destino,inf,verificados,manager)
     for _,ruta in creados.items():
-        print(f"   {A}{t('common.ok')}{X} {os.path.basename(ruta)}")
+        print(f"   {pasos.V}{pasos.MARCAS['ok'][0]}{X} {os.path.basename(ruta)}")
     ok,detalle=lanzadores.crear_acceso_escritorio(destino,preferido)
-    print(f"   {t('common.ok') if ok else t('common.failed')} {t('installer.desktop_shortcut')}")
-    titulo(t("installer.summary"))
-    print(f"   Backend: {inf['backend']}")
-    print(f"   {t('installer.main_launcher')}: {os.path.basename(preferido)}")
-    print(f"   ComfyUI-Manager: {t('installer.manager_'+manager) if manager else t('common.not_active')}")
-    print(f"   {t('installer.nodes')}: {t('common.ok') if nodos_ok else t('common.not_installed')}")
-    print(f"   {t('installer.monitor')}: {t('common.ok') if monitor_ok else t('common.not_installed')}")
-    print(f"   {t('installer.video_nodes')}: {', '.join(NODOS[c]['carpetas'][0] for c in video) or t('common.not_installed')}")
-    print(f"   PyTorch: {inf['torch'].get('torch')}")
+    P.cerrar("ok" if ok else "fallo",t("installer.desktop_shortcut"))
+
+    # Datos del equipo que quedan de referencia, encima del resumen de pasos.
+    print(f"\n   {G}Backend: {inf['backend']}  ·  PyTorch: {inf['torch'].get('torch')}  ·  "
+          f"{t('installer.main_launcher')}: {os.path.basename(preferido)}{X}")
     if problemas:
         print(f"   {R}{t('installer.pip_conflicts',count=len(problemas))}{X}")
         for linea in problemas[:8]:
             print(f"      {G}{linea}{X}")
-    print(f"   SageAttention: {t('common.ok') if 'sageattention' in verificados else t('common.not_active')}")
-    print(f"   FlashAttention: {t('common.ok') if 'flashattention' in verificados else t('common.not_active')}")
-    print(f"   Nunchaku: {t('common.ok') if 'nunchaku' in verificados else t('common.not_active')}")
+    P.resumen()
     print(f"\n   {A}{t('installer.ready')}{X}")
     return 0
 

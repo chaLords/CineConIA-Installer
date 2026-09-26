@@ -1,5 +1,13 @@
 # Changelog
 
+## v2.3.0 — 2026-09-26
+
+- Progreso por pasos: la instalacion muestra 12 pasos numerados y cada uno cierra con su linea (listo, omitido o fallo) y un detalle: la GPU, lo instalado, "5 de 5" nodos para video...
+- Al final, un resumen con todos los pasos y el tiempo total.
+- pip y git corren con un indicador de una sola linea que se borra al terminar, asi no quedan barras congeladas a la mitad. Su salida completa va a ComfyUI\_cineconia\instalacion.log y, si algo falla, se muestran sus ultimas lineas.
+- La barra de descarga de curl se reemplaza por la linea del paso al terminar.
+- En Windows Terminal se usan los simbolos de visto y cruz; en la consola clasica, OK y X.
+
 ## v2.2.2 — 2026-09-26
 
 - La eleccion de CUDA pasa a ser una lista como las demas preguntas: CUDA 13 (la mas usada, ~84 % de las descargas NVIDIA del portable oficial) y CUDA 12.6, con la recomendada marcada; Enter la acepta. Reemplaza la cuenta atras de 10 segundos con la tecla C.
