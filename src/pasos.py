@@ -43,6 +43,16 @@ def _cola(texto, n=6):
     return lineas[-n:]
 
 
+def registrar(etiqueta, texto):
+    """Agrega texto al registro de la instalacion, si hay uno."""
+    if _log["ruta"]:
+        try:
+            with open(_log["ruta"], "a", encoding="utf-8") as f:
+                f.write(f"\n===== {etiqueta}\n{texto}")
+        except OSError:
+            pass
+
+
 def correr(cmd, etiqueta, entorno=None):
     """Ejecuta cmd mostrando un indicador en una sola linea. (ok, ultimas lineas)."""
     salida = []

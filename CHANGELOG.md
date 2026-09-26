@@ -1,5 +1,11 @@
 # Changelog
 
+## v2.3.1 — 2026-09-26
+
+- Ya no sale en rojo el aviso de pip sobre comfyui-workflow-templates-media-*: viene asi en el portable oficial, no afecta a ComfyUI y aparecia en toda instalacion nueva. Queda solo en instalacion.log. Otros avisos de pip se muestran en ambar, no en rojo.
+- Cada nodo aparece una sola vez al instalarse: la linea de sus requisitos ahora dice "requirements.txt".
+- ComfyUI-Manager se resume como "clasico (boton Manager)" en vez de "OK OK (clasico)".
+
 ## v2.3.0 — 2026-09-26
 
 - Progreso por pasos: la instalacion muestra 12 pasos numerados y cada uno cierra con su linea (listo, omitido o fallo) y un detalle: la GPU, lo instalado, "5 de 5" nodos para video...

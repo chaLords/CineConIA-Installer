@@ -6,7 +6,7 @@ call :LEER_ARGS %*
 call :SELECT_LANGUAGE
 rem Paquete ~2 GB + portable extraido ~7 GB + aceleradores y margen.
 set "MIN_ESPACIO_GB=15"
-set "VERSION=2.3.0"
+set "VERSION=2.3.1"
 set "CIA_DIR=%~dp0"
 call :LOAD_TEXT
 title !T_TITLE!

@@ -217,13 +217,23 @@ def verificar(claves,py,solo_presentes=False):
             print(f"   {R}{t('installer.import_failed')}{X} {h['nombre']}: {detalle[:80]}")
     return verificados,fallos
 
+# Avisos de "pip check" que trae el propio portable oficial y no afectan a
+# ComfyUI: comfyui-workflow-templates declara sus paquetes de imagenes de
+# ejemplo, que el portable no incluye. Salian en rojo en toda instalacion
+# nueva y parecia que algo habia fallado.
+CONFLICTOS_CONOCIDOS=("comfyui-workflow-templates-media-",)
+
 def conflictos_pip(py):
-    """Lineas de 'pip check': paquetes con dependencias incompatibles."""
+    """Lineas de 'pip check' que importan. Las conocidas e inofensivas van solo al registro."""
     try:
         r=subprocess.run([py,"-s","-m","pip","check"],capture_output=True,text=True,timeout=120)
     except (OSError,subprocess.SubprocessError):
         return []
-    return [] if r.returncode==0 else [l for l in r.stdout.splitlines() if l.strip()]
+    if r.returncode==0:
+        return []
+    lineas=[l for l in r.stdout.splitlines() if l.strip()]
+    pasos.registrar("pip check",r.stdout)
+    return [l for l in lineas if not any(c in l for c in CONFLICTOS_CONOCIDOS)]
 
 def ofrecer_manager(destino,py,torch_base=None):
     """Devuelve "clasico", "integrado" o None.
@@ -250,7 +260,7 @@ def instalar_requisitos(py,req,nombre):
     Un solo paquete que no compila en Windows (insightface sin Visual C++, por
     ejemplo) hace fallar el -r entero y deja al nodo sin nada.
     """
-    if pip_instalar(py,["-r",req],nombre):
+    if pip_instalar(py,["-r",req],f"{nombre} · requirements.txt"):
         return []
     fallidos=[]
     with open(req,encoding="utf-8",errors="replace") as f:
@@ -466,7 +476,7 @@ def main():
 
     P.empezar(t("installer.step_manager"))
     manager=ofrecer_manager(destino,py,torch_base)
-    P.cerrar("ok" if manager else "omitido",t("installer.manager_"+manager) if manager else t("common.not_active"))
+    P.cerrar("ok" if manager else "omitido",t("installer.step_manager_"+manager) if manager else t("common.not_active"))
 
     P.empezar(t("installer.step_nodes"))
     nodos_ok=instalar_nodo(destino,py,"cineconia",torch_base)
@@ -498,7 +508,7 @@ def main():
     print(f"\n   {G}Backend: {inf['backend']}  ·  PyTorch: {inf['torch'].get('torch')}  ·  "
           f"{t('installer.main_launcher')}: {os.path.basename(preferido)}{X}")
     if problemas:
-        print(f"   {R}{t('installer.pip_conflicts',count=len(problemas))}{X}")
+        print(f"   {A}{t('installer.pip_conflicts',count=len(problemas))}{X}")
         for linea in problemas[:8]:
             print(f"      {G}{linea}{X}")
     P.resumen()

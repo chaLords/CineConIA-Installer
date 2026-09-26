@@ -200,5 +200,7 @@
   "installer.step_models_none": "ninguno enlazado",
   "installer.done_in": "Instalación completa en {time}",
   "installer.done_with_issues": "Instalación terminada con avisos en {time}",
-  "installer.log_hint": "Detalle completo en {path}"
+  "installer.log_hint": "Detalle completo en {path}",
+  "installer.step_manager_clasico": "clásico (botón Manager)",
+  "installer.step_manager_integrado": "integrado de ComfyUI"
 }

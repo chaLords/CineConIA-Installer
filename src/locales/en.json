@@ -200,5 +200,7 @@
   "installer.step_models_none": "none linked",
   "installer.done_in": "Installation complete in {time}",
   "installer.done_with_issues": "Installation finished with warnings in {time}",
-  "installer.log_hint": "Full log: {path}"
+  "installer.log_hint": "Full log: {path}",
+  "installer.step_manager_clasico": "classic (Manager button)",
+  "installer.step_manager_integrado": "ComfyUI built-in"
 }
