@@ -221,6 +221,7 @@
   "installer.library_offline": "Biblioteca guardada no disponible: {path}. Conecta el disco o revisa su letra.",
   "installer.step_models_error": "requiere atención; revisa el resultado de la migración o el enlace",
   "migrator.copy_phase": "FASE 1/3 · Copiar y verificar. Todos los originales se conservan.",
+  "migrator.copy_only_phase": "Copiando y verificando. Todos los originales se conservarán.",
   "migrator.verify_phase": "FASE 2/3 · Verificar toda la biblioteca antes de borrar.",
   "migrator.delete_phase": "FASE 3/3 · Copia completa verificada. Retirando originales.",
   "migrator.all_originals_kept": "No se ha borrado ningún original: hubo un problema al copiar, verificar o guardar el reporte.",

@@ -10,12 +10,19 @@ def analizar(salida, carpetas):
     """Un codigo 0 de ComfyUI no basta: puede haber fallado un custom node."""
     cargados=set()
     errores=[]
+    resumen_importacion=False
     for linea in salida:
         lower=linea.lower()
-        if "import failed" in lower or "import failed:" in lower or "cannot import " in lower:
+        if any(texto in lower for texto in ("import failed","cannot import ","failed to import ","could not import ")):
             errores.append(linea.strip())
+        if "import times for custom nodes:" in lower:
+            resumen_importacion=True
+            cargados.clear()
+            continue
         m=re.search(r"\bseconds(?:\s+\(IMPORT FAILED\))?:\s+(.+)$",linea)
-        if m and "IMPORT FAILED" not in linea:
+        # Prestartup scripts usan el mismo formato de tiempos: no prueban que
+        # el paquete haya cargado. Solo vale el resumen final de importaciones.
+        if resumen_importacion and m and "IMPORT FAILED" not in linea:
             nombre=os.path.basename(m.group(1).strip().replace("\\","/"))
             cargados.add(nombre.casefold())
     faltan=[c for c in carpetas if c.casefold() not in cargados]

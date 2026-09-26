@@ -1,6 +1,6 @@
 # Changelog
 
-## v2.5.0 — en preparación
+## v2.5.0 — 2026-09-26
 
 - Flujograma compacto, transparente y adaptado a GitHub claro/oscuro en ambos idiomas.
 - Instalación de nodos: conservar fallos de dependencias, reparar carpetas incompletas con respaldo y volver a comprobar nodos existentes.
@@ -10,6 +10,7 @@
 - Migración en tres fases: copiar todo, verificar el conjunto y retirar originales. Si falla la copia o verificación, conservar todos los originales. Registrar destinos y SHA-256 antes de borrarlos.
 - Mostrar las carpetas finales y recordar la biblioteca central para instalaciones futuras, con aviso si el disco está desconectado. Configurarla como biblioteca preferida sin duplicar modelos.
 - Conservar colores y progreso en consola. Añadir pruebas automáticas Windows/Python 3.12 y 3.13, excluidas del ZIP de descarga.
+- Validación real: ComfyUI v0.37.0, Windows 11, RTX 4060 Ti, CUDA 13 y PyTorch 2.13; carga de 14 paquetes de nodos, SageAttention probado en GPU y reinstalación sin cambiar PyTorch. Alcance y pendientes en `.github/VALIDATION.md`.
 
 ## v2.4.0 — 2026-09-26
 

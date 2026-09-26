@@ -435,6 +435,11 @@ extra_model_paths.yaml actualizadas.
 
 ## Filosofía de compatibilidad
 
+La v2.5.0 se probó con Windows 11 y RTX 4060 Ti: arranque, carga de 14 paquetes
+de nodos, SageAttention en GPU y segunda ejecución del instalador. Las pruebas
+de AMD, Intel y el perfil Nunchaku siguen pendientes.
+[Ver el alcance de las comprobaciones](.github/VALIDATION.md).
+
 Compatible → instalar y verificar.
 Dudoso → omitir.
 No compatible → usar fallback.

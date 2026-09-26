@@ -114,6 +114,19 @@ class InstallerTests(Isolated):
         path=entorno_torch.restricciones(str(self.root),{"torch":"2.13.0+rocm7.2","torchvision":"0.28.0+rocm7.2"})
         self.assertIn("torch==2.13.0+rocm7.2",Path(path).read_text())
 
+    def test_failed_version_switch_verifies_rollback(self):
+        original={"torch":"2.13.0+cu130"}
+        with patch.object(entorno_torch,"versiones",return_value=original),patch.object(entorno_torch,"arranca",side_effect=[(False,"incompatible"),(True,"2.13.0+cu130")]):
+            ok,detail=entorno_torch.cambiar_rama("python",(2,11),original["torch"],lambda *args:True)
+        self.assertFalse(ok)
+        self.assertEqual(detail,"incompatible")
+
+    def test_failed_version_switch_cannot_claim_failed_rollback_succeeded(self):
+        original={"torch":"2.13.0+cu130"}
+        with patch.object(entorno_torch,"versiones",side_effect=[original,{"torch":"2.11.0+cu130"}]),patch.object(entorno_torch,"arranca",return_value=(False,"incompatible")):
+            with self.assertRaises(entorno_torch.EntornoNoRecuperado):
+                entorno_torch.cambiar_rama("python",(2,11),original["torch"],lambda *args:True)
+
     def test_intel_unavailable_is_reported(self):
         torch={"torch":"2.13.0+xpu","cuda":None,"hip":None,"xpu_available":False,"cuda_available":False}
         with patch.object(deteccion,"entorno_torch",return_value=torch),patch.object(deteccion,"driver_nvidia",return_value=None),patch.object(deteccion,"adaptadores_windows",return_value=[{"Name":"Intel Arc"}]):
@@ -131,7 +144,7 @@ class InstallerTests(Isolated):
 
 class StartupTests(unittest.TestCase):
     def test_success_summary(self):
-        self.assertEqual(verificacion.analizar([r"   0.1 seconds: C:\ComfyUI\custom_nodes\rgthree-comfy"],["rgthree-comfy"]),([],[]))
+        self.assertEqual(verificacion.analizar(["Import times for custom nodes:",r"   0.1 seconds: C:\ComfyUI\custom_nodes\rgthree-comfy"],["rgthree-comfy"]),([],[]))
 
     def test_failed_import_not_counted(self):
         missing,errors=verificacion.analizar([r"   0.1 seconds (IMPORT FAILED): C:\ComfyUI\custom_nodes\rgthree-comfy"],["rgthree-comfy"])
@@ -144,13 +157,16 @@ class StartupTests(unittest.TestCase):
     def test_partial_node_import_error_reported(self):
         self.assertTrue(verificacion.analizar(["Node `Example` import failed:"],[])[1])
 
+    def test_prestartup_success_is_not_node_load(self):
+        self.assertEqual(verificacion.analizar(["Prestartup times for custom nodes:",r"0.1 seconds: C:\ComfyUI\custom_nodes\rgthree-comfy"],["rgthree-comfy"])[0],["rgthree-comfy"])
+
 
 class StartupProcessTests(Isolated):
     def check_start(self,output,code=0):
         root=self.root/"ComfyUI"
         (root/"comfy").mkdir(parents=True)
         (root/"comfy/cli_args.py").write_text("--quick-test-for-ci --disable-auto-launch --disable-all-custom-nodes --whitelist-custom-nodes")
-        (root/"main.py").write_text(f"import sys\nprint({output!r})\nsys.exit({code})\n")
+        (root/"main.py").write_text(f"import sys\nprint('Import times for custom nodes:')\nprint({output!r})\nsys.exit({code})\n")
         return verificacion.comprobar(str(self.root),sys.executable,["test-node"])
 
     def test_real_subprocess_success(self):

@@ -424,7 +424,7 @@ def ejecutar_plan(plan, modo, cache, antes_de_borrar=None):
         "archivos": [],
     }
     # Fase 1: copiar y verificar toda la biblioteca. Nunca borrar aqui.
-    print("\n"+t("migrator.copy_phase"))
+    print("\n"+t("migrator.copy_phase" if modo=="mover" else "migrator.copy_only_phase"))
     for i, item in enumerate(plan, 1):
         origen = item["origen"]
         destino = item["destino"]

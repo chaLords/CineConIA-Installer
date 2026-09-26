@@ -221,6 +221,7 @@
   "installer.library_offline": "Saved library unavailable: {path}. Connect the drive or check its letter.",
   "installer.step_models_error": "needs attention; review the migration or library link result",
   "migrator.copy_phase": "PHASE 1/3 · Copy and verify. All originals are kept.",
+  "migrator.copy_only_phase": "Copying and verifying. All originals will be kept.",
   "migrator.verify_phase": "PHASE 2/3 · Verify the entire library before deleting.",
   "migrator.delete_phase": "PHASE 3/3 · Full copy verified. Removing originals.",
   "migrator.all_originals_kept": "No originals have been deleted: copying, verification or report saving encountered a problem.",

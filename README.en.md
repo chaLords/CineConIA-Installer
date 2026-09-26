@@ -345,6 +345,11 @@ It records sources, destination, migration mode, duplicates, conflicts, errors, 
 
 ## Compatibility philosophy
 
+Version 2.5.0 was tested on Windows 11 with an RTX 4060 Ti: startup, loading
+14 node packages, GPU SageAttention and a second installer run. Physical AMD,
+Intel and Nunchaku profile tests are still pending.
+[See the validation scope](.github/VALIDATION.md).
+
 Compatible → install and verify.
 Uncertain → skip.
 Not compatible → use a fallback.
