@@ -1,6 +1,6 @@
 """Adaptive orchestrator: detect, propose, install and verify."""
 from __future__ import annotations
-import os, subprocess, sys
+import os, shutil, subprocess, sys
 sys.path.insert(0,os.path.dirname(os.path.abspath(__file__)))
 import catalogo, deteccion, entorno_torch, i18n, lanzadores, modelos_enlace, pasos, preflight, rutas_largas
 
@@ -37,10 +37,31 @@ NODOS={
     "h3upscaler":{"repo":"https://github.com/LBH-123-AI/Comfyui_Minimax_h3_latent_Upscaler.git",
                   "carpetas":["Comfyui_Minimax_h3_latent_Upscaler","comfyui_minimax_h3_latent_upscaler"],
                   "grupo":"video"},
+    # Grupo "interfaz": ayudas de pantalla, sin dependencias de Python.
+    # rgthree-comfy dibuja la barra de progreso verde de arriba (cola, porcentaje
+    # y nodo que corre) y trae nodos muy usados (Fast Groups Bypasser, Power Lora
+    # Loader...). Custom-Scripts agrega Image Feed y el autocompletado.
+    "rgthree":{"repo":"https://github.com/rgthree/rgthree-comfy.git",
+               "carpetas":["rgthree-comfy"],"grupo":"interfaz"},
+    "customscripts":{"repo":"https://github.com/pythongosssss/ComfyUI-Custom-Scripts.git",
+                     "carpetas":["comfyui-custom-scripts","ComfyUI-Custom-Scripts"],"grupo":"interfaz"},
+    # Grupo "comunidad": lo que piden muchos workflows compartidos. Traen
+    # dependencias pesadas, por eso la respuesta por defecto es No. ControlNet
+    # aux va al final: su onnxruntime-gpu queda encima si otro trajo el de CPU.
+    "essentials":{"repo":"https://github.com/cubiq/ComfyUI_essentials.git",
+                  "carpetas":["comfyui_essentials","ComfyUI_essentials"],"grupo":"comunidad"},
+    "comfyroll":{"repo":"https://github.com/Suzie1/ComfyUI_Comfyroll_CustomNodes.git",
+                 "carpetas":["ComfyUI_Comfyroll_CustomNodes","comfyroll"],"grupo":"comunidad"},
+    "was":{"repo":"https://github.com/ltdrdata/was-node-suite-comfyui.git",
+           "carpetas":["was-ns","was-node-suite-comfyui"],"grupo":"comunidad"},
+    "controlnet_aux":{"repo":"https://github.com/Fannovel16/comfyui_controlnet_aux.git",
+                      "carpetas":["comfyui_controlnet_aux"],"grupo":"comunidad"},
     # Nodos de Nunchaku: sin ellos la wheel no aporta nada. Van con el perfil Nunchaku.
     "nunchaku":{"repo":"https://github.com/nunchux-ai/ComfyUI-nunchaku.git",
                 "carpetas":["ComfyUI-nunchaku","comfyui-nunchaku"]},
 }
+# Respuesta por defecto de cada grupo (1 = Si, 2 = No).
+DEFECTO_GRUPO={"video":1,"interfaz":1,"comunidad":2}
 A,G,R,X="\033[38;5;179m","\033[38;5;245m","\033[38;5;203m","\033[0m"
 t=i18n.t
 SI_NO=lambda:[(t("common.yes"),None),(t("common.no"),None)]
@@ -312,15 +333,36 @@ def instalar_nodo(destino,py,clave,torch_base=None):
     return clonar_nodo(destino,py,clave,torch_base)
 
 def instalar_grupo(destino,py,grupo,torch_base=None):
-    """Una sola pregunta para un grupo de nodos. Devuelve los que quedaron instalados."""
+    """Una sola pregunta para un grupo de nodos.
+
+    Devuelve (instalados, aceptado). aceptado es None si no hubo que preguntar
+    (ya estaba todo o no hay Git)."""
     claves=[c for c,n in NODOS.items() if n.get("grupo")==grupo]
     faltan=[c for c in claves if not nodo_instalado(destino,c)]
+    aceptado=None
     if faltan and preflight.git_exe():
         print("\n   "+t(f"installer.{grupo}_nodes_desc"))
-        if preguntar(t(f"installer.install_{grupo}_nodes"),SI_NO(),1)==1:
+        aceptado=preguntar(t(f"installer.install_{grupo}_nodes"),SI_NO(),DEFECTO_GRUPO.get(grupo,1))==1
+        if aceptado:
             for clave in faltan:
                 clonar_nodo(destino,py,clave,torch_base)
-    return [c for c in claves if nodo_instalado(destino,c)]
+    return [c for c in claves if nodo_instalado(destino,c)],aceptado
+
+def paso_grupo(P,destino,py,grupo,torch_base=None):
+    """Un paso por grupo: listo si esta todo, fallo solo si se pidio y algo no
+    quedo, omitido si se dijo que no (aunque ya hubiera alguno de antes)."""
+    instalados,aceptado=instalar_grupo(destino,py,grupo,torch_base)
+    total=len([c for c,n in NODOS.items() if n.get("grupo")==grupo])
+    estado="ok" if len(instalados)==total else ("fallo" if aceptado else "omitido")
+    P.cerrar(estado,t("installer.n_of_m",n=len(instalados),m=total))
+    return instalados
+
+def git_en_path():
+    """pip necesita git en el PATH para los requisitos "git+https://..." (WAS los
+    usa). Si Git se acaba de instalar, esta consola todavia no lo ve."""
+    git=preflight.git_exe()
+    if git and not shutil.which("git"):
+        os.environ["PATH"]=os.path.dirname(git)+os.pathsep+os.environ.get("PATH","")
 
 def proteger_torch(py,antes):
     """Si algo reinstalo PyTorch por su cuenta, se devuelve a la version anterior."""
@@ -406,7 +448,8 @@ def ofrecer_enlace_modelos(destino):
 # se suman delante. Ver pasos.py.
 TITULOS=["installer.step_environment","installer.step_accelerators","installer.step_verify",
          "installer.step_manager","installer.step_nodes","installer.step_monitor",
-         "installer.step_video","installer.step_models","installer.step_launchers"]
+         "installer.step_video","installer.step_interface","installer.step_community",
+         "installer.step_models","installer.step_launchers"]
 
 def main():
     os.system("")  # activa los colores ANSI en la consola clasica de Windows 10
@@ -486,11 +529,11 @@ def main():
     monitor_ok=instalar_nodo(destino,py,"monitor",torch_base)
     P.cerrar("ok" if monitor_ok else "omitido",t("installer.installed") if monitor_ok else t("common.not_installed"))
 
-    P.empezar(t("installer.step_video"))
-    video=instalar_grupo(destino,py,"video",torch_base)
-    del_grupo=[c for c,n in NODOS.items() if n.get("grupo")=="video"]
-    estado="ok" if len(video)==len(del_grupo) else ("omitido" if not video else "fallo")
-    P.cerrar(estado,t("installer.n_of_m",n=len(video),m=len(del_grupo)))
+    git_en_path()
+    for grupo,titulo in (("video","installer.step_video"),("interfaz","installer.step_interface"),
+                         ("comunidad","installer.step_community")):
+        P.empezar(t(titulo))
+        paso_grupo(P,destino,py,grupo,torch_base)
     problemas=conflictos_pip(py)
 
     P.empezar(t("installer.step_models"))

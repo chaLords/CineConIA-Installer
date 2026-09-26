@@ -57,6 +57,10 @@ For a new installation, the recommended order is:
    - Offers the classic ComfyUI-Manager ("Manager" button).
    - Offers to install the Cine con IA custom nodes.
    - Offers to install the resource monitor (CPU, RAM, GPU, VRAM).
+   - Offers the interface extras: the green progress bar at the top
+     (rgthree-comfy) and the Show Image Feed button (Custom-Scripts).
+   - Offers the community nodes (Essentials, Comfyroll, WAS, ControlNet aux).
+     They are heavy and are not installed by default.
    - Looks for models from previous installations and offers to use them where they are
      or move them to a central library on another drive.
    - Creates launchers and a desktop shortcut named **ComfyUI**.
@@ -81,7 +85,7 @@ flowchart TD
     fresh(["New installation"])
     existing(["You already have ComfyUI and only want<br/>to organize or move its models"])
 
-    fresh --> s1["<b>1 · Run ComfyUI-Setup.bat</b><br/>Installs ComfyUI with the right CUDA<br/>and accelerators for your GPU.<br/>If you accept: Manager, Cine con IA nodes<br/>and resource monitor (CPU, RAM, GPU, VRAM).<br/>Creates the <b>ComfyUI</b> desktop shortcut."]
+    fresh --> s1["<b>1 · Run ComfyUI-Setup.bat</b><br/>Installs ComfyUI with the right CUDA<br/>and accelerators for your GPU.<br/>If you accept: Manager, Cine con IA nodes, resource monitor,<br/>green progress bar and community nodes.<br/>Creates the <b>ComfyUI</b> desktop shortcut."]
     s1 --> found{{"Did it find models from<br/>another installation?"}}
     found -- "No" --> s2
     found -- "Yes" --> ask["It asks what to do:<br/>• use them where they are (linked, not copied)<br/>• move them to a library on another drive<br/>• do nothing"]
@@ -258,10 +262,18 @@ It then offers to install:
   - https://github.com/city96/ComfyUI-GGUF — GGUF models, the way to save VRAM for video.
   - https://github.com/facok/comfyui-SelfLift — progressive rendering for H3: first steps at low resolution, the rest at full resolution.
   - https://github.com/LBH-123-AI/Comfyui_Minimax_h3_latent_Upscaler — the H3 latent upscaler. Without it, Cine con IA's "Escalar y refinar" cannot raise the resolution of the second pass.
+- Interface extras, with a single question (yes by default). They have no Python dependencies.
+  - https://github.com/rgthree/rgthree-comfy — the green progress bar at the top of the screen (queue, percentage and the running node) and widely used nodes such as Fast Groups Bypasser and Power Lora Loader.
+  - https://github.com/pythongosssss/ComfyUI-Custom-Scripts — the Show Image Feed button with your generated images, and autocomplete.
+- Community nodes, with a single question (no by default): what many shared workflows ask for. They bring heavy dependencies and add several minutes to the installation. If you skip them, ComfyUI offers them through the Manager ("Missing Node Packs") when you open a workflow that needs them.
+  - https://github.com/cubiq/ComfyUI_essentials
+  - https://github.com/Suzie1/ComfyUI_Comfyroll_CustomNodes
+  - https://github.com/ltdrdata/was-node-suite-comfyui — WAS Node Suite.
+  - https://github.com/Fannovel16/comfyui_controlnet_aux — depth, pose and edge maps for ControlNet.
 
 ### On-screen progress
 
-Installation runs in 12 numbered steps (`[5/12] Accelerators`). Each step closes with its own line: ✓ when done, a dash when skipped and ✗ when it failed. pip and git progress bars never stay half-drawn on screen: a small indicator shows while they run and disappears when they finish, and the full output goes to `ComfyUI\_cineconia\instalacion.log`. At the end, a summary lists every step and the total time.
+Installation runs in 14 numbered steps (`[5/14] Accelerators`). Each step closes with its own line: ✓ when done, a dash when skipped and ✗ when it failed. pip and git progress bars never stay half-drawn on screen: a small indicator shows while they run and disappears when they finish, and the full output goes to `ComfyUI\_cineconia\instalacion.log`. At the end, a summary lists every step and the total time.
 
 ## Models
 

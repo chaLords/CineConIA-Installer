@@ -6,7 +6,7 @@ call :LEER_ARGS %*
 call :SELECT_LANGUAGE
 rem Paquete ~2 GB + portable extraido ~7 GB + aceleradores y margen.
 set "MIN_ESPACIO_GB=15"
-set "VERSION=2.3.1"
+set "VERSION=2.4.0"
 set "CIA_DIR=%~dp0"
 call :LOAD_TEXT
 title !T_TITLE!
@@ -18,7 +18,7 @@ if defined WT_SESSION for /f "delims=" %%C in ('powershell -NoProfile -Command "
 for /f %%T in ('powershell -NoProfile -Command "[DateTimeOffset]::Now.ToUnixTimeSeconds()"') do set "CIA_INICIO=%%T"
 set "PASO_N=0"
 rem 3 pasos aqui y 9 en src\instalador.py (TITULOS).
-set "PASOS_TOTAL=12"
+set "PASOS_TOTAL=14"
 set "DESTINO=%~dp0ComfyUI"
 set "PY=%DESTINO%\python_embeded\python.exe"
 set "MAIN=%DESTINO%\ComfyUI\main.py"

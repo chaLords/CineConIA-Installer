@@ -57,6 +57,10 @@ Para una instalación nueva, el orden recomendado es este:
    - Instala ComfyUI-Manager clásico (botón "Manager") si lo aceptas.
    - Instala los nodos Cine con IA si lo aceptas.
    - Instala el monitor de recursos (CPU, RAM, GPU, VRAM) si lo aceptas.
+   - Instala los extras de interfaz si lo aceptas: la barra de progreso verde
+     de arriba (rgthree-comfy) y el botón Show Image Feed (Custom-Scripts).
+   - Ofrece los nodos de la comunidad (Essentials, Comfyroll, WAS, ControlNet
+     aux). Son pesados y por defecto no se instalan.
    - Busca modelos de instalaciones anteriores y ofrece usarlos donde están
      o llevarlos a una biblioteca central en otro disco.
    - Crea los lanzadores y el acceso directo de escritorio **ComfyUI**.
@@ -81,7 +85,7 @@ flowchart TD
     nuevo(["Instalación nueva"])
     existente(["Ya tienes ComfyUI y solo quieres<br/>ordenar o mover sus modelos"])
 
-    nuevo --> p1["<b>1 · Ejecuta Instalar-ComfyUI.bat</b><br/>Instala ComfyUI con la CUDA<br/>y los aceleradores de tu GPU.<br/>Si aceptas: Manager, nodos Cine con IA<br/>y monitor de recursos (CPU, RAM, GPU, VRAM).<br/>Crea el acceso directo <b>ComfyUI</b> en el escritorio."]
+    nuevo --> p1["<b>1 · Ejecuta Instalar-ComfyUI.bat</b><br/>Instala ComfyUI con la CUDA<br/>y los aceleradores de tu GPU.<br/>Si aceptas: Manager, nodos Cine con IA, monitor de recursos,<br/>barra de progreso verde y nodos de la comunidad.<br/>Crea el acceso directo <b>ComfyUI</b> en el escritorio."]
     p1 --> hay{{"¿Encontró modelos de<br/>otra instalación?"}}
     hay -- "No" --> p2
     hay -- "Sí" --> elige["Te pregunta qué hacer:<br/>• usarlos donde están (se enlazan, sin copiar)<br/>• llevarlos a una biblioteca en otro disco<br/>• no hacer nada"]
@@ -298,10 +302,26 @@ Luego ofrece instalar:
   - https://github.com/LBH-123-AI/Comfyui_Minimax_h3_latent_Upscaler — escalador
     latente de H3. Sin él, "Escalar y refinar" de Cine con IA no puede subir la
     resolución del segundo pase.
+- Extras de interfaz, con una sola pregunta (por defecto sí). No traen
+  dependencias de Python.
+  - https://github.com/rgthree/rgthree-comfy — la barra de progreso verde arriba
+    de la pantalla (cola, porcentaje y el nodo que corre) y nodos muy usados,
+    como Fast Groups Bypasser y Power Lora Loader.
+  - https://github.com/pythongosssss/ComfyUI-Custom-Scripts — el botón Show Image
+    Feed con tus imágenes generadas, y el autocompletado.
+- Nodos de la comunidad, con una sola pregunta (por defecto no): los que piden
+  muchos workflows compartidos. Traen dependencias pesadas y alargan la
+  instalación varios minutos. Si no los instalas, ComfyUI los ofrece con el
+  Manager ("Missing Node Packs") al abrir un workflow que los necesite.
+  - https://github.com/cubiq/ComfyUI_essentials
+  - https://github.com/Suzie1/ComfyUI_Comfyroll_CustomNodes
+  - https://github.com/ltdrdata/was-node-suite-comfyui — WAS Node Suite.
+  - https://github.com/Fannovel16/comfyui_controlnet_aux — mapas de
+    profundidad, pose y bordes para ControlNet.
 
 ### Progreso en pantalla
 
-La instalación avanza en 12 pasos numerados (`[5/12] Aceleradores`). Cada paso
+La instalación avanza en 14 pasos numerados (`[5/14] Aceleradores`). Cada paso
 cierra con su propia línea: ✓ si quedó listo, un guion si se omitió y ✗ si
 falló. Las barras de pip y git no quedan a medias en pantalla: se ve un
 indicador que desaparece al terminar, y el detalle completo queda en

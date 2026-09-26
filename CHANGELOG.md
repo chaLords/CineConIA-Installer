@@ -1,5 +1,12 @@
 # Changelog
 
+## v2.4.0 — 2026-09-26
+
+- Nuevo paso "Extras de interfaz" (por defecto si): rgthree-comfy, que dibuja la barra de progreso verde arriba de la pantalla con la cola, el porcentaje y el nodo que corre, y ComfyUI-Custom-Scripts, con el boton Show Image Feed. Ninguno trae dependencias de Python.
+- Nuevo paso "Nodos de la comunidad" (por defecto no): ComfyUI Essentials, Comfyroll, WAS Node Suite y ControlNet Auxiliary Preprocessors, los que piden muchos workflows compartidos. Traen dependencias pesadas; si se omiten, ComfyUI los ofrece con el Manager al abrir un workflow que los necesite.
+- La instalacion pasa de 12 a 14 pasos. Un grupo que se rechaza queda como omitido aunque ya hubiera alguno de sus nodos; solo se marca como fallo si se pidio y algo no quedo.
+- Si Git se acaba de instalar, se agrega al PATH de la instalacion para que pip pueda instalar requisitos "git+https://" (los usa WAS).
+
 ## v2.3.1 — 2026-09-26
 
 - Ya no sale en rojo el aviso de pip sobre comfyui-workflow-templates-media-*: viene asi en el portable oficial, no afecta a ComfyUI y aparecia en toda instalacion nueva. Queda solo en instalacion.log. Otros avisos de pip se muestran en ambar, no en rojo.
