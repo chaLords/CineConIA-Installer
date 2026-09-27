@@ -24,6 +24,7 @@
 
 <p align="center">
   <a href="https://github.com/chaLords/CineConIA-Installer/releases/latest/download/CineConIA-Installer.zip"><img alt="Descargar el instalador (.zip)" src="https://img.shields.io/badge/Descargar-instalador%20.zip-2ea44f?style=for-the-badge"></a><br>
+  <a href="https://github.com/chaLords/CineConIA-Installer/releases/latest"><img alt="Versión del instalador que se descarga" src="https://img.shields.io/github/v/release/chaLords/CineConIA-Installer?label=versi%C3%B3n&color=2ea44f"></a><br>
   <sub>Solo lo necesario para instalar; la documentación queda aquí en GitHub.</sub>
 </p>
 
