@@ -229,5 +229,22 @@
   "migrator.delete_phase": "PHASE 3/3 · Full copy verified. Removing originals.",
   "migrator.all_originals_kept": "No originals have been deleted: copying, verification or report saving encountered a problem.",
   "migrator.shared_library": "This library can be linked to multiple ComfyUI installations without duplicating models.",
-  "migrator.library_remembered": "Library remembered for future installations: {path}"
+  "migrator.library_remembered": "Library remembered for future installations: {path}",
+  "migrator.copy_done": "Copy complete: {ok} of {total} files · {size} in {time}",
+  "migrator.verify_done": "Library verified: {ok} of {total} files · {size} in {time}",
+  "migrator.delete_done": "Originals removed: {ok} of {total} in {time}",
+  "migrator.total_time": "Total time:           {time}",
+  "progress.left": "~{time} left",
+  "progress.estimating": "estimating time…",
+  "progress.analyzing": "analyzing",
+  "progress.comparing": "comparing",
+  "progress.copying": "copying",
+  "progress.flushing": "flushing to disk",
+  "progress.verifying": "verifying",
+  "progress.checking": "checking",
+  "progress.removing": "removing",
+  "progress.title_plan": "Analyzing models",
+  "progress.title_copy": "Copying models",
+  "progress.title_verify": "Verifying library",
+  "progress.title_delete": "Removing originals"
 }

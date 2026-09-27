@@ -14,6 +14,7 @@ import re
 import shutil
 import subprocess
 import sys
+import time
 from datetime import datetime
 
 try:
@@ -22,8 +23,11 @@ except ImportError:
     sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
     import modelos_enlace
 import i18n
+import pasos
+import progreso
 
 t=i18n.t
+BLOQUE = 8 * 1024 * 1024
 
 CATEGORIAS = list(modelos_enlace.CARPETAS)
 IGNORAR_ARCHIVOS = {"desktop.ini", "thumbs.db", ".ds_store"}
@@ -188,7 +192,8 @@ def rutas_se_solapan(a, b):
     return comun == a or comun == b
 
 
-def sha256(ruta, cache):
+def sha256(ruta, cache, avance=None):
+    """avance(n): se llama con los bytes leidos, para la barra de progreso."""
     ruta = os.path.abspath(ruta)
     try:
         stat = os.stat(ruta)
@@ -196,26 +201,30 @@ def sha256(ruta, cache):
     except OSError:
         clave = (ruta, None, None)
     if clave in cache:
+        if avance and clave[1]:
+            avance(clave[1])
         return cache[clave]
     h = hashlib.sha256()
     with open(ruta, "rb") as f:
         while True:
-            bloque = f.read(8 * 1024 * 1024)
+            bloque = f.read(BLOQUE)
             if not bloque:
                 break
             h.update(bloque)
+            if avance:
+                avance(len(bloque))
     valor = h.hexdigest()
     cache[clave] = valor
     return valor
 
 
-def mismo_contenido(a, b, cache):
+def mismo_contenido(a, b, cache, avance=None):
     try:
         if os.path.getsize(a) != os.path.getsize(b):
             return False
     except OSError:
         return False
-    return sha256(a, cache) == sha256(b, cache)
+    return sha256(a, cache, avance) == sha256(b, cache, avance)
 
 
 def nombre_fuente(models_root):
@@ -247,10 +256,19 @@ def construir_plan(fuentes, destino):
     cache = {}
     ocupados = {}
     plan = []
-
-    for fuente in fuentes:
-        etiqueta = nombre_fuente(fuente)
-        for origen in iterar_archivos(fuente):
+    # Primero la lista completa, para poder mostrar "34/73" mientras se analiza.
+    archivos = [(fuente, origen) for fuente in fuentes for origen in iterar_archivos(fuente)]
+    with progreso.Progreso(0, len(archivos), titulo=t("progress.title_plan"),
+                           por_bytes=False) as prog:
+        for i, (fuente, origen) in enumerate(archivos, 1):
+            etiqueta = nombre_fuente(fuente)
+            try:
+                tamano = os.path.getsize(origen)
+            except OSError:
+                tamano = 0
+            # Si el destino ya existe se compara SHA-256: se leen los dos.
+            prog.archivo(i, os.path.basename(origen), tamano, 2 * tamano,
+                         t("progress.analyzing"))
             rel = os.path.relpath(origen, fuente)
             partes = Path(rel).parts
             categoria = modelos_enlace.categoria_de(partes[0]) if len(partes) > 1 else None
@@ -266,14 +284,16 @@ def construir_plan(fuentes, destino):
             destino_final = objetivo
 
             if os.path.exists(objetivo):
-                if mismo_contenido(origen, objetivo, cache):
+                prog.fase(t("progress.comparing"))
+                if mismo_contenido(origen, objetivo, cache, prog.avanzar):
                     accion = "duplicado"
                 else:
                     destino_final = destino_conflicto(objetivo, ocupados)
                     accion = "conflicto"
             elif clave in ocupados:
                 previo = ocupados[clave]
-                if mismo_contenido(origen, previo, cache):
+                prog.fase(t("progress.comparing"))
+                if mismo_contenido(origen, previo, cache, prog.avanzar):
                     accion = "duplicado"
                 else:
                     destino_final = destino_conflicto(objetivo, ocupados)
@@ -282,10 +302,6 @@ def construir_plan(fuentes, destino):
             if accion != "duplicado":
                 ocupados[os.path.normcase(os.path.normpath(destino_final))] = origen
 
-            try:
-                tamano = os.path.getsize(origen)
-            except OSError:
-                tamano = 0
             plan.append({
                 "origen": origen,
                 "destino": destino_final,
@@ -294,6 +310,7 @@ def construir_plan(fuentes, destino):
                 "categoria": categoria,
                 "clasificado": clasificado,
             })
+            prog.terminar_archivo()
     return plan, cache
 
 
@@ -368,11 +385,31 @@ def comprobar_espacio(plan, destino, modo):
     return libre >= requerido
 
 
-def copiar_verificar(origen, destino, cache):
+def copiar_con_avance(origen, destino, avance=None):
+    """Como shutil.copy2, pero por bloques para poder mostrar el avance.
+    En Windows copy2 tambien copia por bloques (de 1 MB) desde Python 3.8."""
+    buf = bytearray(BLOQUE)
+    vista = memoryview(buf)
+    with open(origen, "rb") as fo, open(destino, "wb") as fd:
+        while True:
+            n = fo.readinto(buf)
+            if not n:
+                break
+            fd.write(vista[:n])
+            if avance:
+                avance(n)
+    shutil.copystat(origen, destino)
+
+
+def copiar_verificar(origen, destino, cache, prog=None):
+    """prog: Progreso opcional; se le informa cada bloque y cada etapa."""
+    avance = prog.avanzar if prog else None
+    etapa = prog.fase if prog else (lambda _texto: None)
     os.makedirs(os.path.dirname(destino), exist_ok=True)
     final = destino
     if os.path.exists(final):
-        if mismo_contenido(origen, final, cache):
+        etapa(t("progress.comparing"))
+        if mismo_contenido(origen, final, cache, avance):
             return final, "duplicado"
         final = destino_conflicto(final, {os.path.normcase(os.path.normpath(final))})
 
@@ -380,10 +417,14 @@ def copiar_verificar(origen, destino, cache):
     try:
         if os.path.exists(temporal):
             os.remove(temporal)
-        shutil.copy2(origen, temporal)
+        etapa(t("progress.copying"))
+        copiar_con_avance(origen, temporal, avance)
+        # Con archivos de varios GB el disco puede tardar en vaciar su cache.
+        etapa(t("progress.flushing"))
         with open(temporal,"rb+") as archivo:
             os.fsync(archivo.fileno())
-        if sha256(origen, {}) != sha256(temporal, {}):
+        etapa(t("progress.verifying"))
+        if sha256(origen, {}, avance) != sha256(temporal, {}, avance):
             raise IOError(t("migrator.hash_mismatch"))
 
         if os.path.exists(final):
@@ -413,8 +454,14 @@ def limpiar_vacios(root):
             pass
 
 
+def _resumen_fase(clave, ok, total, tamano, prog):
+    return t(clave, ok=ok, total=total, size=human_bytes(tamano),
+             time=pasos.duracion(prog.transcurrido()))
+
+
 def ejecutar_plan(plan, modo, cache, antes_de_borrar=None):
     total = len(plan)
+    mover = modo == "mover"
     resultado = {
         "copiados": 0,
         "eliminados_origen": 0,
@@ -424,55 +471,86 @@ def ejecutar_plan(plan, modo, cache, antes_de_borrar=None):
         "archivos": [],
     }
     # Fase 1: copiar y verificar toda la biblioteca. Nunca borrar aqui.
-    print("\n"+t("migrator.copy_phase" if modo=="mover" else "migrator.copy_only_phase"))
-    for i, item in enumerate(plan, 1):
-        origen = item["origen"]
-        destino = item["destino"]
-        print(f"\n   [{i}/{total}] {os.path.basename(origen)}")
-        try:
-            if rutas_se_solapan(origen,destino):
-                raise IOError(t("migrator.overlap",path=origen))
-            if item["accion"] == "duplicado":
-                if not os.path.exists(destino) or not mismo_contenido(origen, destino, {}):
-                    raise IOError(t("migrator.duplicate_changed"))
-                resultado["duplicados"] += 1
-                resultado["archivos"].append({"origen":origen,"destino":destino,"estado":"duplicado"})
-                print("      "+t("migrator.duplicate_verified"))
-                continue
-            final, estado = copiar_verificar(origen, destino, {})
-            if estado == "duplicado":
-                resultado["duplicados"] += 1
-            else:
-                resultado["copiados"] += 1
-                if item["accion"] == "conflicto" or "__conflicto_" in os.path.basename(final):
-                    resultado["conflictos"] += 1
+    # Trabajo por archivo: copiar + SHA-256 del origen + SHA-256 de la copia
+    # (3 x tamano), o comparar un duplicado ya existente (2 x tamano).
+    print("\n"+t("migrator.copy_phase" if mover else "migrator.copy_only_phase"))
+    bytes_plan = sum(x["tamano"] for x in plan)
+    titulo = t("progress.title_copy")
+    with progreso.Progreso(bytes_plan, total, titulo=("1/3 \u00b7 "+titulo) if mover else titulo,
+                           sangria="      ", mostrar_nombre=False) as prog:
+        for i, item in enumerate(plan, 1):
+            origen = item["origen"]
+            destino = item["destino"]
+            prog.escribir(f"\n   [{i}/{total}] {os.path.basename(origen)}  \u00b7  {human_bytes(item['tamano'])}")
+            duplicado = item["accion"] == "duplicado"
+            prog.archivo(i, os.path.basename(origen), item["tamano"],
+                         item["tamano"] * (2 if duplicado else 3),
+                         t("progress.comparing" if duplicado else "progress.copying"))
+            try:
+                if rutas_se_solapan(origen,destino):
+                    raise IOError(t("migrator.overlap",path=origen))
+                if duplicado:
+                    if not os.path.exists(destino) or not mismo_contenido(origen, destino, {}, prog.avanzar):
+                        raise IOError(t("migrator.duplicate_changed"))
+                    resultado["duplicados"] += 1
+                    resultado["archivos"].append({"origen":origen,"destino":destino,
+                                                  "estado":"duplicado","tamano":item["tamano"]})
+                    prog.escribir("      "+t("migrator.duplicate_verified"))
+                    continue
+                final, estado = copiar_verificar(origen, destino, {}, prog)
+                if estado == "duplicado":
+                    resultado["duplicados"] += 1
+                else:
+                    resultado["copiados"] += 1
+                    if item["accion"] == "conflicto" or "__conflicto_" in os.path.basename(final):
+                        resultado["conflictos"] += 1
 
-            resultado["archivos"].append({"origen":origen,"destino":final,"estado":estado})
-            print(f"      OK -> {final}")
+                resultado["archivos"].append({"origen":origen,"destino":final,
+                                              "estado":estado,"tamano":item["tamano"]})
+                prog.escribir(f"      OK -> {final}")
 
-        except Exception as e:
-            resultado["errores"].append({
-                "origen": origen,
-                "destino": destino,
-                "error": f"{type(e).__name__}: {e}",
-            })
-            print(f"      [X] {type(e).__name__}: {e}")
+            except Exception as e:
+                resultado["errores"].append({
+                    "origen": origen,
+                    "destino": destino,
+                    "error": f"{type(e).__name__}: {e}",
+                })
+                prog.escribir(f"      [X] {type(e).__name__}: {e}")
+            finally:
+                prog.terminar_archivo()
+        prog.escribir()
+        prog.cerrar(_resumen_fase("migrator.copy_done", len(resultado["archivos"]),
+                                  total, bytes_plan, prog),
+                    ok=not resultado["errores"], sangria="   ")
 
-    if modo!="mover":
+    if not mover:
         return resultado
     if resultado["errores"]:
         print("\n"+t("migrator.all_originals_kept"))
         return resultado
     # Fase 2: comprobar de nuevo todas las parejas, sin caches del plan.
     print("\n"+t("migrator.verify_phase"))
-    for item in resultado["archivos"]:
-        try:
-            digest=sha256(item["origen"],{})
-            if digest!=sha256(item["destino"],{}):
-                raise IOError(t("migrator.hash_mismatch"))
-            item["sha256"]=digest
-        except OSError as e:
-            resultado["errores"].append({**item,"error":str(e)})
+    archivos = resultado["archivos"]
+    bytes_lib = sum(x["tamano"] for x in archivos)
+    with progreso.Progreso(bytes_lib, len(archivos),
+                           titulo="2/3 \u00b7 "+t("progress.title_verify")) as prog:
+        verificados = 0
+        for i, item in enumerate(archivos, 1):
+            nombre = os.path.basename(item["origen"])
+            prog.archivo(i, nombre, item["tamano"], 2 * item["tamano"], t("progress.verifying"))
+            try:
+                digest=sha256(item["origen"],{},prog.avanzar)
+                if digest!=sha256(item["destino"],{},prog.avanzar):
+                    raise IOError(t("migrator.hash_mismatch"))
+                item["sha256"]=digest
+                verificados += 1
+            except OSError as e:
+                resultado["errores"].append({**item,"error":str(e)})
+                prog.escribir(f"   [X] {nombre}: {e}")
+            finally:
+                prog.terminar_archivo()
+        prog.cerrar(_resumen_fase("migrator.verify_done", verificados, len(archivos), bytes_lib, prog),
+                    ok=not resultado["errores"])
     if resultado["errores"]:
         print("\n"+t("migrator.all_originals_kept"))
         return resultado
@@ -486,17 +564,28 @@ def ejecutar_plan(plan, modo, cache, antes_de_borrar=None):
             return resultado
     # Fase 3: cada origen se borra solo si ambas copias aun coinciden.
     print("\n"+t("migrator.delete_phase"))
-    for item in resultado["archivos"]:
-        try:
-            if (sha256(item["origen"],{})!=item["sha256"] or
-                    sha256(item["destino"],{})!=item["sha256"]):
-                raise IOError(t("migrator.hash_mismatch"))
-            os.remove(item["origen"])
-            item["original_eliminado"]=True
-            resultado["eliminados_origen"]+=1
-        except OSError as e:
-            resultado["errores"].append({**item,"error":str(e)})
-            break
+    with progreso.Progreso(bytes_lib, len(archivos),
+                           titulo="3/3 \u00b7 "+t("progress.title_delete")) as prog:
+        for i, item in enumerate(archivos, 1):
+            nombre = os.path.basename(item["origen"])
+            prog.archivo(i, nombre, item["tamano"], 2 * item["tamano"], t("progress.checking"))
+            try:
+                if (sha256(item["origen"],{},prog.avanzar)!=item["sha256"] or
+                        sha256(item["destino"],{},prog.avanzar)!=item["sha256"]):
+                    raise IOError(t("migrator.hash_mismatch"))
+                prog.fase(t("progress.removing"))
+                os.remove(item["origen"])
+                item["original_eliminado"]=True
+                resultado["eliminados_origen"]+=1
+            except OSError as e:
+                resultado["errores"].append({**item,"error":str(e)})
+                prog.escribir(f"   [X] {nombre}: {e}")
+                break
+            finally:
+                prog.terminar_archivo()
+        prog.cerrar(t("migrator.delete_done", ok=resultado["eliminados_origen"], total=len(archivos),
+                      time=pasos.duracion(prog.transcurrido())),
+                    ok=not resultado["errores"])
     return resultado
 
 
@@ -577,8 +666,10 @@ def main(encontrados=None, instalaciones_extra=()):
     for c in CATEGORIAS + ["_sin_clasificar"]:
         os.makedirs(os.path.join(destino, c), exist_ok=True)
 
+    inicio = time.monotonic()
     resultado = ejecutar_plan(plan, modo, cache, antes_de_borrar=lambda estado:
         guardar_reporte(destino,fuentes,modo,plan,estado,[]))
+    duracion = pasos.duracion(time.monotonic() - inicio)
 
     if not resultado["errores"]:
         try:
@@ -626,6 +717,7 @@ def main(encontrados=None, instalaciones_extra=()):
     print("   "+t("migrator.conflicts",count=resultado["conflictos"]))
     print("   "+t("migrator.deleted",count=resultado["eliminados_origen"]))
     print("   "+t("migrator.errors",count=len(resultado["errores"])))
+    print("   "+t("migrator.total_time",time=duracion))
     print("   "+t("migrator.report",path=reporte))
     print("\n   "+t("migrator.unclassified_note"))
     if resultado["errores"]:

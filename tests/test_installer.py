@@ -223,9 +223,9 @@ class MigrationTests(Isolated):
     def test_second_copy_failure_keeps_every_original(self):
         src,dst,plan,cache=self.files()
         copy=migrar.copiar_verificar
-        def fail_second(a,b,c):
+        def fail_second(a,b,c,*rest):
             if a.endswith("b.safetensors"): raise OSError("disk disconnected")
-            return copy(a,b,c)
+            return copy(a,b,c,*rest)
         with patch.object(migrar,"copiar_verificar",side_effect=fail_second):
             result=migrar.ejecutar_plan(plan,"mover",cache)
         self.assertTrue(result["errores"])

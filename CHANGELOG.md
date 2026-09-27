@@ -1,5 +1,16 @@
 # Changelog
 
+## v2.7.0 — 2026-09-27
+
+- Migración de modelos con progreso visible. Antes, las fases 2 (verificar) y 3 (retirar originales) no mostraban nada mientras releían toda la biblioteca, y dentro de un modelo grande la fase 1 tampoco: no se sabía si avanzaba. Ahora cada fase muestra una barra en una línea con el porcentaje, los GB hechos del total, el tiempo que falta, la velocidad, qué se está haciendo (copiando, asegurando en disco, verificando, comprobando, retirando) y con qué archivo.
+- El porcentaje también va al título de la ventana y, en Windows Terminal, al anillo de progreso de la pestaña y del icono de la barra de tareas; se ve aunque la ventana esté minimizada.
+- La simulación ("Construyendo simulación...") también muestra su avance cuando tiene que comparar SHA-256 con modelos que ya están en el destino.
+- Cada fase cierra con su resumen ("Biblioteca verificada: 73 de 73 archivos · 71.8 GB en 5 min 12 s") y el resumen final agrega el tiempo total.
+- La línea se adapta al ancho de la ventana: si no cabe, primero se quita la velocidad, luego los GB y al final se acorta el nombre del archivo por el medio, conservando el final (fp16, .safetensors). La barra no cambia de largo entre un dibujo y otro.
+- Sin cambios en la seguridad: se hacen las mismas lecturas y comprobaciones SHA-256 que en v2.5.0; la copia ahora va por bloques de 8 MB para poder informar el avance (copy2 de Python también copia por bloques en Windows) y conserva fechas y atributos igual que antes.
+- Fuera de una consola (salida redirigida a un archivo) no se dibuja la barra, solo los resúmenes. `CINECONIA_PROGRESO=0` la desactiva.
+- 12 pruebas nuevas en `tests/test_progreso.py`: la línea nunca pasa del ancho de la ventana, se restaura la pestaña aunque se interrumpa con Ctrl+C, la copia informa cada byte y conserva la fecha, y un fallo en la verificación queda marcado sin borrar originales.
+
 ## v2.6.0 — 2026-09-27
 
 - La cola de trabajos queda acoplada al panel lateral: ya no aparece el panel flotante de progreso ("Total", "Nodo actual") encima del lienzo, que repetía la barra de rgthree y el progreso del nodo Render. Solo se agregan los ajustes que falten en `ComfyUI/user/default/comfy.settings.json`, con copia `.bak` previa; lo que ya se haya elegido en ComfyUI no cambia. Para volver al panel flotante: menú "⋯" de la cola → "Historial de trabajos acoplado".

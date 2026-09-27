@@ -229,5 +229,22 @@
   "migrator.delete_phase": "FASE 3/3 · Copia completa verificada. Retirando originales.",
   "migrator.all_originals_kept": "No se ha borrado ningún original: hubo un problema al copiar, verificar o guardar el reporte.",
   "migrator.shared_library": "Esta biblioteca se puede enlazar a varios ComfyUI sin duplicar modelos.",
-  "migrator.library_remembered": "Biblioteca recordada para futuras instalaciones: {path}"
+  "migrator.library_remembered": "Biblioteca recordada para futuras instalaciones: {path}",
+  "migrator.copy_done": "Copia lista: {ok} de {total} archivos · {size} en {time}",
+  "migrator.verify_done": "Biblioteca verificada: {ok} de {total} archivos · {size} en {time}",
+  "migrator.delete_done": "Originales retirados: {ok} de {total} en {time}",
+  "migrator.total_time": "Tiempo total:         {time}",
+  "progress.left": "faltan ~{time}",
+  "progress.estimating": "calculando tiempo…",
+  "progress.analyzing": "analizando",
+  "progress.comparing": "comparando",
+  "progress.copying": "copiando",
+  "progress.flushing": "asegurando en disco",
+  "progress.verifying": "verificando",
+  "progress.checking": "comprobando",
+  "progress.removing": "retirando",
+  "progress.title_plan": "Analizando modelos",
+  "progress.title_copy": "Copiando modelos",
+  "progress.title_verify": "Verificando biblioteca",
+  "progress.title_delete": "Retirando originales"
 }
