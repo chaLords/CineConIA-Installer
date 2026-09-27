@@ -67,6 +67,8 @@ Para una instalación nueva, el orden recomendado es este:
    - Instala el monitor de recursos (CPU, RAM, GPU, VRAM) si lo aceptas.
    - Instala los extras de interfaz si lo aceptas: la barra de progreso verde
      de arriba (rgthree-comfy) y el botón Show Image Feed (Custom-Scripts).
+   - Deja la cola de trabajos en el panel lateral, sin el panel flotante de
+     progreso encima del lienzo (se puede volver a activar en ComfyUI).
    - Ofrece los nodos de la comunidad (Essentials, Comfyroll, WAS, ControlNet
      aux). Son pesados y por defecto no se instalan.
    - Busca modelos de instalaciones anteriores y ofrece usarlos donde están

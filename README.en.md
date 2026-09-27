@@ -67,6 +67,8 @@ For a new installation, the recommended order is:
    - Offers to install the resource monitor (CPU, RAM, GPU, VRAM).
    - Offers the interface extras: the green progress bar at the top
      (rgthree-comfy) and the Show Image Feed button (Custom-Scripts).
+   - Docks the job queue in the side panel, without the floating progress
+     panel over the canvas (it can be turned back on in ComfyUI).
    - Offers the community nodes (Essentials, Comfyroll, WAS, ControlNet aux).
      They are heavy and are not installed by default.
    - Looks for models from previous installations and offers to use them where they are

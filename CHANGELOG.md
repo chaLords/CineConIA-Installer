@@ -1,5 +1,9 @@
 # Changelog
 
+## v2.6.0 — 2026-09-27
+
+- La cola de trabajos queda acoplada al panel lateral: ya no aparece el panel flotante de progreso ("Total", "Nodo actual") encima del lienzo, que repetía la barra de rgthree y el progreso del nodo Render. Solo se agregan los ajustes que falten en `ComfyUI/user/default/comfy.settings.json`, con copia `.bak` previa; lo que ya se haya elegido en ComfyUI no cambia. Para volver al panel flotante: menú "⋯" de la cola → "Historial de trabajos acoplado".
+
 ## v2.5.0 — 2026-09-26
 
 - Flujograma compacto, transparente y adaptado a GitHub claro/oscuro en ambos idiomas.

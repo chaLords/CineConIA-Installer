@@ -11,6 +11,7 @@ import unittest
 from unittest.mock import patch
 
 sys.path.insert(0,str(Path(__file__).resolve().parents[1]/"src"))
+import ajustes_interfaz
 import deteccion
 import entorno_torch
 import instalador as ins
@@ -323,6 +324,65 @@ class LibraryTests(Isolated):
         path.parent.mkdir(parents=True)
         path.write_text('{"bibliotecas": null}')
         self.assertEqual(enlaces.bibliotecas_guardadas(),[])
+
+
+class UiSettingsTests(Isolated):
+    def settings(self):
+        return self.root/"ComfyUI/user/default/comfy.settings.json"
+
+    def write_settings(self,text):
+        path=self.settings()
+        path.parent.mkdir(parents=True,exist_ok=True)
+        path.write_text(text,encoding="utf-8")
+        return path
+
+    def test_new_install_gets_docked_queue(self):
+        state,backup=ajustes_interfaz.aplicar(str(self.root))
+        self.assertEqual(state,"ok")
+        self.assertIsNone(backup)
+        data=json.loads(self.settings().read_text(encoding="utf-8"))
+        self.assertIs(data["Comfy.Queue.QPOV2"],True)
+        self.assertIs(data["Comfy.Queue.ShowRunProgressBar"],False)
+
+    def test_existing_settings_are_preserved_and_backed_up(self):
+        original='{"Comfy.Locale": "es", "Comfy.ColorPalette": "dark"}'
+        path=self.write_settings(original)
+        state,backup=ajustes_interfaz.aplicar(str(self.root))
+        self.assertEqual(state,"ok")
+        data=json.loads(path.read_text(encoding="utf-8"))
+        self.assertEqual((data["Comfy.Locale"],data["Comfy.ColorPalette"]),("es","dark"))
+        self.assertIs(data["Comfy.Queue.QPOV2"],True)
+        self.assertEqual(Path(backup).read_text(encoding="utf-8"),original)
+
+    def test_user_choice_is_not_overwritten(self):
+        path=self.write_settings('{"Comfy.Queue.QPOV2": false}')
+        ajustes_interfaz.aplicar(str(self.root))
+        data=json.loads(path.read_text(encoding="utf-8"))
+        self.assertIs(data["Comfy.Queue.QPOV2"],False)
+        self.assertIs(data["Comfy.Queue.ShowRunProgressBar"],False)
+
+    def test_settings_with_bom_are_read(self):
+        path=self.write_settings('\ufeff{"Comfy.Locale": "es"}')
+        self.assertEqual(ajustes_interfaz.aplicar(str(self.root))[0],"ok")
+        self.assertEqual(json.loads(path.read_text(encoding="utf-8"))["Comfy.Locale"],"es")
+
+    def test_rerun_changes_nothing(self):
+        ajustes_interfaz.aplicar(str(self.root))
+        before=self.settings().read_bytes()
+        self.assertEqual(ajustes_interfaz.aplicar(str(self.root)),("igual",None))
+        self.assertEqual(self.settings().read_bytes(),before)
+        self.assertEqual(len(list(self.settings().parent.iterdir())),1)
+
+    def test_unreadable_settings_are_left_untouched(self):
+        for text in ("not json","[1, 2]"):
+            path=self.write_settings(text)
+            self.assertEqual(ajustes_interfaz.aplicar(str(self.root))[0],"error")
+            self.assertEqual(path.read_text(encoding="utf-8"),text)
+        self.assertEqual(len(list(self.settings().parent.iterdir())),1)
+
+    def test_installer_reports_failure_without_stopping(self):
+        with patch.object(ins.ajustes_interfaz,"aplicar",return_value=("error","disco lleno")):
+            self.assertEqual(ins.ajustar_interfaz(str(self.root)),"error")
 
 
 class PackagingTests(unittest.TestCase):

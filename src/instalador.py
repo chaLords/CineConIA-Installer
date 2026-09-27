@@ -2,7 +2,7 @@
 from __future__ import annotations
 import os, re, shutil, subprocess, sys, tempfile
 sys.path.insert(0,os.path.dirname(os.path.abspath(__file__)))
-import catalogo, deteccion, entorno_torch, i18n, lanzadores, modelos_enlace, pasos, preflight, rutas_largas, verificacion
+import ajustes_interfaz, catalogo, deteccion, entorno_torch, i18n, lanzadores, modelos_enlace, pasos, preflight, rutas_largas, verificacion
 
 # Nodos opcionales. "carpetas": nombres con que puede estar ya instalado;
 # el primero es el que se usa al clonar.
@@ -506,6 +506,20 @@ def ofrecer_enlace_modelos(destino):
         print(f"   {G}{t('installer.migrator_hint')}{X}")
     return "linked"
 
+def ajustar_interfaz(destino):
+    """Cola de trabajos acoplada al panel lateral, sin el panel flotante de
+    progreso. No pisa lo que el usuario ya haya elegido en ComfyUI."""
+    estado,detalle=ajustes_interfaz.aplicar(destino)
+    if estado=="ok":
+        print(f"   {pasos.V}{pasos.MARCAS['ok'][0]}{X} {t('installer.ui_settings_applied')}")
+        if detalle:
+            print(f"      {G}{detalle}{X}")
+    elif estado=="igual":
+        print(f"   {G}{t('installer.ui_settings_kept')}{X}")
+    else:
+        print(f"   {A}{t('installer.ui_settings_failed',error=detalle)}{X}")
+    return estado
+
 # Pasos que muestra este script; los del .bat (equipo, descarga, extraccion)
 # se suman delante. Ver pasos.py.
 TITULOS=["installer.step_environment","installer.step_accelerators",
@@ -611,6 +625,7 @@ def main():
     for _,ruta in creados.items():
         print(f"   {pasos.V}{pasos.MARCAS['ok'][0]}{X} {os.path.basename(ruta)}")
     ok,detalle=lanzadores.crear_acceso_escritorio(destino,preferido)
+    ajustar_interfaz(destino)
     P.cerrar("ok" if ok else "fallo",t("installer.desktop_shortcut"))
 
     # Datos del equipo que quedan de referencia, encima del resumen de pasos.
