@@ -10,6 +10,11 @@
 </p>
 
 <p align="center">
+  <a href="https://www.youtube.com/@cineconia.oficial"><img alt="Canal de YouTube" src="https://img.shields.io/badge/youtube-Cine%20con%20IA-red?style=flat-square&logo=youtube&logoColor=white"></a>
+  <a href="https://discord.gg/hXKJ78cEua"><img alt="Comunidad en Discord" src="https://img.shields.io/badge/discord-Cine%20con%20IA-5865F2?style=flat-square&logo=discord&logoColor=white"></a>
+</p>
+
+<p align="center">
   <strong>Español</strong> · <a href="README.en.md">English</a>
 </p>
 
@@ -24,10 +29,13 @@
 
 <p align="center">
   <sub>Sin sponsors · Sin accesos promocionales · Sin software innecesario · Sin modelos obligatorios</sub><br>
-  <sub>Desarrollado por <a href="https://www.youtube.com/@cineconia.oficial">Cine con IA · YouTube</a> · Proyecto independiente, no afiliado a Comfy Org</sub>
+  <sub>Desarrollado por <a href="https://www.youtube.com/@cineconia.oficial">Cine con IA · YouTube</a> · <a href="https://discord.gg/hXKJ78cEua">Comunidad en Discord</a> · Proyecto independiente, no afiliado a Comfy Org</sub>
 </p>
 
 ---
+
+> [!TIP]
+> **💬 ¿Dudas o problemas con la instalación?** Pregunta en la comunidad de Cine con IA en Discord: [discord.gg/hXKJ78cEua](https://discord.gg/hXKJ78cEua) · Tutoriales en [YouTube](https://www.youtube.com/@cineconia.oficial).
 
 ## Idioma automático
 

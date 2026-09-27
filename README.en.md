@@ -10,6 +10,11 @@
 </p>
 
 <p align="center">
+  <a href="https://www.youtube.com/@cineconia.oficial"><img alt="YouTube channel" src="https://img.shields.io/badge/youtube-Cine%20con%20IA-red?style=flat-square&logo=youtube&logoColor=white"></a>
+  <a href="https://discord.gg/hXKJ78cEua"><img alt="Discord community" src="https://img.shields.io/badge/discord-Cine%20con%20IA-5865F2?style=flat-square&logo=discord&logoColor=white"></a>
+</p>
+
+<p align="center">
   <a href="README.md">Español</a> · <strong>English</strong>
 </p>
 
@@ -24,10 +29,13 @@
 
 <p align="center">
   <sub>No sponsors · No promotional shortcuts · No unnecessary software · No required models</sub><br>
-  <sub>Made by <a href="https://www.youtube.com/@cineconia.oficial">Cine con IA · YouTube</a> · Independent project, not affiliated with Comfy Org</sub>
+  <sub>Made by <a href="https://www.youtube.com/@cineconia.oficial">Cine con IA · YouTube</a> · <a href="https://discord.gg/hXKJ78cEua">Discord community</a> · Independent project, not affiliated with Comfy Org</sub>
 </p>
 
 ---
+
+> [!TIP]
+> **💬 Questions or problems with the installation?** Ask the Cine con IA community on Discord (Spanish-speaking): [discord.gg/hXKJ78cEua](https://discord.gg/hXKJ78cEua) · Tutorials on [YouTube](https://www.youtube.com/@cineconia.oficial).
 
 ## Automatic language selection
 
