@@ -8,6 +8,7 @@ Tambien se cambia de rama de forma controlada cuando un extra lo exige
 """
 from __future__ import annotations
 import json, os, re, subprocess
+import i18n, progreso
 from datetime import datetime
 
 PAQUETES=("torch","torchvision","torchaudio")
@@ -64,7 +65,8 @@ def instalar(py,objetivo,pip):
 def arranca(py):
     """(ok, detalle): PyTorch, la GPU y las piezas de ComfyUI siguen cargando."""
     try:
-        r=subprocess.run([py,"-s","-c",PRUEBA_ARRANQUE],capture_output=True,text=True,timeout=180)
+        with progreso.Actividad(i18n.t("progress.torch_check"),hilo=True):
+            r=subprocess.run([py,"-s","-c",PRUEBA_ARRANQUE],capture_output=True,text=True,timeout=180)
     except (OSError,subprocess.SubprocessError) as e:
         return False,str(e)
     if r.returncode==0:

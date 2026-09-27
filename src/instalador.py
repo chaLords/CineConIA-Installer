@@ -2,7 +2,7 @@
 from __future__ import annotations
 import os, re, shutil, subprocess, sys, tempfile
 sys.path.insert(0,os.path.dirname(os.path.abspath(__file__)))
-import ajustes_interfaz, catalogo, deteccion, entorno_torch, i18n, lanzadores, modelos_enlace, pasos, preflight, rutas_largas, verificacion
+import ajustes_interfaz, catalogo, deteccion, entorno_torch, i18n, lanzadores, modelos_enlace, pasos, preflight, progreso, rutas_largas, verificacion
 
 # Nodos opcionales. "carpetas": nombres con que puede estar ya instalado;
 # el primero es el que se usa al clonar.
@@ -94,6 +94,11 @@ def marcar(texto,opciones):
         return []
     return [int(x) for x in r.replace(","," ").split()
             if x.isdigit() and 1<=int(x)<=len(opciones)]
+
+def detectar_equipo(py,destino,fabricante,variante):
+    # Importar PyTorch para leer la GPU tarda varios segundos: que se vea.
+    with progreso.Actividad(t("progress.detecting"),hilo=True):
+        return deteccion.informe(py,destino,fabricante,variante)
 
 def mostrar_equipo(inf):
     print(f"   GPU          {inf['gpu']}")
@@ -232,7 +237,8 @@ def verificar(claves,py,solo_presentes=False):
             continue
         if solo_presentes and not _presente(py,h["modulo"]):
             continue
-        ok,detalle=_probar(py,clave)
+        with progreso.Actividad(t("progress.testing",name=h["nombre"]),hilo=True):
+            ok,detalle=_probar(py,clave)
         if ok:
             verificados.add(clave)
             print(f"   {A}{t('common.ok')}{X}   {h['nombre']} {detalle}")
@@ -250,7 +256,8 @@ CONFLICTOS_CONOCIDOS=("comfyui-workflow-templates-media-",)
 def conflictos_pip(py):
     """Lineas de 'pip check' que importan. Las conocidas e inofensivas van solo al registro."""
     try:
-        r=subprocess.run([py,"-s","-m","pip","check"],capture_output=True,text=True,timeout=120)
+        with progreso.Actividad(t("progress.pip_check"),hilo=True):
+            r=subprocess.run([py,"-s","-m","pip","check"],capture_output=True,text=True,timeout=120)
     except (OSError,subprocess.SubprocessError) as e:
         return [t("installer.pip_check_failed",error=str(e))]
     if r.returncode==0:
@@ -456,11 +463,13 @@ def ofrecer_enlace_modelos(destino):
     for ruta in modelos_enlace.bibliotecas_guardadas():
         if not os.path.isdir(ruta):
             print(f"   {A}{t('installer.library_offline',path=ruta)}{X}")
-    encontradas=[p for p in modelos_enlace.detectar_instalaciones() if real(p)!=propia]
+    with progreso.Actividad(t("progress.searching"),hilo=True):
+        encontradas=[p for p in modelos_enlace.detectar_instalaciones() if real(p)!=propia]
     # La biblioteca central que dejo el migrador va primero: es la que deben
     # compartir todas las instalaciones futuras.
     central=modelos_enlace.es_central
-    con_tamano=[(p,modelos_enlace.tamano_bytes(p)/1e9) for p in encontradas]
+    with progreso.Actividad(t("progress.measuring"),hilo=True):
+        con_tamano=[(p,modelos_enlace.tamano_bytes(p)/1e9) for p in encontradas]
     guardadas={real(p):i for i,p in enumerate(modelos_enlace.bibliotecas_guardadas())}
     con_tamano=sorted([x for x in con_tamano if x[1]>0 or central(x[0])],
         key=lambda x:(guardadas.get(real(x[0]),len(guardadas)+(0 if central(x[0]) else 1)),-x[1]))[:5]
@@ -543,7 +552,7 @@ def main():
     git_en_path()
 
     P.empezar(t("installer.step_environment"))
-    inf=deteccion.informe(py,destino,fabricante,variante)
+    inf=detectar_equipo(py,destino,fabricante,variante)
     mostrar_equipo(inf)
     if not inf["torch"].get("torch"):
         print(f"\n   {R}{t('installer.pytorch_broken')}{X}")
@@ -566,7 +575,7 @@ def main():
         perfiles=elegir_perfiles(inf.get("vram_gb"))
     herramientas=catalogo.herramientas_de(perfiles)
     if "nunchaku" in herramientas and preparar_nunchaku(destino,py,inf):
-        inf=deteccion.informe(py,destino,fabricante,variante)
+        inf=detectar_equipo(py,destino,fabricante,variante)
         mostrar_equipo(inf)
     # Version de PyTorch "buena": ningun extra ni nodo puede cambiarla sin permiso.
     torch_base=entorno_torch.versiones(py)

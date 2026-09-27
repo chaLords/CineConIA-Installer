@@ -1,9 +1,15 @@
 import contextlib
+import functools
+import hashlib
+import http.server
 import io
 import os
 from pathlib import Path
+import shutil
+import subprocess
 import sys
 import tempfile
+import threading
 import unittest
 from unittest.mock import patch
 
@@ -157,6 +163,96 @@ class MigracionConProgresoTests(unittest.TestCase):
         self.assertEqual(resultado["eliminados_origen"],0)
         self.assertTrue((self.src/"chico.safetensors").exists())
         self.assertIn("Biblioteca verificada: 1 de 2 archivos",self.salida.getvalue())
+
+
+class ActividadTests(unittest.TestCase):
+    def test_activity_line_fits_and_shows_elapsed_time(self):
+        consola_falsa(self)
+        with progreso.Actividad("pip install sageattention",salida=Consola()) as a:
+            a.detalle("Collecting triton-windows<3.5 (from sageattention)")
+            a.t0-=75
+            for ancho in (40,80,120,200):
+                linea=a.linea(ancho)[0]
+                self.assertLessEqual(progreso.ancho_texto(linea),ancho-1,(ancho,linea))
+            self.assertIn("1:15",a.linea(120)[0])
+            self.assertIn("pip install sageattention",a.linea(120)[0])
+
+    def test_activity_thread_draws_and_marks_tab_as_busy(self):
+        consola_falsa(self)
+        salida=Consola()
+        with progreso.Actividad("probando",salida=salida,hilo=True):
+            pass
+        texto=salida.getvalue()
+        self.assertIn("\x1b]9;4;3;0\x07",texto)
+        self.assertTrue(texto.endswith("\x1b]9;4;0;0\x07"))
+
+    def test_activity_is_silent_when_redirected(self):
+        salida=io.StringIO()
+        with progreso.Actividad("pip",salida=salida,hilo=True) as a:
+            a.dibujar()
+        self.assertEqual(salida.getvalue(),"")
+
+
+PS1=Path(__file__).resolve().parents[1]/"src/progreso.ps1"
+POWERSHELL=shutil.which("powershell.exe") or shutil.which("pwsh")
+
+
+class PowerShellAsciiTests(unittest.TestCase):
+    def test_script_is_ascii_for_windows_powershell_5(self):
+        # PowerShell 5.1 lee un .ps1 sin BOM como ANSI: una tilde lo rompe.
+        PS1.read_bytes().decode("ascii")
+
+
+@unittest.skipUnless(POWERSHELL,"PowerShell no disponible")
+class PowerShellTests(unittest.TestCase):
+    def setUp(self):
+        tmp=tempfile.TemporaryDirectory()
+        self.addCleanup(tmp.cleanup)
+        self.root=Path(tmp.name)
+        self.datos=os.urandom(12*1024*1024+7)
+        (self.root/"paquete.bin").write_bytes(self.datos)
+
+    def ps(self,*args):
+        env=dict(os.environ,CINECONIA_LANG="es")
+        return subprocess.run([POWERSHELL,"-NoProfile","-ExecutionPolicy","Bypass","-File",str(PS1),*args],
+                              capture_output=True,text=True,encoding="utf-8",errors="replace",
+                              timeout=180,cwd=self.root,env=env)
+
+    def test_probe_mode(self):
+        self.assertEqual(self.ps("-Modo","prueba").returncode,0)
+
+    def test_hash_accepts_the_right_digest_only(self):
+        bueno=hashlib.sha256(self.datos).hexdigest()
+        r=self.ps("-Modo","hash","-Archivo","paquete.bin","-Esperado",bueno.upper())
+        self.assertEqual(r.returncode,0,r.stdout+r.stderr)
+        self.assertIn("SHA-256 verificado",r.stdout)
+        self.assertEqual(self.ps("-Modo","hash","-Archivo","paquete.bin","-Esperado","0"*64).returncode,1)
+
+    def test_download_writes_the_file_and_reports_it(self):
+        manejador=functools.partial(http.server.SimpleHTTPRequestHandler,directory=str(self.root))
+        manejador.log_message=lambda *a:None
+        servidor=http.server.ThreadingHTTPServer(("127.0.0.1",0),manejador)
+        threading.Thread(target=servidor.serve_forever,daemon=True).start()
+        self.addCleanup(servidor.shutdown)
+        url=f"http://127.0.0.1:{servidor.server_address[1]}/paquete.bin"
+        r=self.ps("-Modo","descargar","-Url",url,"-Salida","bajado.part","-Nombre","paquete.7z")
+        self.assertEqual(r.returncode,0,r.stdout+r.stderr)
+        self.assertEqual((self.root/"bajado.part").read_bytes(),self.datos)
+        self.assertIn("Descarga lista: paquete.7z",r.stdout)
+
+    def test_failed_download_returns_curl_error(self):
+        r=self.ps("-Modo","descargar","-Url","http://127.0.0.1:1/nada.7z","-Salida","nada.part")
+        self.assertNotEqual(r.returncode,0)
+
+    @unittest.skipUnless(shutil.which("7z") or os.path.isfile(r"C:\Program Files\7-Zip\7z.exe"),"7-Zip no disponible")
+    def test_extract_and_test_read_7zip_progress(self):
+        siete=shutil.which("7z") or r"C:\Program Files\7-Zip\7z.exe"
+        subprocess.run([siete,"a","-mx=1","p.7z","paquete.bin"],cwd=self.root,capture_output=True,check=True)
+        r=self.ps("-Modo","extraer","-SieteZip",siete,"-Archivo","p.7z","-Destino","salida")
+        self.assertEqual(r.returncode,0,r.stdout+r.stderr)
+        self.assertEqual((self.root/"salida/paquete.bin").read_bytes(),self.datos)
+        self.assertIn("Extracción lista: 1 archivos",r.stdout)
+        self.assertEqual(self.ps("-Modo","probar","-SieteZip",siete,"-Archivo","p.7z").returncode,0)
 
 
 if __name__=="__main__": unittest.main()

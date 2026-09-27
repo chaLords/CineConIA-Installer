@@ -302,7 +302,8 @@ Recommended flow:
 8. Review the **SIMULATION** before anything changes.
 9. Type **MIGRATE** to confirm in English mode.
 10. While copying and verifying, a progress bar shows the percentage, the GB done,
-    the time left, what is being done and to which file. The percentage also shows
+    the time left, what is being done and to which file; it is the same bar used for
+    the download, the extraction and the rest of the installation. The percentage also shows
     on the Windows Terminal tab and its taskbar icon. Each phase ends with a summary
     and its duration.
 11. The migrator can update extra_model_paths.yaml for recognized ComfyUI installations.

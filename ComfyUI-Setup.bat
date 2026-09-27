@@ -86,13 +86,18 @@ if /I "!FABRICANTE!"=="intel" set "VARIANTE=intel"
 set "PAQUETE=ComfyUI_windows_portable_!VARIANTE!.7z"
 echo   !T_PORTABLE!: !PAQUETE!
 call :PASO_OK "!GPU!"
+rem Barra de progreso de src\progreso.ps1 (la misma de la migracion) para
+rem descarga, SHA-256 y extraccion. Si PowerShell no puede correr el script
+rem (directivas del equipo), se usan curl y 7-Zip con su barra de siempre.
+set "BARRA=0"
+set "PS1=%~dp0src\progreso.ps1"
+powershell -NoProfile -ExecutionPolicy Bypass -File "!PS1!" -Modo prueba >nul 2>&1 && set "BARRA=1"
 call :PASO "!T_STEP_DOWNLOAD!"
 if not exist "7zr.exe" (
     echo   !T_DOWNLOAD_7Z!
     if exist "7zr.exe.part" del /Q "7zr.exe.part" >nul 2>&1
-    curl.exe --fail --location --retry 5 --retry-delay 2 --progress-bar -o "7zr.exe.part" "https://www.7-zip.org/a/7zr.exe"
+    call :DESCARGAR "https://www.7-zip.org/a/7zr.exe" "7zr.exe.part" "7zr.exe"
     if errorlevel 1 (del /Q "7zr.exe.part" >nul 2>&1&echo   [X] !T_DOWNLOAD_7Z_FAIL!&goto :fin)
-    call :BORRAR_BARRA
     move /Y "7zr.exe.part" "7zr.exe" >nul
 )
 "7zr.exe" i >nul 2>&1
@@ -105,9 +110,8 @@ if not exist "!PAQUETE!" (
     echo   !T_DOWNLOAD_COMFY!
     rem -C - reanuda un .part previo: un corte al 90%% no obliga a bajar 2 GB otra vez.
     rem Si el .part fuera de otra version, el SHA-256 lo detecta y se descarta.
-    curl.exe --fail --location --retry 5 --retry-delay 2 -C - --progress-bar -o "!PAQUETE!.part" "https://github.com/Comfy-Org/ComfyUI/releases/latest/download/!PAQUETE!"
+    call :DESCARGAR "https://github.com/Comfy-Org/ComfyUI/releases/latest/download/!PAQUETE!" "!PAQUETE!.part" "!PAQUETE!" reanudar
     if errorlevel 1 (echo   [X] !T_DOWNLOAD_COMFY_FAIL!&echo   !T_RESUME_HINT!&goto :fin)
-    call :BORRAR_BARRA
     move /Y "!PAQUETE!.part" "!PAQUETE!" >nul
     call :VERIFICAR_HASH "!PAQUETE!"
     if errorlevel 1 (echo   [X] !T_HASH_FAIL!&del /Q "!PAQUETE!" >nul 2>&1&goto :fin)
@@ -129,7 +133,11 @@ set "EXTRACT=%~dp0_cineconia_extract_!RANDOM!_!RANDOM!"
 if exist "!EXTRACT!" goto :fin
 mkdir "!EXTRACT!"
 if errorlevel 1 goto :fin
-"7zr.exe" x "!PAQUETE!" -o"!EXTRACT!" -y -bso0 -bsp1
+if "!BARRA!"=="1" (
+    powershell -NoProfile -ExecutionPolicy Bypass -File "!PS1!" -Modo extraer -SieteZip "!CIA_DIR!7zr.exe" -Archivo "!PAQUETE!" -Destino "!EXTRACT!"
+) else (
+    "7zr.exe" x "!PAQUETE!" -o"!EXTRACT!" -y -bso0 -bsp1
+)
 if errorlevel 1 (echo   [X] !T_EXTRACT_FAIL!&goto :fin)
 if not exist "!EXTRACT!\ComfyUI_windows_portable\python_embeded\python.exe" (echo   [X] !T_NO_EMBEDDED!&goto :fin)
 if exist "%DESTINO%" goto :fin
@@ -166,18 +174,45 @@ exit /b 0
 rem La barra de curl queda en la linea de arriba: se sube y se borra.
 <nul set /p "=!ESC![1A!ESC![2K"
 exit /b 0
+:DESCARGAR
+rem %1 URL, %2 archivo .part, %3 nombre que se muestra, %4 "reanudar" = -C -
+rem (un corte al 90%% no obliga a bajar todo otra vez).
+if "!BARRA!"=="1" (
+    if /I "%~4"=="reanudar" (
+        powershell -NoProfile -ExecutionPolicy Bypass -File "!PS1!" -Modo descargar -Url "%~1" -Salida "%~2" -Nombre "%~3" -Reanudar
+    ) else (
+        powershell -NoProfile -ExecutionPolicy Bypass -File "!PS1!" -Modo descargar -Url "%~1" -Salida "%~2" -Nombre "%~3"
+    )
+    exit /b !errorlevel!
+)
+set "REANUDAR="
+if /I "%~4"=="reanudar" set "REANUDAR=-C -"
+curl.exe --fail --location --retry 5 --retry-delay 2 !REANUDAR! --progress-bar -o "%~2" "%~1"
+set "DL_RC=!errorlevel!"
+if "!DL_RC!"=="0" call :BORRAR_BARRA
+exit /b !DL_RC!
 :VERIFICAR_HASH
 rem Sin tuberias: dentro de las comillas de -Command, "^|" llega literal a PowerShell y falla.
 set "DIGEST="
 for /f "delims=" %%H in ('powershell -NoProfile -Command "$ErrorActionPreference='Stop'; $r=Invoke-RestMethod -Headers @{'User-Agent'='CineConIA-Installer'} 'https://api.github.com/repos/Comfy-Org/ComfyUI/releases/latest'; foreach($a in $r.assets){if($a.name -eq '%~1' -and $a.digest){$a.digest}}" 2^>nul') do set "DIGEST=%%H"
 if not defined DIGEST (
     echo   [^^!] !T_NO_DIGEST!
-    "7zr.exe" t "%~1" -bso0 -bsp1
+    if "!BARRA!"=="1" (
+        powershell -NoProfile -ExecutionPolicy Bypass -File "!PS1!" -Modo probar -SieteZip "!CIA_DIR!7zr.exe" -Archivo "%~1"
+    ) else (
+        "7zr.exe" t "%~1" -bso0 -bsp1
+    )
     set "HASH_RC=!errorlevel!"
     set "VERIFY_DETAIL=7-Zip OK"
     exit /b !HASH_RC!
 )
 set "ESPERADO=!DIGEST:sha256:=!"
+if "!BARRA!"=="1" (
+    powershell -NoProfile -ExecutionPolicy Bypass -File "!PS1!" -Modo hash -Archivo "%~1" -Esperado "!ESPERADO!" -Nombre "%~nx1"
+    if errorlevel 1 exit /b 1
+    set "VERIFY_DETAIL=!T_STEP_VERIFIED!"
+    exit /b 0
+)
 set "REAL="
 for /f "delims=" %%H in ('powershell -NoProfile -Command "(Get-FileHash -Algorithm SHA256 -LiteralPath '%~1').Hash.ToLower()"') do set "REAL=%%H"
 if /I "!REAL!"=="!ESPERADO!" (set "VERIFY_DETAIL=!T_STEP_VERIFIED!"&exit /b 0)

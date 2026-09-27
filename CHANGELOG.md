@@ -2,14 +2,15 @@
 
 ## v2.7.0 — 2026-09-27
 
-- Migración de modelos con progreso visible. Antes, las fases 2 (verificar) y 3 (retirar originales) no mostraban nada mientras releían toda la biblioteca, y dentro de un modelo grande la fase 1 tampoco: no se sabía si avanzaba. Ahora cada fase muestra una barra en una línea con el porcentaje, los GB hechos del total, el tiempo que falta, la velocidad, qué se está haciendo (copiando, asegurando en disco, verificando, comprobando, retirando) y con qué archivo.
-- El porcentaje también va al título de la ventana y, en Windows Terminal, al anillo de progreso de la pestaña y del icono de la barra de tareas; se ve aunque la ventana esté minimizada.
-- La simulación ("Construyendo simulación...") también muestra su avance cuando tiene que comparar SHA-256 con modelos que ya están en el destino.
-- Cada fase cierra con su resumen ("Biblioteca verificada: 73 de 73 archivos · 71.8 GB en 5 min 12 s") y el resumen final agrega el tiempo total.
+- Una sola barra de progreso para toda la instalación. Antes cada etapa mostraba algo distinto: la barra de `#` de curl en la descarga, el porcentaje de 7-Zip en la extracción, un giro `| / - \` en pip y git, y nada en el SHA-256 del paquete ni en las fases 2 y 3 de la migración. Ahora todas usan la misma línea: barra ámbar, porcentaje, GB hechos del total, tiempo que falta, velocidad, qué se está haciendo y con qué archivo.
+- Descarga, SHA-256 y extracción (el `.bat`, antes de que exista el Python del portable) dibujan esa línea con `src/progreso.ps1`: curl sigue bajando con los mismos reintentos y reanudación, el SHA-256 se calcula por bloques y el porcentaje de 7-Zip se lee de su salida. Si las directivas del equipo no dejan correr el script, se usan curl y 7-Zip con su barra de siempre.
+- Lo que no tiene un total conocido (pip, git, la prueba de arranque de ComfyUI, probar aceleradores, detectar la GPU, buscar modelos) usa la misma línea en modo "en curso": un tramo ámbar va y viene, en lugar del porcentaje va el tiempo transcurrido y al final la última línea que escribió el programa (por ejemplo, qué paquete está bajando pip).
+- Migración de modelos: las tres fases y la simulación muestran la barra; cada fase cierra con su resumen ("Biblioteca verificada: 73 de 73 archivos · 71.8 GB en 5 min 12 s") y el resumen final agrega el tiempo total.
+- El porcentaje también va al título de la ventana y, en Windows Terminal, al anillo de progreso de la pestaña y del icono de la barra de tareas (en modo "en curso" gira sin porcentaje); se ve aunque la ventana esté minimizada.
 - La línea se adapta al ancho de la ventana: si no cabe, primero se quita la velocidad, luego los GB y al final se acorta el nombre del archivo por el medio, conservando el final (fp16, .safetensors). La barra no cambia de largo entre un dibujo y otro.
-- Sin cambios en la seguridad: se hacen las mismas lecturas y comprobaciones SHA-256 que en v2.5.0; la copia ahora va por bloques de 8 MB para poder informar el avance (copy2 de Python también copia por bloques en Windows) y conserva fechas y atributos igual que antes.
+- Sin cambios en la seguridad de la migración: se hacen las mismas lecturas y comprobaciones SHA-256 que en v2.5.0; la copia va por bloques de 8 MB para poder informar el avance (copy2 de Python también copia por bloques en Windows) y conserva fechas y atributos igual que antes.
 - Fuera de una consola (salida redirigida a un archivo) no se dibuja la barra, solo los resúmenes. `CINECONIA_PROGRESO=0` la desactiva.
-- 12 pruebas nuevas en `tests/test_progreso.py`: la línea nunca pasa del ancho de la ventana, se restaura la pestaña aunque se interrumpa con Ctrl+C, la copia informa cada byte y conserva la fecha, y un fallo en la verificación queda marcado sin borrar originales.
+- 21 pruebas nuevas en `tests/test_progreso.py`, entre ellas `progreso.ps1` con el PowerShell 5.1 de Windows en GitHub Actions (descarga desde un servidor local, SHA-256 bueno y malo, extracción y prueba con 7-Zip) y que el script siga en ASCII, como lo necesita PowerShell 5.1.
 
 ## v2.6.0 — 2026-09-27
 

@@ -382,7 +382,8 @@ sobrescribir archivos ni borrar originales antes de verificar.
    conflictos y elementos sin clasificar.
 9. Nada cambia hasta escribir exactamente **MIGRAR**.
 10. Mientras copia y verifica, una barra muestra el porcentaje, los GB hechos, el
-    tiempo que falta, qué está haciendo y con qué archivo. El porcentaje también
+    tiempo que falta, qué está haciendo y con qué archivo; es la misma barra de la
+    descarga, la extracción y el resto de la instalación. El porcentaje también
     se ve en la pestaña y en el icono de Windows Terminal en la barra de tareas.
     Cada fase cierra con su resumen y su tiempo.
 11. Al terminar puede actualizar extra_model_paths.yaml de los ComfyUI detectados.

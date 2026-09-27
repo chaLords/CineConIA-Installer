@@ -246,5 +246,17 @@
   "progress.title_plan": "Analizando modelos",
   "progress.title_copy": "Copiando modelos",
   "progress.title_verify": "Verificando biblioteca",
-  "progress.title_delete": "Retirando originales"
+  "progress.title_delete": "Retirando originales",
+  "progress.testing": "probando {name}",
+  "progress.pip_check": "revisando dependencias con pip check",
+  "progress.searching": "buscando carpetas de modelos",
+  "progress.measuring": "midiendo las bibliotecas encontradas",
+  "progress.detecting": "detectando GPU, driver y PyTorch",
+  "progress.torch_check": "comprobando que PyTorch y la GPU sigan cargando",
+  "progress.downloading": "descargando",
+  "progress.extracting": "extrayendo",
+  "progress.download_done": "Descarga lista: {name} · {size} en {time}",
+  "progress.hash_done": "SHA-256 verificado: {size} en {time}",
+  "progress.extract_done": "Extracción lista: {files} archivos · {size} en {time}",
+  "progress.test_done": "Paquete íntegro según 7-Zip: {files} archivos · {size} en {time}"
 }

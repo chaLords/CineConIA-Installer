@@ -1,15 +1,16 @@
 """Pasos numerados de la instalacion y el resumen final.
 
 Cada paso abre con "[n/T] titulo" y cierra con una linea propia: visto verde,
-guion gris (omitido) o cruz roja. Los comandos largos (pip, git) corren con un
-indicador que se borra al terminar y su salida va a _cineconia/instalacion.log,
-asi no quedan en pantalla barras de otros programas congeladas a la mitad.
+guion gris (omitido) o cruz roja. Los comandos largos (pip, git) corren con la
+barra de progreso.py en modo "en curso" (la misma de la descarga y la migracion),
+que se borra al terminar; su salida va a _cineconia/instalacion.log, asi no
+quedan en pantalla barras de otros programas congeladas a la mitad.
 
 Los pasos del .bat (equipo, descarga, extraccion) llegan por variables de
 entorno CIA_PASOS_BAT y CIA_PASO1..n ("titulo|detalle") y entran al resumen.
 """
 from __future__ import annotations
-import os, subprocess, sys, time
+import os, subprocess, time
 import i18n
 
 A, G, R, V, X = "\033[38;5;179m", "\033[38;5;245m", "\033[38;5;203m", "\033[38;5;71m", "\033[0m"
@@ -17,7 +18,6 @@ A, G, R, V, X = "\033[38;5;179m", "\033[38;5;245m", "\033[38;5;203m", "\033[38;5
 _WT = bool(os.environ.get("WT_SESSION"))
 MARCAS = {"ok": ("\u2713" if _WT else "OK", V), "omitido": ("\u2013" if _WT else "-", G),
           "fallo": ("\u2717" if _WT else "X", R)}
-GIRO = "|/-\\"
 ANCHO = 40
 _log = {"ruta": None}
 
@@ -64,24 +64,24 @@ def correr(cmd, etiqueta, entorno=None, cwd=None, timeout=None, completo=False):
     except OSError as e:
         return False, [str(e)]
     import threading
+    import progreso  # aqui: progreso importa este modulo
     hilo = threading.Thread(target=lambda: salida.extend(p.stdout), daemon=True)
     hilo.start()
-    t0, i = time.time(), 0
-    while p.poll() is None:
-        if timeout is not None and time.time()-t0>timeout:
-            p.kill()
-            p.wait()
-            salida.append("\nTIMEOUT: " + etiqueta + "\n")
-            break
-        seg = int(time.time() - t0)
-        sys.stdout.write(f"\r   {A}{GIRO[i % 4]}{X} {etiqueta}  {G}{seg // 60}:{seg % 60:02d}{X}   ")
-        sys.stdout.flush()
-        time.sleep(0.2)
-        i += 1
+    t0 = time.time()
+    # La misma barra que la migracion y la descarga, en modo "sin total":
+    # tiempo transcurrido, que se ejecuta y la ultima linea que escribio.
+    with progreso.Actividad(etiqueta) as barra:
+        while p.poll() is None:
+            if timeout is not None and time.time()-t0>timeout:
+                p.kill()
+                p.wait()
+                salida.append("\nTIMEOUT: " + etiqueta + "\n")
+                break
+            barra.detalle(next((l for l in reversed(salida[-20:]) if l.strip()), ""))
+            barra.dibujar()
+            time.sleep(0.2)
     hilo.join(timeout=5)
     p.stdout.close()
-    sys.stdout.write("\r\033[2K")
-    sys.stdout.flush()
     texto = "".join(salida)
     if _log["ruta"]:
         try:
