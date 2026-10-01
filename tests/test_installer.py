@@ -69,7 +69,8 @@ class InstallerTests(Isolated):
         node=self.node(False)
         (node/"user-file.txt").write_text("keep me")
         def clone(cmd,*args,**kwargs):
-            Path(cmd[-1],"__init__.py").write_text("NODE_CLASS_MAPPINGS = {}")
+            if cmd[1]=="clone":
+                Path(cmd[-1],"__init__.py").write_text("NODE_CLASS_MAPPINGS = {}")
             return True,[]
         with patch.object(ins.preflight,"git_exe",return_value="git"),patch.object(ins.pasos,"correr",side_effect=clone),patch.object(ins,"proteger_torch",return_value=True):
             self.assertTrue(ins.clonar_nodo(str(self.root),"python","cineconia"))

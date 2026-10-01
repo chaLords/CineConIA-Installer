@@ -4,6 +4,28 @@ import os
 import re
 import i18n
 import pasos
+import subprocess
+
+
+def comprobar_gpu(py, fabricante):
+    """Run an actual GPU kernel: availability alone does not prove wheel support."""
+    backend = 'xpu' if fabricante == 'intel' else 'cuda'
+    code = f'''
+import json, torch
+device = {backend!r}
+assert getattr(torch, device).is_available(), 'GPU unavailable'
+x = torch.ones((32, 32), device=device, dtype=torch.float16)
+y = x @ x
+getattr(torch, device).synchronize()
+assert float(y[0, 0].cpu()) == 32.0, 'GPU result invalid'
+print(json.dumps({{'backend': device, 'fp16_matmul': True, 'torch': torch.__version__}}))
+'''
+    try:
+        result = subprocess.run([py, '-s', '-c', code], capture_output=True,
+                                text=True, encoding='utf-8', errors='replace', timeout=90)
+        return result.returncode == 0, (result.stdout + result.stderr).strip()
+    except (OSError, subprocess.SubprocessError) as e:
+        return False, str(e)
 
 
 def analizar(salida, carpetas):

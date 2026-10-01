@@ -1,0 +1,50 @@
+[
+  {
+    "min_vram_gb": 0,
+    "name": "<8 GB",
+    "recommendation_es": "Modelos cuantizados, lotes de uno y resolucion moderada.",
+    "recommendation_en": "Quantized models, batch size one and moderate resolution."
+  },
+  {
+    "min_vram_gb": 8,
+    "name": "8 GB",
+    "recommendation_es": "Modelos cuantizados, lotes de uno y resolucion moderada.",
+    "recommendation_en": "Quantized models, batch size one and moderate resolution."
+  },
+  {
+    "min_vram_gb": 12,
+    "name": "12 GB",
+    "recommendation_es": "Modelos cuantizados, lotes de uno y resolucion moderada.",
+    "recommendation_en": "Quantized models, batch size one and moderate resolution."
+  },
+  {
+    "min_vram_gb": 16,
+    "name": "16 GB",
+    "recommendation_es": "Ajusta modelo, resolucion y offload segun el workflow; la VRAM no garantiza que cualquier modelo quepa.",
+    "recommendation_en": "Choose model, resolution and offload for your workflow; VRAM alone does not guarantee a model fits."
+  },
+  {
+    "min_vram_gb": 24,
+    "name": "24 GB",
+    "recommendation_es": "Ajusta modelo, resolucion y offload segun el workflow; la VRAM no garantiza que cualquier modelo quepa.",
+    "recommendation_en": "Choose model, resolution and offload for your workflow; VRAM alone does not guarantee a model fits."
+  },
+  {
+    "min_vram_gb": 32,
+    "name": "32 GB",
+    "recommendation_es": "Ajusta modelo, resolucion y offload segun el workflow; la VRAM no garantiza que cualquier modelo quepa.",
+    "recommendation_en": "Choose model, resolution and offload for your workflow; VRAM alone does not guarantee a model fits."
+  },
+  {
+    "min_vram_gb": 48,
+    "name": "48 GB",
+    "recommendation_es": "Ajusta modelo, resolucion y offload segun el workflow; la VRAM no garantiza que cualquier modelo quepa.",
+    "recommendation_en": "Choose model, resolution and offload for your workflow; VRAM alone does not guarantee a model fits."
+  },
+  {
+    "min_vram_gb": 64,
+    "name": "64 GB+",
+    "recommendation_es": "Ajusta modelo, resolucion y offload segun el workflow; la VRAM no garantiza que cualquier modelo quepa.",
+    "recommendation_en": "Choose model, resolution and offload for your workflow; VRAM alone does not guarantee a model fits."
+  }
+]

@@ -11,6 +11,7 @@ entorno CIA_PASOS_BAT y CIA_PASO1..n ("titulo|detalle") y entran al resumen.
 """
 from __future__ import annotations
 import os, subprocess, time
+from datetime import datetime
 import i18n
 
 A, G, R, V, X = "\033[38;5;179m", "\033[38;5;245m", "\033[38;5;203m", "\033[38;5;71m", "\033[0m"
@@ -27,7 +28,7 @@ def usar_log(destino):
     carpeta = os.path.join(destino, "_cineconia")
     try:
         os.makedirs(carpeta, exist_ok=True)
-        _log["ruta"] = os.path.join(carpeta, "instalacion.log")
+        _log["ruta"] = os.path.join(carpeta, datetime.now().strftime("instalacion-%Y%m%d-%H%M%S-%f.log"))
     except OSError:
         _log["ruta"] = None
     return _log["ruta"]

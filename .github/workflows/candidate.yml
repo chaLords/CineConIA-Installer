@@ -1,0 +1,34 @@
+name: ZIP de prueba V2
+on:
+  push:
+    branches: ['feature/instalador-v2-seguro']
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  package:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.13'
+      - name: Probar antes de empaquetar
+        run: python -B -m unittest discover -s tests -v
+      - name: Crear ZIP de esta rama sin publicar una release
+        shell: pwsh
+        run: |
+          git archive --format=zip -o CineConIA-Installer-V2-rc.zip HEAD
+          if ($LASTEXITCODE -ne 0) { throw 'git archive failed' }
+          Add-Type -AssemblyName System.IO.Compression.FileSystem
+          $zip=[IO.Compression.ZipFile]::OpenRead((Join-Path $pwd 'CineConIA-Installer-V2-rc.zip'))
+          try {
+            foreach($name in @('ComfyUI-Setup.bat','ComfyUI-Advanced-Setup.bat','src/bootstrap.ps1','src/configuracion.py','config/compatibility_matrix.json','config/recommended_nodes.json','config/hardware_profiles.json')) {
+              if(-not $zip.GetEntry($name)) { throw "Missing $name" }
+            }
+          } finally { $zip.Dispose() }
+      - uses: actions/upload-artifact@v4
+        with:
+          name: CineConIA-Installer-V2-rc
+          path: CineConIA-Installer-V2-rc.zip
+          retention-days: 14

@@ -1,0 +1,184 @@
+{
+  "manager": {
+    "repo": "https://github.com/Comfy-Org/ComfyUI-Manager.git",
+    "carpetas": [
+      "comfyui-manager",
+      "ComfyUI-Manager"
+    ],
+    "pregunta": "installer.install_manager",
+    "detalle": "installer.manager_desc",
+    "version": "6db282e2488cfb0833fbf38d74baffcd716ce8f6",
+    "recommended": true,
+    "required": true,
+    "validation": "startup_verified_nvidia_v0.38.0"
+  },
+  "cineconia": {
+    "repo": "https://github.com/chaLords/ComfyUI-Cine-con-IA.git",
+    "carpetas": [
+      "ComfyUI-Cine-con-IA",
+      "ComfyUI-CineConIA",
+      "cine-con-ia"
+    ],
+    "pregunta": "installer.install_nodes",
+    "detalle": null,
+    "version": "0610ff48bfb88beab0eff528dc5f73df8d32dc1a",
+    "recommended": true,
+    "required": true,
+    "validation": "startup_verified_nvidia_v0.38.0"
+  },
+  "monitor": {
+    "repo": "https://github.com/crystian/ComfyUI-Crystools.git",
+    "carpetas": [
+      "ComfyUI-Crystools",
+      "comfyui-crystools"
+    ],
+    "pregunta": "installer.install_monitor",
+    "detalle": "installer.monitor_desc",
+    "sobrante": "pynvml",
+    "version": "2f18256c5b5063937106f29a8e0a7db3ae3869b7",
+    "recommended": false,
+    "required": false,
+    "validation": "candidate"
+  },
+  "kjnodes": {
+    "repo": "https://github.com/kijai/ComfyUI-KJNodes.git",
+    "carpetas": [
+      "comfyui-kjnodes",
+      "ComfyUI-KJNodes"
+    ],
+    "grupo": "video",
+    "version": "d3cfe21625e5170126ce06fbfcfe1d88108688c3",
+    "recommended": false,
+    "required": false,
+    "validation": "candidate"
+  },
+  "vhs": {
+    "repo": "https://github.com/Kosinkadink/ComfyUI-VideoHelperSuite.git",
+    "carpetas": [
+      "comfyui-videohelpersuite",
+      "ComfyUI-VideoHelperSuite"
+    ],
+    "grupo": "video",
+    "version": "4d907bee61e92c2e65af3bd6383a4e4d356126d1",
+    "recommended": true,
+    "required": true,
+    "validation": "startup_verified_nvidia_v0.38.0"
+  },
+  "gguf": {
+    "repo": "https://github.com/city96/ComfyUI-GGUF.git",
+    "carpetas": [
+      "ComfyUI-GGUF",
+      "comfyui-gguf"
+    ],
+    "grupo": "video",
+    "version": "6ea2651e7df66d7585f6ffee804b20e92fb38b8a",
+    "recommended": false,
+    "required": false,
+    "validation": "candidate"
+  },
+  "selflift": {
+    "repo": "https://github.com/facok/comfyui-SelfLift.git",
+    "carpetas": [
+      "comfyui-SelfLift",
+      "comfyui-selflift"
+    ],
+    "grupo": "video",
+    "version": "835c3cf7919410f71f414688f049c6ca497789d0",
+    "recommended": false,
+    "required": false,
+    "validation": "candidate"
+  },
+  "h3upscaler": {
+    "repo": "https://github.com/LBH-123-AI/Comfyui_Minimax_h3_latent_Upscaler.git",
+    "carpetas": [
+      "Comfyui_Minimax_h3_latent_Upscaler",
+      "comfyui_minimax_h3_latent_upscaler"
+    ],
+    "grupo": "video",
+    "version": "40316cf008b2fd8663263270669eb4da23f89d2c",
+    "recommended": false,
+    "required": false,
+    "validation": "candidate"
+  },
+  "rgthree": {
+    "repo": "https://github.com/rgthree/rgthree-comfy.git",
+    "carpetas": [
+      "rgthree-comfy"
+    ],
+    "grupo": "interfaz",
+    "version": "449c58fcdd612f7733e54c51f6758ead63fa180b",
+    "recommended": false,
+    "required": false,
+    "validation": "candidate"
+  },
+  "customscripts": {
+    "repo": "https://github.com/pythongosssss/ComfyUI-Custom-Scripts.git",
+    "carpetas": [
+      "comfyui-custom-scripts",
+      "ComfyUI-Custom-Scripts"
+    ],
+    "grupo": "interfaz",
+    "version": "609f3afaa74b2f88ef9ce8d939626065e3247469",
+    "recommended": false,
+    "required": false,
+    "validation": "candidate"
+  },
+  "essentials": {
+    "repo": "https://github.com/cubiq/ComfyUI_essentials.git",
+    "carpetas": [
+      "comfyui_essentials",
+      "ComfyUI_essentials"
+    ],
+    "grupo": "comunidad",
+    "version": "9d9f4bedfc9f0321c19faf71855e228c93bd0dc9",
+    "recommended": false,
+    "required": false,
+    "validation": "candidate"
+  },
+  "comfyroll": {
+    "repo": "https://github.com/Suzie1/ComfyUI_Comfyroll_CustomNodes.git",
+    "carpetas": [
+      "ComfyUI_Comfyroll_CustomNodes",
+      "comfyroll"
+    ],
+    "grupo": "comunidad",
+    "version": "d78b780ae43fcf8c6b7c6505e6ffb4584281ceca",
+    "recommended": false,
+    "required": false,
+    "validation": "candidate"
+  },
+  "was": {
+    "repo": "https://github.com/ltdrdata/was-node-suite-comfyui.git",
+    "carpetas": [
+      "was-ns",
+      "was-node-suite-comfyui"
+    ],
+    "grupo": "comunidad",
+    "version": "44de705818d4663fefefde57ffe0ea5a9ea39df4",
+    "recommended": false,
+    "required": false,
+    "validation": "candidate"
+  },
+  "controlnet_aux": {
+    "repo": "https://github.com/Fannovel16/comfyui_controlnet_aux.git",
+    "carpetas": [
+      "comfyui_controlnet_aux"
+    ],
+    "grupo": "comunidad",
+    "version": "0cd290477128d42cdc3e76a826a402d866e8c684",
+    "recommended": false,
+    "required": false,
+    "validation": "candidate"
+  },
+  "nunchaku": {
+    "repo": "https://github.com/nunchux-ai/ComfyUI-nunchaku.git",
+    "carpetas": [
+      "ComfyUI-nunchaku",
+      "comfyui-nunchaku"
+    ],
+    "version": "b600f879a777fdef1466c362e850f7e8c31bf89a",
+    "recommended": false,
+    "required": false,
+    "validation": "candidate"
+  }
+}

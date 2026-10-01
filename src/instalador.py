@@ -2,64 +2,11 @@
 from __future__ import annotations
 import os, re, shutil, subprocess, sys, tempfile
 sys.path.insert(0,os.path.dirname(os.path.abspath(__file__)))
+import json, configuracion
 import ajustes_interfaz, catalogo, deteccion, entorno_torch, i18n, lanzadores, modelos_enlace, pasos, preflight, progreso, rutas_largas, verificacion
 
-# Nodos opcionales. "carpetas": nombres con que puede estar ya instalado;
-# el primero es el que se usa al clonar.
-NODOS={
-    # Manager clasico como nodo: boton "Manager" en la barra, el de casi todos los
-    # tutoriales. Su documentacion exige la carpeta custom_nodes/comfyui-manager.
-    "manager":{"repo":"https://github.com/Comfy-Org/ComfyUI-Manager.git",
-               "carpetas":["comfyui-manager","ComfyUI-Manager"],
-               "pregunta":"installer.install_manager","detalle":"installer.manager_desc"},
-    "cineconia":{"repo":"https://github.com/chaLords/ComfyUI-Cine-con-IA.git",
-                 "carpetas":["ComfyUI-Cine-con-IA","ComfyUI-CineConIA","cine-con-ia"],
-                 "pregunta":"installer.install_nodes","detalle":None},
-    # Monitor de CPU, RAM, GPU, VRAM y temperatura en la barra superior.
-    "monitor":{"repo":"https://github.com/crystian/ComfyUI-Crystools.git",
-               "carpetas":["ComfyUI-Crystools","comfyui-crystools"],
-               "pregunta":"installer.install_monitor","detalle":"installer.monitor_desc",
-               # Su requirements pide "pynvml", hoy un envoltorio que solo avisa de que esta
-               # obsoleto en cada arranque; el modulo real lo trae nvidia-ml-py.
-               "sobrante":"pynvml"},
-    # Grupo "video": lo que usan los workflows de MiniMax H3 y LTX. Una sola pregunta.
-    "kjnodes":{"repo":"https://github.com/kijai/ComfyUI-KJNodes.git",
-               "carpetas":["comfyui-kjnodes","ComfyUI-KJNodes"],"grupo":"video"},
-    "vhs":{"repo":"https://github.com/Kosinkadink/ComfyUI-VideoHelperSuite.git",
-           "carpetas":["comfyui-videohelpersuite","ComfyUI-VideoHelperSuite"],"grupo":"video"},
-    # Modelos GGUF: la forma de ahorrar VRAM en video (Nunchaku solo cubre imagen).
-    "gguf":{"repo":"https://github.com/city96/ComfyUI-GGUF.git",
-            "carpetas":["ComfyUI-GGUF","comfyui-gguf"],"grupo":"video"},
-    "selflift":{"repo":"https://github.com/facok/comfyui-SelfLift.git",
-                "carpetas":["comfyui-SelfLift","comfyui-selflift"],"grupo":"video"},
-    # Escalador latente 3D de H3: sin el, "Escalar y refinar" de Cine con IA no
-    # puede subir la resolucion del segundo pase.
-    "h3upscaler":{"repo":"https://github.com/LBH-123-AI/Comfyui_Minimax_h3_latent_Upscaler.git",
-                  "carpetas":["Comfyui_Minimax_h3_latent_Upscaler","comfyui_minimax_h3_latent_upscaler"],
-                  "grupo":"video"},
-    # Grupo "interfaz": ayudas de pantalla, sin dependencias de Python.
-    # rgthree-comfy dibuja la barra de progreso verde de arriba (cola, porcentaje
-    # y nodo que corre) y trae nodos muy usados (Fast Groups Bypasser, Power Lora
-    # Loader...). Custom-Scripts agrega Image Feed y el autocompletado.
-    "rgthree":{"repo":"https://github.com/rgthree/rgthree-comfy.git",
-               "carpetas":["rgthree-comfy"],"grupo":"interfaz"},
-    "customscripts":{"repo":"https://github.com/pythongosssss/ComfyUI-Custom-Scripts.git",
-                     "carpetas":["comfyui-custom-scripts","ComfyUI-Custom-Scripts"],"grupo":"interfaz"},
-    # Grupo "comunidad": lo que piden muchos workflows compartidos. Traen
-    # dependencias pesadas, por eso la respuesta por defecto es No. ControlNet
-    # aux va al final: su onnxruntime-gpu queda encima si otro trajo el de CPU.
-    "essentials":{"repo":"https://github.com/cubiq/ComfyUI_essentials.git",
-                  "carpetas":["comfyui_essentials","ComfyUI_essentials"],"grupo":"comunidad"},
-    "comfyroll":{"repo":"https://github.com/Suzie1/ComfyUI_Comfyroll_CustomNodes.git",
-                 "carpetas":["ComfyUI_Comfyroll_CustomNodes","comfyroll"],"grupo":"comunidad"},
-    "was":{"repo":"https://github.com/ltdrdata/was-node-suite-comfyui.git",
-           "carpetas":["was-ns","was-node-suite-comfyui"],"grupo":"comunidad"},
-    "controlnet_aux":{"repo":"https://github.com/Fannovel16/comfyui_controlnet_aux.git",
-                      "carpetas":["comfyui_controlnet_aux"],"grupo":"comunidad"},
-    # Nodos de Nunchaku: sin ellos la wheel no aporta nada. Van con el perfil Nunchaku.
-    "nunchaku":{"repo":"https://github.com/nunchux-ai/ComfyUI-nunchaku.git",
-                "carpetas":["ComfyUI-nunchaku","comfyui-nunchaku"]},
-}
+# Sources, revisions and recommended components are policy, not code.
+NODOS=configuracion.nodos()
 # Respuesta por defecto de cada grupo (1 = Si, 2 = No).
 DEFECTO_GRUPO={"video":1,"interfaz":1,"comunidad":2}
 A,G,R,X="\033[38;5;179m","\033[38;5;245m","\033[38;5;203m","\033[0m"
@@ -108,6 +55,12 @@ def mostrar_equipo(inf):
     print(f"   Backend      {inf['backend']}")
     print(f"   PyTorch      {inf['torch'].get('torch') or t('common.unavailable')}")
     print(f"   Python       {inf['python']}")
+    profile=configuracion.perfil_vram(inf.get('vram_gb'))
+    if profile:
+        print(f"   {t('setup.profile')}: {profile['name']}")
+        print('   '+profile['recommendation_'+i18n.get_language()])
+    if inf['torch'].get('bf16') is not None:
+        print(f"   BF16         {inf['torch']['bf16']}")
     print(f"   {t('installer.free_space'):<12} {t('installer.free_space_value',value=inf['espacio_gb'])}")
 
 def preflight_usuario(destino):
@@ -119,22 +72,23 @@ def preflight_usuario(destino):
     if preflight.vcredist_instalado() is False:
         titulo("Microsoft Visual C++")
         print("   "+t("installer.vcredist_missing"))
-        if preflight.winget_exe() and preguntar(t("installer.install_vcredist"),SI_NO(),1)==1:
+        if preflight.winget_exe() and (configuracion.recomendado() or preguntar(t("installer.install_vcredist"),SI_NO(),1)==1):
             ok,msg=preflight.instalar_vcredist()
             print(f"   {A if ok else R}{msg}{X}")
         else:
             print("   https://aka.ms/vc14/vc_redist.x64.exe")
+        if preflight.vcredist_instalado() is False:
+            return False
     aviso=rutas_largas.aviso()
     if aviso:
         titulo(t("installer.long_paths"))
         print("   "+aviso)
-    if not preflight.git_exe():
-        titulo("Git")
-        print("   "+t("installer.git_required"))
-        opciones=[(t("common.yes"),None),(t("common.no"),t("installer.nodes_will_be_skipped"))]
-        if preflight.winget_exe() and preguntar(t("installer.install_git"),opciones,1)==1:
-            ok,msg=preflight.instalar_git()
-            print(f"   {A if ok else R}{msg}{X}")
+    try:
+        configuracion.preparar_git(destino)
+    except (OSError, RuntimeError, ValueError, subprocess.SubprocessError) as e:
+        print(f"   {R}{e}{X}")
+        pasos.registrar("GIT_PREPARATION_FAILED",str(e))
+        return False
     return True
 
 def gpu_utilizable(inf):
@@ -149,7 +103,7 @@ def gpu_utilizable(inf):
         print("   https://www.nvidia.com/drivers")
     elif inf["fabricante"]=="amd":
         print("   https://www.amd.com/support")
-    return preguntar(t("installer.continue_anyway"),[(t("common.no"),None),(t("common.yes"),None)],1)==2
+    return False  # A GPU installer must never call an unusable backend ready.
 
 def elegir_perfiles(vram):
     claves=list(catalogo.PERFILES)
@@ -351,6 +305,13 @@ def _preparar_nodo(destino,py,clave,torch_base=None):
             for linea in cola[-3:]:
                 print(f"      {G}{linea[:110]}{X}")
             return False
+        revision=nodo["version"]
+        ok,cola=pasos.correr([git,"-C",temporal,"fetch","--depth","1","origin",revision],f"git fetch {clave}")
+        if ok:
+            ok,cola=pasos.correr([git,"-C",temporal,"checkout","--detach",revision],f"git checkout {clave}")
+        if not ok or not os.path.isfile(os.path.join(temporal,"__init__.py")):
+            pasos.registrar("NODE_REVISION_FAILED "+clave,"\n".join(cola))
+            return False
         if os.path.exists(ruta):
             respaldo=temporal+"-anterior"
             os.rename(ruta,respaldo)
@@ -377,9 +338,11 @@ def instalar_nodo(destino,py,clave,torch_base=None):
     ESTADOS_NODOS[clave]="omitido"
     if not preflight.git_exe():
         return False
+    if configuracion.recomendado() and not nodo.get("recommended"):
+        return False
     if nodo.get("detalle"):
         print("\n   "+t(nodo["detalle"]))
-    if preguntar(t(nodo["pregunta"]),SI_NO(),1)!=1:
+    if not configuracion.recomendado() and preguntar(t(nodo["pregunta"]),SI_NO(),1)!=1:
         return False
     return clonar_nodo(destino,py,clave,torch_base)
 
@@ -388,15 +351,16 @@ def instalar_grupo(destino,py,grupo,torch_base=None):
 
     Devuelve (instalados, aceptado). aceptado es None si no hubo que preguntar
     (ya estaba todo o no hay Git)."""
-    claves=[c for c,n in NODOS.items() if n.get("grupo")==grupo]
+    claves=[c for c,n in NODOS.items() if n.get("grupo")==grupo and (not configuracion.recomendado() or n.get("recommended"))]
     existentes=[c for c in claves if ruta_nodo(destino,c)]
     for clave in existentes:
         clonar_nodo(destino,py,clave,torch_base)
     faltan=[c for c in claves if c not in existentes]
     aceptado=None
     if faltan and preflight.git_exe():
-        print("\n   "+t(f"installer.{grupo}_nodes_desc"))
-        aceptado=preguntar(t(f"installer.install_{grupo}_nodes"),SI_NO(),DEFECTO_GRUPO.get(grupo,1))==1
+        if not configuracion.recomendado():
+            print("\n   "+t(f"installer.{grupo}_nodes_desc"))
+        aceptado=configuracion.recomendado() or preguntar(t(f"installer.install_{grupo}_nodes"),SI_NO(),DEFECTO_GRUPO.get(grupo,1))==1
         if aceptado:
             for clave in faltan:
                 clonar_nodo(destino,py,clave,torch_base)
@@ -406,9 +370,9 @@ def paso_grupo(P,destino,py,grupo,torch_base=None):
     """Un paso por grupo: listo si esta todo, fallo solo si se pidio y algo no
     quedo, omitido si se dijo que no (aunque ya hubiera alguno de antes)."""
     instalados,aceptado=instalar_grupo(destino,py,grupo,torch_base)
-    total=len([c for c,n in NODOS.items() if n.get("grupo")==grupo])
+    total=len([c for c,n in NODOS.items() if n.get("grupo")==grupo and (not configuracion.recomendado() or n.get("recommended"))])
     fallo=any(ESTADOS_NODOS.get(c)=="fallo" for c,n in NODOS.items() if n.get("grupo")==grupo)
-    estado="fallo" if fallo else ("ok" if len(instalados)==total else ("fallo" if aceptado else "omitido"))
+    estado="fallo" if fallo else ("ok" if total and len(instalados)==total else ("fallo" if aceptado else "omitido"))
     P.cerrar(estado,t("installer.n_of_m",n=len(instalados),m=total))
     return instalados
 
@@ -456,6 +420,8 @@ def preparar_nunchaku(destino,py,inf):
 
 def ofrecer_enlace_modelos(destino):
     """Busca modelos de instalaciones anteriores y solo pregunta si encuentra algo."""
+    if os.environ.get('CIA_SKIP_MODELS')=='1':
+        return None
     destino_comfy=os.path.join(destino,"ComfyUI")
     real=lambda p:os.path.normcase(os.path.realpath(p))
     propia=real(os.path.join(destino_comfy,"models"))
@@ -465,6 +431,14 @@ def ofrecer_enlace_modelos(destino):
             print(f"   {A}{t('installer.library_offline',path=ruta)}{X}")
     with progreso.Actividad(t("progress.searching"),hilo=True):
         encontradas=[p for p in modelos_enlace.detectar_instalaciones() if real(p)!=propia]
+    if not configuracion.recomendado():
+        import migrar_modelos
+        if preguntar(t('setup.manual_models'),SI_NO(),2)==1:
+            manual=migrar_modelos.seleccionar_carpeta(t('installer.which_models'))
+            if manual:
+                manual=migrar_modelos.normalizar_origen(manual)
+                if manual and real(manual)!=propia and real(manual) not in {real(p) for p in encontradas}:
+                    encontradas.append(manual)
     # La biblioteca central que dejo el migrador va primero: es la que deben
     # compartir todas las instalaciones futuras.
     central=modelos_enlace.es_central
@@ -498,14 +472,22 @@ def ofrecer_enlace_modelos(destino):
             return "error"
         return "migrated"
     models=con_tamano[0][0]
+    bibliotecas=None
     if len(con_tamano)>1:
-        eleccion=preguntar(t("installer.which_models"),[(etiqueta(p,gb),None) for p,gb in con_tamano],1)
-        models=con_tamano[eleccion-1][0]
+        if configuracion.recomendado():
+            eleccion=preguntar(t("installer.which_models"),[(etiqueta(p,gb),None) for p,gb in con_tamano],1)
+            models=con_tamano[eleccion-1][0]
+        else:
+            seleccion=marcar(t('setup.multiple_models'),[(etiqueta(p,gb),None) for p,gb in con_tamano])
+            if not seleccion:
+                return None
+            bibliotecas=[con_tamano[i-1][0] for i in seleccion]
+            models=bibliotecas[0]
     try:
         if central(models):
             modelos_enlace.registrar_biblioteca(models)
-        _,backup=modelos_enlace.actualizar_yaml(destino_comfy,models,modelos_enlace.mapa_categorias(models))
-    except OSError as e:
+        _,backup=modelos_enlace.actualizar_yaml(destino_comfy,models,modelos_enlace.mapa_categorias(models),bibliotecas=bibliotecas)
+    except (OSError,ValueError) as e:
         print(f"   {R}{t('installer.no_changes',error=e)}{X}")
         return "error"
     print(f"   {A}{t('installer.models_linked')}{X}")
@@ -545,15 +527,23 @@ def main():
     fabricante=sys.argv[2] if len(sys.argv)>2 else None
     variante=sys.argv[3] if len(sys.argv)>3 else None
     py=os.path.join(destino,"python_embeded","python.exe")
+    if not configuracion.autorizar(destino):
+        return 2
     pasos.usar_log(destino)
+    if os.environ.get('CIA_OPERATION')=='maintenance':
+        entorno_torch.guardar_estado(destino,py)
+    configuracion.guardar_estado(destino,status="configuring")
     P=pasos.Pasos([t(k) for k in TITULOS])
     if not preflight_usuario(destino):
+        configuracion.guardar_estado(destino,status="needs_attention",error="DEPENDENCY_PREFLIGHT_FAILED")
         return 1
     git_en_path()
 
     P.empezar(t("installer.step_environment"))
     inf=detectar_equipo(py,destino,fabricante,variante)
     mostrar_equipo(inf)
+    configuracion.validar_entorno(destino,inf)
+    configuracion.guardar_estado(destino,environment=inf)
     if not inf["torch"].get("torch"):
         print(f"\n   {R}{t('installer.pytorch_broken')}{X}")
         P.cerrar("fallo","PyTorch")
@@ -566,12 +556,12 @@ def main():
     P.cerrar("ok",f"{inf['gpu']} · {inf['backend']}")
 
     P.empezar(t("installer.step_accelerators"))
-    perfiles=["sage"] if inf["fabricante"]=="nvidia" and not inf.get("gpu_inutilizable") else []
+    perfiles=[]  # The recommended baseline uses the official PyTorch attention backend.
     opciones=[
         (t("installer.auto"),t("installer.auto_desc")),
         (t("installer.advanced"),t("installer.advanced_desc")),
     ]
-    if preguntar(t("installer.continue"),opciones,1)==2:
+    if not configuracion.recomendado():
         perfiles=elegir_perfiles(inf.get("vram_gb"))
     herramientas=catalogo.herramientas_de(perfiles)
     if "nunchaku" in herramientas and preparar_nunchaku(destino,py,inf):
@@ -620,10 +610,17 @@ def main():
             print(f"   {A if ok else R}{msg}{X}")
     verificados,fallos=verificar(list(catalogo.HERRAMIENTAS),py,solo_presentes=True)
     carpetas=[os.path.basename(ruta_nodo(destino,c)) for c in NODOS if ruta_nodo(destino,c)]
+    if configuracion.recomendado():
+        for clave,nodo in NODOS.items():
+            if nodo.get("required") and ESTADOS_NODOS.get(clave)!="ok":
+                ESTADOS_NODOS[clave]="fallo"
+                carpetas.append(nodo["carpetas"][0])
+    gpu_ok,gpu_detalle=verificacion.comprobar_gpu(py,inf["fabricante"])
+    pasos.registrar("GPU_OPERATION",gpu_detalle)
     arranque_ok,detalle=verificacion.comprobar(destino,py,carpetas,manager,RESTRICCIONES_TORCH)
     proteger_torch(py,torch_base)
     problemas=conflictos_pip(py)
-    P.cerrar("ok" if arranque_ok and not fallos and not problemas else "fallo",detalle)
+    P.cerrar("ok" if arranque_ok and gpu_ok and not fallos and not problemas else "fallo",detalle)
 
     P.empezar(t("installer.step_models"))
     modelos=ofrecer_enlace_modelos(destino)
@@ -633,9 +630,12 @@ def main():
     creados,preferido=lanzadores.crear_lanzadores(destino,inf,verificados,manager)
     for _,ruta in creados.items():
         print(f"   {pasos.V}{pasos.MARCAS['ok'][0]}{X} {os.path.basename(ruta)}")
-    ok,detalle=lanzadores.crear_acceso_escritorio(destino,preferido)
+    if os.environ.get("CIA_NO_SHORTCUT")=="1":
+        ok,detalle=True,"omitted"
+    else:
+        ok,detalle=lanzadores.crear_acceso_escritorio(destino,preferido)
     ajustar_interfaz(destino)
-    P.cerrar("ok" if ok else "fallo",t("installer.desktop_shortcut"))
+    P.cerrar("ok" if ok else "fallo",preferido if os.environ.get("CIA_NO_SHORTCUT")=="1" else 'ComfyUI - CineConIA V2')
 
     # Datos del equipo que quedan de referencia, encima del resumen de pasos.
     print(f"\n   {G}Backend: {inf['backend']}  ·  PyTorch: {inf['torch'].get('torch')}  ·  "
@@ -645,14 +645,21 @@ def main():
         for linea in problemas[:8]:
             print(f"      {G}{linea}{X}")
     P.resumen()
-    incidencias=any(estado=="fallo" for _,estado,_ in P.hechos)
-    print(f"\n   {A if incidencias else pasos.V}{t('installer.needs_attention' if incidencias else 'installer.ready')}{X}")
+    incidencias=any(estado=="fallo" for _,estado,_ in P.hechos) or any(s=="fallo" for s in ESTADOS_NODOS.values())
+    configuracion.guardar_estado(destino,status="needs_attention" if incidencias else "verified",
+        nodes=dict(ESTADOS_NODOS),steps=P.hechos,environment=inf,gpu_operation=gpu_ok,startup=arranque_ok)
+    entorno_torch.guardar_estado(destino,py)
+    final=t('installer.needs_attention') if incidencias else (preferido if os.environ.get('CIA_NO_SHORTCUT')=='1' else t('installer.ready'))
+    print(f"\n   {A if incidencias else pasos.V}{final}{X}")
     return 1 if incidencias else 0
 
 if __name__=="__main__":
     try:
         sys.exit(main())
-    except entorno_torch.EntornoNoRecuperado as e:
+    except (entorno_torch.EntornoNoRecuperado, OSError, RuntimeError, ValueError, KeyboardInterrupt, EOFError) as e:
         print(f"\n   {R}{e}{X}")
-        pasos.registrar("ERROR PyTorch",str(e))
+        pasos.registrar("INSTALLATION_INTERRUPTED",str(e))
+        if len(sys.argv)>1 and os.environ.get("CIA_AUTHORIZED_DESTINATION"):
+            try: configuracion.guardar_estado(sys.argv[1],status="interrupted",error=str(e))
+            except OSError: pass
         sys.exit(1)

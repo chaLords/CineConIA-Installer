@@ -6,3 +6,5 @@ __pycache__/
 ComfyUI/
 ComfyUI_windows_portable/
 ComfyUI_incompleto_*/
+.cache/
+logs/

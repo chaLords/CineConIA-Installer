@@ -49,7 +49,7 @@ def entorno_torch(python_exe=None):
     codigo = r'''
 import json,re
 d={"torch":None,"rama":"","cuda":None,"hip":None,"cuda_available":False,
-   "xpu_available":False,"gpu":None,"vram_gb":None,"cap":None,"error":None,"gpu_error":None}
+   "xpu_available":False,"gpu":None,"vram_gb":None,"cap":None,"error":None,"gpu_error":None,"bf16":None}
 try:
     import torch
     d["torch"]=torch.__version__
@@ -67,13 +67,16 @@ try:
             d["gpu"]=torch.cuda.get_device_name(0)
             d["vram_gb"]=round(torch.cuda.get_device_properties(0).total_memory/(1024**3),1)
             d["cap"]=list(torch.cuda.get_device_capability(0))
+            d["bf16"]=bool(torch.cuda.is_bf16_supported())
         except Exception: pass
     xpu=getattr(torch,"xpu",None)
     if xpu is not None:
         try: d["xpu_available"]=bool(xpu.is_available())
         except Exception: pass
         if d["xpu_available"]:
-            try: d["gpu"]=xpu.get_device_name(0)
+            try:
+                d["gpu"]=xpu.get_device_name(0)
+                d["vram_gb"]=round(xpu.get_device_properties(0).total_memory/(1024**3),1)
             except Exception: pass
 except Exception as e:
     d["error"]=f"{type(e).__name__}: {e}"
@@ -124,7 +127,10 @@ def informe(python_exe=None, ruta_destino=None, fabricante_hint=None, variante=N
         (bool(torch.get("cuda") or torch.get("hip")) and not torch.get("cuda_available"))
         or (fabricante=="intel" and not torch.get("xpu_available"))
         or (fabricante in ("nvidia","amd") and not torch.get("cuda_available")))
+    try: hardware = json.loads(os.environ.get("CIA_BOOTSTRAP_HARDWARE", "{}"))
+    except ValueError: hardware = {}
     return {
+        "hardware": hardware,
         "gpu_inutilizable": gpu_inutilizable,
         "gpu_error": torch.get("gpu_error"),
         "so": f"{platform.system()} {platform.release()}",

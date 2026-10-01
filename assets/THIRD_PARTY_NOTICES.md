@@ -94,3 +94,11 @@ actualizacion y reutilizacion de modelos.
 No se copia su codigo. Esta implementacion mantiene las decisiones principales
 en Python, evita branding de terceros/canal en el escritorio y resuelve extras
 contra el entorno real instalado.
+
+## MinGit (V2 bootstrap)
+- Source: https://github.com/git-for-windows/git
+- License: GNU GPL v2; original license files remain in the downloaded distribution.
+- Downloaded only when Git is absent, extracted inside the new portable. URL and SHA-256 are pinned in config/compatibility_matrix.json.
+
+## Versioned downloads
+ComfyUI and node source revisions used by this candidate are recorded in config/*.json. No third-party binary is bundled into the installer ZIP. See docs/VALIDATION.md for the tested hardware scope.

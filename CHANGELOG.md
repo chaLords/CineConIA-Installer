@@ -1,3 +1,16 @@
+# 3.0.0-rc.1 — PLAN V2 (rama de pruebas, 2026-09-30)
+
+- Inicio PowerShell sin Python global: diagnóstico, detección de instalaciones, selector de destino y validaciones antes de descargar.
+- Reutilización sin cambios por defecto; configuración de un portable existente solo con autorización explícita.
+- Portable ComfyUI v0.38.0 y nodos fijados por revisión/hash; matriz separada de la lógica.
+- Git portátil local automático, modo recomendado sin preguntas técnicas, grupos y aceleradores opcionales en avanzado.
+- Perfiles de VRAM, varias bibliotecas de modelos y carpeta de resultados en otro disco.
+- Operación real de GPU, arranque y carga de nodos; estado persistente y logs fechados.
+- Accesos directos independientes que preservan otras instalaciones.
+- Pruebas de seguridad y compatibilidad, y validación física NVIDIA documentada.
+
+No se publica una release estable desde esta rama. Se conserva el historial anterior:
+
 # Changelog
 
 ## v2.7.0 — 2026-09-27

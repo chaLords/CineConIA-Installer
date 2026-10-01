@@ -1,0 +1,76 @@
+{
+  "schema_version": 1,
+  "installer_version": "3.0.0-rc.1",
+  "reviewed_at": "2026-09-30",
+  "minimum_free_gb": 20,
+  "profiles": {
+    "nvidia": {
+      "release": "v0.38.0",
+      "url": "https://github.com/Comfy-Org/ComfyUI/releases/download/v0.38.0/ComfyUI_windows_portable_nvidia.7z",
+      "sha256": "8f137eac345707fd7e42bcf8e29377415243011ca15522a86aed6c77331fbd56",
+      "size_bytes": 1994326521,
+      "python_minor": "3.13",
+      "cuda_runtime": "13.0",
+      "min_driver": "580.0",
+      "min_compute": 7.5,
+      "max_compute_exclusive": null,
+      "torch_version": "2.14.0+cu130",
+      "validation": "tested_rtx_4060_ti_windows11",
+      "notes": "Pinned official archive. Runtime is checked before installing nodes. Hardware qualification recorded in docs/VALIDATION.md.",
+      "python_version": "3.13.14",
+      "tested_driver": "616.92"
+    },
+    "nvidia_cu126": {
+      "release": "v0.38.0",
+      "url": "https://github.com/Comfy-Org/ComfyUI/releases/download/v0.38.0/ComfyUI_windows_portable_nvidia_cu126.7z",
+      "sha256": "bd3bd7e3ce0068d8bc58fe46c912c360dd510f9bcfd0c5029d4906e6e6fbc677",
+      "size_bytes": 1886111296,
+      "python_minor": "3.12",
+      "cuda_runtime": "12.6",
+      "min_driver": "528.33",
+      "min_compute": 5.0,
+      "max_compute_exclusive": 10.0,
+      "torch_version": null,
+      "validation": "candidate",
+      "notes": "Pinned official archive. Runtime is checked before installing nodes. Hardware qualification recorded in docs/VALIDATION.md."
+    },
+    "amd": {
+      "release": "v0.38.0",
+      "url": "https://github.com/Comfy-Org/ComfyUI/releases/download/v0.38.0/ComfyUI_windows_portable_amd.7z",
+      "sha256": "f346e5c187b4e1647f0ea01d9978f53de1f259878656128c3296f61a5948fd1f",
+      "size_bytes": 1612070856,
+      "python_minor": null,
+      "cuda_runtime": null,
+      "min_driver": null,
+      "min_compute": null,
+      "max_compute_exclusive": null,
+      "torch_version": null,
+      "validation": "candidate",
+      "notes": "Pinned official archive. Runtime is checked before installing nodes. Hardware qualification recorded in docs/VALIDATION.md."
+    },
+    "intel": {
+      "release": "v0.38.0",
+      "url": "https://github.com/Comfy-Org/ComfyUI/releases/download/v0.38.0/ComfyUI_windows_portable_intel.7z",
+      "sha256": "4df593042aced1fb0b8dfdf033918c9e5d093f01c6fbb9c79fe2504350107de0",
+      "size_bytes": 1427214780,
+      "python_minor": null,
+      "cuda_runtime": null,
+      "min_driver": null,
+      "min_compute": null,
+      "max_compute_exclusive": null,
+      "torch_version": null,
+      "validation": "candidate",
+      "notes": "Pinned official archive. Runtime is checked before installing nodes. Hardware qualification recorded in docs/VALIDATION.md."
+    }
+  },
+  "tools": {
+    "7zr": {
+      "url": "https://www.7-zip.org/a/7zr.exe",
+      "sha256": "ad4c82fadcbdf93c03b4fc440f300509c7d60c5c2f4d183e35d9d70d6957037d"
+    },
+    "mingit": {
+      "url": "https://github.com/git-for-windows/git/releases/download/v2.56.0.windows.1/MinGit-2.56.0-64-bit.zip",
+      "sha256": "064b440ff870ed5198527e8f3a92cdf5bd2fd0fedf5e718af95e3fdaddeff718"
+    }
+  }
+}

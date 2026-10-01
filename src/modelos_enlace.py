@@ -157,7 +157,7 @@ def bloque_yaml(models,mapa=None):
     lineas.append(MARCA_FIN)
     return "\n".join(lineas)
 
-def actualizar_yaml(comfy_root,models,mapa=None):
+def actualizar_yaml(comfy_root,models,mapa=None,bibliotecas=None):
     """Escribe o reemplaza solo el bloque administrado, con copia .bak previa."""
     ruta=os.path.join(comfy_root,"extra_model_paths.yaml")
     previo,backup="",None
@@ -167,6 +167,22 @@ def actualizar_yaml(comfy_root,models,mapa=None):
         backup=ruta+datetime.now().strftime(".bak-%Y%m%d-%H%M%S-%f")
         shutil.copy2(ruta,backup)
     nuevo_bloque=bloque_yaml(models,mapa)
+    if bibliotecas:
+        bloques=[]
+        vistas=set()
+        for biblioteca in bibliotecas:
+            clave=os.path.normcase(os.path.realpath(biblioteca))
+            if clave in vistas:
+                continue
+            vistas.add(clave)
+            categorias=mapa_categorias(biblioteca)
+            if not categorias:
+                raise ValueError('MODEL_LIBRARY_EMPTY: '+biblioteca)
+            bloque=bloque_yaml(biblioteca,categorias)
+            bloque=bloque.replace(MARCA_INICIO+'\n','').replace('\n'+MARCA_FIN,'')
+            bloque=bloque.replace(BLOQUE_NOMBRE+':',BLOQUE_NOMBRE+f'_{len(bloques)+1}:',1)
+            bloques.append(bloque)
+        nuevo_bloque=MARCA_INICIO+'\n'+'\n'.join(bloques)+'\n'+MARCA_FIN
     patron=re.compile(re.escape(MARCA_INICIO)+r".*?"+re.escape(MARCA_FIN),flags=re.DOTALL)
     if patron.search(previo):
         nuevo=patron.sub(lambda _:nuevo_bloque,previo)
