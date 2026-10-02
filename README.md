@@ -53,6 +53,9 @@
 - **Versiones comprobadas.** ComfyUI, 7-Zip, Git portátil y los nodos de
   terceros se descargan en versiones fijas, verificadas con SHA-256 o por
   commit. Los nodos Cine con IA siempre llegan en su última versión.
+- **Tus modelos, fuera de ComfyUI.** Si todavía no tienes modelos, te propone
+  una carpeta en el disco que elijas. Si borras y reinstalas ComfyUI, el
+  instalador la encuentra sola.
 - **Sin instalar Git a mano.** Si falta, usa una copia portátil de Git dentro
   de la instalación, sin tocar el sistema.
 - **Prueba real en la GPU** antes de dar la instalación por buena.
@@ -414,6 +417,25 @@ python_embeded) nunca se modifica.
 ## Modelos
 
 El instalador **no descarga modelos**.
+
+### Si todavía no tienes modelos
+
+Te pregunta dónde guardarlos y propone **ComfyUI-models** en el disco con más
+espacio libre (**Enter** lo acepta). También puedes elegir otra carpeta u otro
+disco, incluso uno externo, o dejarlos dentro de ComfyUI como antes.
+
+La carpeta se crea vacía, con la estructura de ComfyUI (checkpoints, loras,
+vae...), y queda:
+
+- enlazada con extra_model_paths.yaml y marcada como destino predeterminado
+  (`is_default`): lo que descargues desde ComfyUI se guarda allí;
+- registrada para este usuario de Windows: si borras ComfyUI y lo vuelves a
+  instalar, el instalador la encuentra sola, aunque siga vacía.
+
+No se acepta una carpeta dentro de la instalación de ComfyUI (se borraría al
+reinstalar), en OneDrive, del sistema, con tildes o eñes, ni una unidad de red.
+
+### Si ya tienes modelos
 
 Busca automáticamente carpetas de modelos de instalaciones anteriores en tus
 discos locales. Solo si encuentra alguna, pregunta qué hacer:

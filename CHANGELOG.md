@@ -19,6 +19,8 @@ Correcciones de la revisión de la rc.1. Todavía no es una release estable.
 - Acceso directo **ComfyUI**, como en 2.x; si ya existe uno de otra instalación, **ComfyUI (2)**. El resumen dice cuál se creó.
 - Pasos numerados `[n/14]` como en 2.x: las fases de equipo, descarga y extracción entran al resumen final.
 - La búsqueda de instalaciones entra en las carpetas de OneDrive y solo evita enlaces y junctions reales.
+- Biblioteca de modelos desde el principio: si no hay modelos previos, el instalador propone `ComfyUI-models` en el disco con más espacio (Enter) o deja elegir otra carpeta o disco. Se crea vacía con la estructura de ComfyUI, enlazada como destino de descargas (`is_default`) y registrada, así que una reinstalación la encuentra sola. No se acepta dentro de la instalación, en OneDrive, en carpetas del sistema, con tildes o en una unidad de red.
+- Un ComfyUI vacío (marcadores `put_*_here` y TAESD de fábrica) ya no se ofrece como biblioteca: con una biblioteca central registrada basta un Enter para enlazarla.
 - "CONFIRM" en inglés; recomendaciones distintas para cada perfil de VRAM.
 - Repositorio: finales de línea LF normalizados (`* text=auto`), como en `main`.
 

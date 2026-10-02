@@ -69,7 +69,8 @@ class PolicyTests(unittest.TestCase):
 
     def test_every_error_code_has_both_translations(self):
         es=json.loads((ROOT/'src/locales/es.json').read_text(encoding='utf-8'))
-        source=(ROOT/'src/bootstrap.ps1').read_text(encoding='ascii')+(ROOT/'src/configuracion.py').read_text(encoding='utf-8')
+        source=(ROOT/'src/bootstrap.ps1').read_text(encoding='ascii')+''.join(
+            (ROOT/'src'/name).read_text(encoding='utf-8') for name in ('configuracion.py','modelos_enlace.py'))
         import re
         codes=set(re.findall(r"""throw ["']([A-Z][A-Z0-9_]+)""",source))|set(re.findall(r"""Error\(f?['"]([A-Z][A-Z0-9_]+)""",source))
         self.assertGreater(len(codes),20)
@@ -220,6 +221,84 @@ class PolicyTests(unittest.TestCase):
             content=(new/'ComfyUI/extra_model_paths.yaml').read_text(encoding='utf-8')
             self.assertIn(str(library).replace('\\','/'),content)
             self.assertIn('is_default: true',content)
+
+    def library_env(self,base,proposal,answers,folders=()):
+        """Recommended mode with no previous models; registry in a temp folder."""
+        asked=[]
+        def ask(text,options,default=1):
+            asked.append([label for label,_ in options])
+            return answers.pop(0)
+        stack=contextlib.ExitStack()
+        stack.enter_context(patch.dict(os.environ,{'CINECONIA_MODE':'recommended','CINECONIA_LANG':'es'}))
+        stack.enter_context(patch.object(ins.modelos_enlace,'ruta_registro',return_value=str(base/'registry/bibliotecas.json')))
+        stack.enter_context(patch.object(ins.modelos_enlace,'detectar_instalaciones',return_value=[]))
+        stack.enter_context(patch.object(ins.modelos_enlace,'biblioteca_propuesta',return_value=(str(proposal),500e9)))
+        stack.enter_context(patch.object(ins,'preguntar',side_effect=ask))
+        import migrar_modelos
+        stack.enter_context(patch.object(migrar_modelos,'seleccionar_carpeta',side_effect=list(folders)))
+        stack.enter_context(contextlib.redirect_stdout(io.StringIO()))
+        return stack,asked
+
+    def test_new_user_gets_an_external_library(self):
+        with tempfile.TemporaryDirectory() as folder:
+            base=Path(folder); new=base/'C'/'ComfyUI'; (new/'ComfyUI').mkdir(parents=True)
+            library=base/'E'/'ComfyUI-models'
+            stack,asked=self.library_env(base,library,[1])
+            with stack:
+                self.assertEqual(ins.ofrecer_enlace_modelos(str(new)),'created')
+                self.assertEqual(modelos_enlace.bibliotecas_guardadas(),[str(library)])
+            self.assertEqual(len(asked),1)  # one question, Enter accepts
+            # Empty, but with ComfyUI's structure: downloads land there.
+            self.assertTrue(all((library/c).is_dir() for c in modelos_enlace.CARPETAS))
+            content=(new/'ComfyUI/extra_model_paths.yaml').read_text(encoding='utf-8')
+            self.assertIn(str(library).replace('\\','/'),content)
+            self.assertIn('is_default: true',content)
+            # A later reinstall finds it even without models: it has the structure and is registered.
+            self.assertTrue(modelos_enlace.mapa_categorias(str(library)))
+
+    def test_library_inside_installation_is_rejected(self):
+        with tempfile.TemporaryDirectory() as folder:
+            base=Path(folder); new=base/'ComfyUI'; (new/'ComfyUI').mkdir(parents=True)
+            disk=base/'E'; disk.mkdir()
+            # Picks a folder inside the installation, then a disk: E:\ becomes E:\models.
+            stack,asked=self.library_env(base,base/'proposal',[2,2],folders=[str(new),str(disk)])
+            with stack:
+                self.assertEqual(ins.ofrecer_enlace_modelos(str(new)),'created')
+                self.assertEqual(modelos_enlace.bibliotecas_guardadas(),[str(disk/'models')])
+            self.assertEqual(len(asked),2)
+            self.assertFalse((new/'models').exists())
+
+    def test_models_can_stay_inside_comfyui(self):
+        with tempfile.TemporaryDirectory() as folder:
+            base=Path(folder); new=base/'ComfyUI'; (new/'ComfyUI').mkdir(parents=True)
+            stack,_=self.library_env(base,base/'E'/'ComfyUI-models',[3])
+            with stack:
+                self.assertIsNone(ins.ofrecer_enlace_modelos(str(new)))
+                self.assertEqual(modelos_enlace.bibliotecas_guardadas(),[])
+            self.assertFalse((base/'E').exists())
+            self.assertFalse((new/'ComfyUI/extra_model_paths.yaml').exists())
+
+    def test_library_validation_rules(self):
+        with tempfile.TemporaryDirectory() as folder:
+            base=Path(os.path.realpath(folder)); comfy=base/'ComfyUI'/'ComfyUI'; comfy.mkdir(parents=True)
+            cases={str(base/'Peña'/'models'):'PATH_NON_ASCII',
+                   str(base/'ComfyUI'/'models'):'LIBRARY_INSIDE_COMFYUI',
+                   os.path.join(os.environ['WINDIR'],'models'):'PATH_PROTECTED'}
+            with patch.dict(os.environ,{'OneDrive':str(base/'OneDrive')}):
+                cases[str(base/'OneDrive'/'models')]='PATH_ONEDRIVE'
+                for path,code in cases.items():
+                    with self.assertRaisesRegex(ValueError,code):
+                        modelos_enlace.validar_biblioteca(path,str(comfy))
+                self.assertEqual(modelos_enlace.validar_biblioteca(str(base/'E'/'models'),str(comfy)),str(base/'E'/'models'))
+
+    def test_proposed_library_skips_unrelated_folders(self):
+        with tempfile.TemporaryDirectory() as folder:
+            disk=Path(folder)
+            (disk/'ComfyUI-models').mkdir(); (disk/'ComfyUI-models/notes.txt').write_text('other')
+            with patch.object(modelos_enlace,'discos_fijos',return_value=[folder]):
+                path,free=modelos_enlace.biblioteca_propuesta()
+            self.assertEqual(path,str(disk/'ComfyUI-models-2'))
+            self.assertGreater(free,0)
 
     def test_checkout_failure_preserves_incomplete_user_node(self):
         with tempfile.TemporaryDirectory() as folder,contextlib.redirect_stdout(io.StringIO()):

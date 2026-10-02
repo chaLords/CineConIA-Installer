@@ -158,6 +158,78 @@ def tiene_modelos(carpeta):
                 return True
     return False
 
+NOMBRE_BIBLIOTECA="ComfyUI-models"
+
+def biblioteca_propuesta():
+    """(ruta, bytes libres) para una biblioteca nueva en el disco con mas espacio.
+
+    Una carpeta vacia o que ya tenga la estructura de modelos se reutiliza; si
+    tiene otra cosa, se prueba ComfyUI-models-2, -3...
+    """
+    discos=[]
+    for disco in discos_fijos():
+        try: discos.append((shutil.disk_usage(disco).free,disco))
+        except OSError: pass
+    if not discos:
+        return None,0
+    libre,disco=max(discos)
+    for n in range(1,100):
+        ruta=os.path.normpath(os.path.join(disco,NOMBRE_BIBLIOTECA if n==1 else f"{NOMBRE_BIBLIOTECA}-{n}"))
+        if not os.path.exists(ruta):
+            return ruta,libre
+        if os.path.isdir(ruta) and (not os.listdir(ruta) or mapa_categorias(ruta)):
+            return ruta,libre
+    return None,0
+
+def _solapan(a,b):
+    a,b=(os.path.normcase(os.path.realpath(p)) for p in (a,b))
+    try: comun=os.path.commonpath([a,b])
+    except ValueError: return False
+    return comun in (a,b)
+
+def validar_biblioteca(models,comfy_root):
+    """Ruta absoluta de una biblioteca nueva valida, o ValueError con codigo.
+
+    Fuera de la instalacion (si no, se borra al reinstalar), fuera de OneDrive
+    y de carpetas del sistema, sin tildes ni enes, en un disco local y con
+    permiso de escritura.
+    """
+    import ctypes
+    models=os.path.abspath(models)
+    if not re.match(r"^[A-Za-z]:\\",models):
+        raise ValueError("PATH_LOCAL_ABSOLUTE_REQUIRED")
+    if re.search(r"[^\x20-\x7E]",models):
+        raise ValueError("PATH_NON_ASCII")
+    if len(models)<=3:
+        raise ValueError("PATH_DRIVE_ROOT")
+    if _solapan(models,os.path.dirname(os.path.abspath(comfy_root))):
+        raise ValueError("LIBRARY_INSIDE_COMFYUI")
+    nubes=[os.environ.get(v) for v in ("OneDrive","OneDriveConsumer","OneDriveCommercial")]
+    if any(n and _solapan(models,n) for n in nubes) or re.search(r"\\OneDrive( - [^\\]+)?(\\|$)",models,re.I):
+        raise ValueError("PATH_ONEDRIVE")
+    for protegida in (os.environ.get(v) for v in ("WINDIR","ProgramFiles","ProgramFiles(x86)","ProgramData")):
+        if protegida and _solapan(models,protegida):
+            raise ValueError("PATH_PROTECTED: "+protegida)
+    try:
+        if ctypes.windll.kernel32.GetDriveTypeW(models[:3])==4:
+            raise ValueError("LIBRARY_NETWORK_DRIVE")
+    except (AttributeError,OSError):
+        pass
+    try:
+        os.makedirs(models,exist_ok=True)
+        prueba=os.path.join(models,".cineconia-write-test")
+        with open(prueba,"w",encoding="utf-8") as f:
+            f.write("ok")
+        os.remove(prueba)
+    except OSError:
+        raise ValueError("LIBRARY_NOT_WRITABLE: "+models)
+    return models
+
+def crear_estructura(models):
+    """Las carpetas habituales de ComfyUI, vacias: ahi guardan las descargas."""
+    for categoria in CARPETAS:
+        os.makedirs(os.path.join(models,categoria),exist_ok=True)
+
 def bloque_yaml(models,mapa=None):
     """Bloque administrado; mapa={categoria: subcarpeta} (por defecto, todas)."""
     mapa=mapa or {c:c for c in CARPETAS}

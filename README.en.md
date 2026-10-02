@@ -53,6 +53,9 @@
 - **Tested versions.** ComfyUI, 7-Zip, portable Git and third-party nodes are
   downloaded at fixed versions, verified by SHA-256 or commit. The Cine con IA
   nodes always arrive at their latest version.
+- **Your models, outside ComfyUI.** If you have no models yet, it suggests a
+  folder on the disk you choose. If you delete and reinstall ComfyUI, the
+  installer finds it automatically.
 - **No manual Git install.** If Git is missing, a portable copy is used inside
   the installation, without touching the system.
 - **A real GPU test** before calling the installation ready.
@@ -342,6 +345,26 @@ It can also **reconfigure an existing portable** (for example, one whose install
 ## Models
 
 The installer does **not download models**.
+
+### If you have no models yet
+
+It asks where to keep them and suggests **ComfyUI-models** on the disk with the
+most free space (**Enter** accepts it). You can also choose another folder or
+disk, including an external one, or keep them inside ComfyUI as before.
+
+The folder is created empty, with ComfyUI's structure (checkpoints, loras,
+vae...), and it is:
+
+- linked through extra_model_paths.yaml and marked as the default location
+  (`is_default`): what you download from ComfyUI is saved there;
+- registered for this Windows user: if you delete ComfyUI and install it again,
+  the installer finds it automatically, even if it is still empty.
+
+A folder inside the ComfyUI installation (it would be deleted on reinstall),
+in OneDrive, in a system location, with accents, or on a network drive is not
+accepted.
+
+### If you already have models
 
 After a successful migration, the central library path is remembered for this
 Windows user in `%LOCALAPPDATA%\CineConIA\bibliotecas.json`. A freshly downloaded

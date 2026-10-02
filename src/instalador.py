@@ -460,7 +460,7 @@ def ofrecer_enlace_modelos(destino):
         key=lambda x:(guardadas.get(real(x[0]),len(guardadas)+(0 if central(x[0]) else 1)),-x[1]))[:5]
     if not con_tamano:
         print(f"   {G}{t('installer.no_models_found')}{X}")
-        return None
+        return crear_biblioteca(destino_comfy)
     etiqueta=lambda p,gb:f"{gb:.1f} GB - {p}"+(f" {A}[{t('installer.central_library')}]{X}" if central(p) else "")
     print("   "+t("installer.models_found"))
     for p,gb in con_tamano:
@@ -507,6 +507,44 @@ def ofrecer_enlace_modelos(destino):
     if not central(models):
         print(f"   {G}{t('installer.migrator_hint')}{X}")
     return "linked"
+
+def crear_biblioteca(destino_comfy):
+    """Sin modelos previos, la biblioteca nace fuera de ComfyUI en el disco que
+    elija el usuario: vacia, con la estructura de ComfyUI, registrada para las
+    proximas instalaciones y marcada como destino de las descargas (is_default)."""
+    import migrar_modelos
+    propuesta,libre=modelos_enlace.biblioteca_propuesta()
+    print("\n   "+t("installer.library_explain"))
+    opciones,claves=[],[]
+    if propuesta:
+        opciones.append((t("installer.library_here",path=propuesta),t("installer.library_here_desc",free=int(libre/1e9))))
+        claves.append("propuesta")
+    opciones+=[(t("installer.library_pick"),t("installer.library_pick_desc")),
+               (t("installer.library_inside"),t("installer.library_inside_desc"))]
+    claves+=["elegir","dentro"]
+    while True:
+        clave=claves[preguntar(t("installer.library_question"),opciones,1)-1]
+        if clave=="dentro":
+            return None
+        models=propuesta
+        if clave=="elegir":
+            carpeta=migrar_modelos.seleccionar_carpeta(t("installer.library_pick_title"))
+            if not carpeta:
+                continue
+            models=migrar_modelos.normalizar_destino(carpeta)
+        try:
+            models=modelos_enlace.validar_biblioteca(models,destino_comfy)
+            modelos_enlace.crear_estructura(models)
+            modelos_enlace.registrar_biblioteca(models)
+            _,backup=modelos_enlace.actualizar_yaml(destino_comfy,models,modelos_enlace.mapa_categorias(models))
+        except (OSError,ValueError) as e:
+            # El motivo y otra oportunidad, como con la carpeta de instalacion.
+            print(f"   {R}{configuracion.mensaje_error(e)}{X}")
+            continue
+        print(f"   {A}{t('installer.library_created',path=models)}{X}")
+        if backup:
+            print(f"   {G}{backup}{X}")
+        return "created"
 
 def ajustar_interfaz(destino):
     """Cola de trabajos acoplada al panel lateral, sin el panel flotante de

@@ -360,5 +360,19 @@
   "setup.step_extract": "Extrayendo",
   "setup.step_verified": "SHA-256 verificado",
   "setup.step_existing": "instalación existente",
-  "installer.advanced_only": "en ComfyUI-Advanced-Setup.bat"
+  "installer.advanced_only": "en ComfyUI-Advanced-Setup.bat",
+  "installer.library_explain": "Todavía no tienes modelos. Elige dónde guardarlos: conviene una carpeta fuera de ComfyUI, en el disco con más espacio. Así no se pierden si reinstalas, y la usarán todos tus ComfyUI futuros.",
+  "installer.library_question": "¿Dónde guardamos tus modelos?",
+  "installer.library_here": "En {path}",
+  "installer.library_here_desc": "Disco con más espacio libre ({free} GB). Se crean las carpetas checkpoints, loras, vae y demás, vacías.",
+  "installer.library_pick": "En otra carpeta o disco que elija",
+  "installer.library_pick_desc": "Se abre el selector de carpetas",
+  "installer.library_pick_title": "Elige el disco o la carpeta para tus modelos",
+  "installer.library_inside": "Dentro de esta instalación de ComfyUI",
+  "installer.library_inside_desc": "Como siempre; si borras ComfyUI, se borran también los modelos",
+  "installer.library_created": "Biblioteca de modelos lista en {path}. ComfyUI guardará allí lo que descargues, y las próximas instalaciones la encontrarán solas.",
+  "installer.step_models_created": "biblioteca nueva lista para tus modelos",
+  "setup.error.LIBRARY_INSIDE_COMFYUI": "Esa carpeta está dentro de la instalación de ComfyUI y se borraría al reinstalar. Elige otra, o la opción «Dentro de esta instalación de ComfyUI».",
+  "setup.error.LIBRARY_NETWORK_DRIVE": "Esa es una unidad de red. Elige un disco de este equipo, que puede ser externo.",
+  "setup.error.LIBRARY_NOT_WRITABLE": "No se puede escribir en {detail}. Elige otra carpeta."
 }

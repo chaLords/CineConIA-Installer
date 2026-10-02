@@ -360,5 +360,19 @@
   "setup.step_extract": "Extracting",
   "setup.step_verified": "SHA-256 verified",
   "setup.step_existing": "existing installation",
-  "installer.advanced_only": "in ComfyUI-Advanced-Setup.bat"
+  "installer.advanced_only": "in ComfyUI-Advanced-Setup.bat",
+  "installer.library_explain": "You have no models yet. Choose where to keep them: a folder outside ComfyUI, on the disk with the most space, is best. They are not lost if you reinstall, and every future ComfyUI will use it.",
+  "installer.library_question": "Where should your models go?",
+  "installer.library_here": "In {path}",
+  "installer.library_here_desc": "Disk with the most free space ({free} GB). Empty checkpoints, loras, vae and other folders are created.",
+  "installer.library_pick": "In another folder or disk I choose",
+  "installer.library_pick_desc": "Opens the folder picker",
+  "installer.library_pick_title": "Choose the disk or folder for your models",
+  "installer.library_inside": "Inside this ComfyUI installation",
+  "installer.library_inside_desc": "As before; deleting ComfyUI also deletes the models",
+  "installer.library_created": "Model library ready in {path}. ComfyUI will save your downloads there, and future installations will find it automatically.",
+  "installer.step_models_created": "new library ready for your models",
+  "setup.error.LIBRARY_INSIDE_COMFYUI": "That folder is inside the ComfyUI installation and would be deleted on reinstall. Choose another one, or the \"Inside this ComfyUI installation\" option.",
+  "setup.error.LIBRARY_NETWORK_DRIVE": "That is a network drive. Choose a disk in this computer; an external one is fine.",
+  "setup.error.LIBRARY_NOT_WRITABLE": "{detail} is not writable. Choose another folder."
 }
