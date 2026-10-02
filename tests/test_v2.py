@@ -241,7 +241,7 @@ class PolicyTests(unittest.TestCase):
 
     def test_new_user_gets_an_external_library(self):
         with tempfile.TemporaryDirectory() as folder:
-            base=Path(folder); new=base/'C'/'ComfyUI'; (new/'ComfyUI').mkdir(parents=True)
+            base=Path(os.path.realpath(folder)); new=base/'C'/'ComfyUI'; (new/'ComfyUI').mkdir(parents=True)
             library=base/'E'/'ComfyUI-models'
             stack,asked=self.library_env(base,library,[1])
             with stack:
@@ -258,7 +258,7 @@ class PolicyTests(unittest.TestCase):
 
     def test_library_inside_installation_is_rejected(self):
         with tempfile.TemporaryDirectory() as folder:
-            base=Path(folder); new=base/'ComfyUI'; (new/'ComfyUI').mkdir(parents=True)
+            base=Path(os.path.realpath(folder)); new=base/'ComfyUI'; (new/'ComfyUI').mkdir(parents=True)
             disk=base/'E'; disk.mkdir()
             # Picks a folder inside the installation, then a disk: E:\ becomes E:\models.
             stack,asked=self.library_env(base,base/'proposal',[2,2],folders=[str(new),str(disk)])
@@ -270,7 +270,7 @@ class PolicyTests(unittest.TestCase):
 
     def test_models_can_stay_inside_comfyui(self):
         with tempfile.TemporaryDirectory() as folder:
-            base=Path(folder); new=base/'ComfyUI'; (new/'ComfyUI').mkdir(parents=True)
+            base=Path(os.path.realpath(folder)); new=base/'ComfyUI'; (new/'ComfyUI').mkdir(parents=True)
             stack,_=self.library_env(base,base/'E'/'ComfyUI-models',[3])
             with stack:
                 self.assertIsNone(ins.ofrecer_enlace_modelos(str(new)))
