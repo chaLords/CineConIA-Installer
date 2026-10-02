@@ -1,6 +1,10 @@
-# Validación de 3.0.0-rc.2
+# Validación de 3.0.0
 
-Rama de pruebas; no es una declaración de compatibilidad universal.
+Alcance de las pruebas de la versión 3.0.0; no es una declaración de compatibilidad universal.
+
+## 3.0.0 — prueba del propietario (1 de octubre de 2026)
+
+El propietario descargó el ZIP de la rama y lo ejecutó en su equipo después de borrar su instalación habitual. El instalador detectó las otras dos instalaciones sin modificarlas, instaló una nueva e independiente con el modo recomendado (nodos de video, extras de interfaz, Triton y SageAttention verificados, arranque con 10 paquetes de nodos) y encontró sola la biblioteca central `E:\models` (415,5 GB), registrada fuera de ComfyUI, con una sola pregunta para enlazarla. El propietario confirmó el resultado y autorizó la publicación.
 
 ## rc.2 — instalación recomendada completa (1 de octubre de 2026)
 
@@ -54,7 +58,7 @@ La suite original tenía 69 pruebas; la rc.1 llegó a 102 y la rc.2 a 125. Las n
 - AMD, Intel XPU y NVIDIA anterior a Turing: paquetes y política fijados; no se dispone de esas GPU para verificar su ejecución física en esta sesión.
 - Selector gráfico y carpeta propuesta: se comprueban rutas, cancelación y nueva elección por pruebas; la elección interactiva (Enter / C) y la barra en vivo en una consola real deben revisarse al probar el ZIP.
 - No se ha probado una imagen de Windows completamente nueva sin Visual C++ ni winget. El fallo del requisito bloquea la configuración; MinGit ausente sí se probó de forma aislada.
-- Los aceleradores y grupos opcionales conservan la resolución por compatibilidad del instalador previo. La validación física de esta candidata se concentra en el modo recomendado.
+- Los aceleradores y grupos opcionales conservan la resolución por compatibilidad del instalador previo. La validación física de esta versión se concentra en el modo recomendado.
 
 ## Fuentes para la matriz
 

@@ -1,6 +1,6 @@
-# Implementación del PLAN V2 — 3.0.0-rc.2
+# Implementación del PLAN V2 — 3.0.0
 
-Fecha: 30 de septiembre de 2026 (rc.1) y 1 de octubre de 2026 (rc.2). Base:
+Fecha: 30 de septiembre de 2026 (rc.1) y 1 de octubre de 2026 (rc.2 y 3.0.0). Base:
 `main`, commit `74a3ff3` (2.7.0). Rama: `feature/instalador-v2-seguro`.
 
 ## Revisión de la rc.1 y correcciones de la rc.2
@@ -23,7 +23,7 @@ Fecha: 30 de septiembre de 2026 (rc.1) y 1 de octubre de 2026 (rc.2). Base:
 | "CONFIRMAR" también en inglés; perfiles de VRAM repetidos | "CONFIRM" en inglés; una recomendación por perfil |
 | 19 archivos con CRLF en el índice | `* text=auto` y LF normalizado |
 
-El [plan original](PLAN_V2.md) se conserva como contexto histórico. Su indicación de no implementar todavía fue sustituida por la autorización posterior del propietario para construir y probar esta nueva rama. No se autoriza desde esta rama fusionar ni publicar una release estable.
+El [plan original](PLAN_V2.md) se conserva como contexto histórico. Su indicación de no implementar todavía fue sustituida por la autorización posterior del propietario para construir y probar esta nueva rama. Tras probar la rc.2 en su equipo, el propietario autorizó el 1 de octubre de 2026 fusionarla en `main` y publicarla como 3.0.0.
 
 ## Auditoría y decisión de arquitectura
 
@@ -33,7 +33,7 @@ Faltaban detección de instalaciones antes de descargar, selector gráfico para 
 
 Se mantiene Python para configuración y migración. Un bootstrap PowerShell 5.1 sustituye la lógica extensa del BAT, porque Windows ya lo incluye y debe funcionar sin Python global. El BAT solo lo invoca con rutas entre comillas y expansión retardada desactivada. Reescribir todo en PowerShell o crear una aplicación gráfica completa añadiría una segunda implementación de lógica ya probada, sin mejorar este flujo.
 
-La V2 conceptual se numera **3.0.0-rc.1** (y rc.2 tras la revisión), porque el proyecto ya publicó 2.7.0. Se implementa una rama candidata, no una sustitución de la release estable.
+La V2 conceptual se numera **3.0.0-rc.1** (y rc.2 tras la revisión), porque el proyecto ya publicó 2.7.0. Se desarrolló en una rama candidata y se publicó como 3.0.0 después de la revisión y la prueba del propietario.
 
 ## Cobertura de requisitos
 
@@ -72,6 +72,6 @@ Una descarga parcial se reanuda y siempre se verifica completa. Un hash incorrec
 
 Un portable cuya configuración se interrumpió puede seleccionarse en avanzado y reconfigurarse después de autorizarlo. El estado registra `base_ready`, `configuring`, `verified`, `needs_attention` o `interrupted`. No se elimina la instalación fallida. La protección de PyTorch permanece; no hay promesa de rollback universal de todas las dependencias.
 
-## Fuera de esta candidata
+## Fuera de la versión 3.0.0
 
 No incluye actualización de drivers, Linux/macOS, descargas de modelos, marketplace, conversión automática de instalaciones manuales, reparación universal ni ejecución de cada workflow/modelo existente. La validación física de otras GPU y la selección visual manual del diálogo son parte de la aceptación antes de publicar estable.

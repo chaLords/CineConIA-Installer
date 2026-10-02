@@ -1,8 +1,25 @@
 # Changelog
 
+## v3.0.0 — 2026-10-01
+
+Un instalador nuevo, pensado para que quien instala ComfyUI por primera vez solo tenga que pulsar Enter.
+
+- Casi sin preguntas: el modo recomendado instala lo que 2.7.0 instalaba aceptando cada respuesta por defecto (Manager clásico, Cine con IA, monitor, nodos de video, extras de interfaz y SageAttention en NVIDIA). Lo opcional pasa a **ComfyUI-Advanced-Setup.bat**.
+- Respeta lo que ya tienes: antes de descargar busca instalaciones de ComfyUI y nunca las modifica.
+- Propone dónde instalar: `ComfyUI` en el SSD con más espacio libre, y Enter lo acepta. Si una carpeta no sirve (OneDrive, tildes o eñes, del sistema, ocupada), explica el motivo y deja elegir otra.
+- Tus modelos, fuera de ComfyUI: encuentra sola la biblioteca central aunque borres ComfyUI, y si todavía no tienes modelos propone una carpeta en el disco que elijas.
+- Versiones comprobadas: ComfyUI v0.38.0, 7-Zip, Git portátil y los nodos de terceros se descargan en versiones fijas con SHA-256 o commit, y se pueden actualizar después. Cine con IA llega siempre en su última versión.
+- Sin instalar Git a mano: si falta, usa una copia portátil dentro de la instalación.
+- Prueba real en la GPU y arranque de ComfyUI antes de dar la instalación por buena.
+- Errores explicados en tu idioma, con qué hacer.
+- Aviso de driver NVIDIA antiguo, y GPU comprobada antes de pedir carpeta.
+- Mismo acceso **ComfyUI**, misma barra de progreso y mismos 14 pasos que 2.7.0.
+
+Validación: 125 pruebas automáticas, instalación recomendada completa en RTX 4060 Ti y prueba del autor con su biblioteca de modelos en otro disco. El detalle de las versiones de prueba está debajo.
+
 ## v3.0.0-rc.2 — 2026-10-01 (rama de pruebas)
 
-Correcciones de la revisión de la rc.1. Todavía no es una release estable.
+Correcciones de la revisión de la rc.1.
 
 - README: vuelve el de la versión estable, con logo, insignias, botón de descarga, Discord y YouTube, y suma una sección con las novedades de la versión 3.
 - La barra de progreso de v2.7.0 vuelve a verse en descarga, extracción, pip y git. El inicio en PowerShell pasaba la salida de Python y de `progreso.ps1` por una tubería: los dos creían que no había consola, no dibujaban la barra y Python retenía sus mensajes durante minutos. Ahora heredan la consola.
