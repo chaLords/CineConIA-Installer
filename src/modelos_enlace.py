@@ -144,6 +144,20 @@ def tamano_bytes(carpeta):
                 except OSError: pass
     return total
 
+# Lo que trae cualquier ComfyUI recien instalado: marcadores put_*_here y los
+# decodificadores TAESD de vista previa. No es una biblioteca del usuario.
+CATEGORIAS_DE_FABRICA={"vae_approx"}
+
+def tiene_modelos(carpeta):
+    """True si hay algun modelo propio, no solo lo que trae el portable."""
+    for categoria,sub in mapa_categorias(carpeta).items():
+        if categoria in CATEGORIAS_DE_FABRICA:
+            continue
+        for _,_,archivos in os.walk(os.path.join(carpeta,sub)):
+            if any(not nombre.startswith("put_") for nombre in archivos):
+                return True
+    return False
+
 def bloque_yaml(models,mapa=None):
     """Bloque administrado; mapa={categoria: subcarpeta} (por defecto, todas)."""
     mapa=mapa or {c:c for c in CARPETAS}

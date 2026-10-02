@@ -455,7 +455,8 @@ def ofrecer_enlace_modelos(destino):
     with progreso.Actividad(t("progress.measuring"),hilo=True):
         con_tamano=[(p,modelos_enlace.tamano_bytes(p)/1e9) for p in encontradas]
     guardadas={real(p):i for i,p in enumerate(modelos_enlace.bibliotecas_guardadas())}
-    con_tamano=sorted([x for x in con_tamano if x[1]>0 or central(x[0])],
+    # Un ComfyUI vacio (marcadores y TAESD de fabrica) no se ofrece como biblioteca.
+    con_tamano=sorted([x for x in con_tamano if central(x[0]) or (x[1]>0 and modelos_enlace.tiene_modelos(x[0]))],
         key=lambda x:(guardadas.get(real(x[0]),len(guardadas)+(0 if central(x[0]) else 1)),-x[1]))[:5]
     if not con_tamano:
         print(f"   {G}{t('installer.no_models_found')}{X}")

@@ -187,6 +187,40 @@ class PolicyTests(unittest.TestCase):
             modelos_enlace.actualizar_yaml(str(comfy),sources[0],bibliotecas=sources)
             self.assertEqual(content,yaml.read_text(encoding='utf-8'))
 
+    def test_fresh_portable_models_folder_is_not_a_library(self):
+        with tempfile.TemporaryDirectory() as folder:
+            models=Path(folder,'models')
+            (models/'checkpoints').mkdir(parents=True); (models/'checkpoints/put_checkpoints_here').write_text('')
+            (models/'vae_approx').mkdir(); (models/'vae_approx/taesd_decoder.safetensors').write_bytes(b'x'*100)
+            self.assertFalse(modelos_enlace.tiene_modelos(str(models)))
+            (models/'loras/style').mkdir(parents=True); (models/'loras/style/look.safetensors').write_bytes(b'x')
+            self.assertTrue(modelos_enlace.tiene_modelos(str(models)))
+
+    def test_registered_library_is_linked_after_reinstall(self):
+        # The previous ComfyUI was deleted; its library on another disk stays registered.
+        with tempfile.TemporaryDirectory() as folder:
+            base=Path(folder)
+            library=base/'E'/'models'; (library/'checkpoints').mkdir(parents=True)
+            (library/'checkpoints/model.safetensors').write_bytes(b'x'*10)
+            empty=base/'old'/'ComfyUI'/'models'; (empty/'vae_approx').mkdir(parents=True)
+            (empty/'vae_approx/taesd_decoder.safetensors').write_bytes(b'x'*10)
+            new=base/'new'; (new/'ComfyUI').mkdir(parents=True)
+            answers=[]
+            def ask(text,options,default=1):
+                answers.append([label for label,_ in options])
+                return 1
+            with patch.dict(os.environ,{'CINECONIA_MODE':'recommended','CINECONIA_LANG':'es'}),\
+                 patch.object(ins.modelos_enlace,'bibliotecas_guardadas',return_value=[str(library)]),\
+                 patch.object(ins.modelos_enlace,'detectar_instalaciones',return_value=[str(library),str(empty)]),\
+                 patch.object(ins.modelos_enlace,'registrar_biblioteca'),\
+                 patch.object(ins,'preguntar',side_effect=ask),contextlib.redirect_stdout(io.StringIO()):
+                self.assertEqual(ins.ofrecer_enlace_modelos(str(new)),'linked')
+            # One question (use them where they are, Enter); no "which library".
+            self.assertEqual(len(answers),1)
+            content=(new/'ComfyUI/extra_model_paths.yaml').read_text(encoding='utf-8')
+            self.assertIn(str(library).replace('\\','/'),content)
+            self.assertIn('is_default: true',content)
+
     def test_checkout_failure_preserves_incomplete_user_node(self):
         with tempfile.TemporaryDirectory() as folder,contextlib.redirect_stdout(io.StringIO()):
             old=Path(folder,'ComfyUI/custom_nodes/comfyui-kjnodes')
