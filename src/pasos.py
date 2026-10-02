@@ -97,9 +97,10 @@ class Pasos:
     def __init__(self, titulos):
         self.hechos = []
         for i in range(1, int(os.environ.get("CIA_PASOS_BAT") or 0) + 1):
-            titulo, _, detalle = (os.environ.get(f"CIA_PASO{i}") or "").partition("|")
+            # "titulo|detalle" o "titulo|detalle|estado" (omitido al reconfigurar).
+            titulo, detalle, estado = ((os.environ.get(f"CIA_PASO{i}") or "").split("|", 2) + ["", ""])[:3]
             if titulo:
-                self.hechos.append((titulo, "ok", detalle))
+                self.hechos.append((titulo, estado if estado in MARCAS else "ok", detalle))
         self.n = len(self.hechos)
         self.total = self.n + len(titulos)
         self.actual = None

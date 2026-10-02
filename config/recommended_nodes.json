@@ -21,7 +21,7 @@
     ],
     "pregunta": "installer.install_nodes",
     "detalle": null,
-    "version": "0610ff48bfb88beab0eff528dc5f73df8d32dc1a",
+    "version": null,
     "recommended": true,
     "required": true,
     "validation": "startup_verified_nvidia_v0.38.0"
@@ -36,7 +36,7 @@
     "detalle": "installer.monitor_desc",
     "sobrante": "pynvml",
     "version": "2f18256c5b5063937106f29a8e0a7db3ae3869b7",
-    "recommended": false,
+    "recommended": true,
     "required": false,
     "validation": "candidate"
   },
@@ -48,7 +48,7 @@
     ],
     "grupo": "video",
     "version": "d3cfe21625e5170126ce06fbfcfe1d88108688c3",
-    "recommended": false,
+    "recommended": true,
     "required": false,
     "validation": "candidate"
   },
@@ -72,7 +72,7 @@
     ],
     "grupo": "video",
     "version": "6ea2651e7df66d7585f6ffee804b20e92fb38b8a",
-    "recommended": false,
+    "recommended": true,
     "required": false,
     "validation": "candidate"
   },
@@ -84,7 +84,7 @@
     ],
     "grupo": "video",
     "version": "835c3cf7919410f71f414688f049c6ca497789d0",
-    "recommended": false,
+    "recommended": true,
     "required": false,
     "validation": "candidate"
   },
@@ -96,7 +96,7 @@
     ],
     "grupo": "video",
     "version": "40316cf008b2fd8663263270669eb4da23f89d2c",
-    "recommended": false,
+    "recommended": true,
     "required": false,
     "validation": "candidate"
   },
@@ -107,7 +107,7 @@
     ],
     "grupo": "interfaz",
     "version": "449c58fcdd612f7733e54c51f6758ead63fa180b",
-    "recommended": false,
+    "recommended": true,
     "required": false,
     "validation": "candidate"
   },
@@ -119,7 +119,7 @@
     ],
     "grupo": "interfaz",
     "version": "609f3afaa74b2f88ef9ce8d939626065e3247469",
-    "recommended": false,
+    "recommended": true,
     "required": false,
     "validation": "candidate"
   },

@@ -2,49 +2,49 @@
   {
     "min_vram_gb": 0,
     "name": "<8 GB",
-    "recommendation_es": "Modelos cuantizados, lotes de uno y resolucion moderada.",
-    "recommendation_en": "Quantized models, batch size one and moderate resolution."
+    "recommendation_es": "Poca VRAM: modelos GGUF o cuantizados, resolución baja y lotes de uno. El video será lento.",
+    "recommendation_en": "Low VRAM: GGUF or quantized models, low resolution and batch size one. Video will be slow."
   },
   {
     "min_vram_gb": 8,
     "name": "8 GB",
-    "recommendation_es": "Modelos cuantizados, lotes de uno y resolucion moderada.",
-    "recommendation_en": "Quantized models, batch size one and moderate resolution."
+    "recommendation_es": "Modelos GGUF o FP8, lotes de uno y resolución moderada. En video, clips cortos.",
+    "recommendation_en": "GGUF or FP8 models, batch size one and moderate resolution. Keep video clips short."
   },
   {
     "min_vram_gb": 12,
     "name": "12 GB",
-    "recommendation_es": "Modelos cuantizados, lotes de uno y resolucion moderada.",
-    "recommendation_en": "Quantized models, batch size one and moderate resolution."
+    "recommendation_es": "Imagen con modelos FP8 sin problemas; en video, GGUF o FP8 y resolución moderada.",
+    "recommendation_en": "Image models in FP8 run comfortably; for video use GGUF or FP8 at moderate resolution."
   },
   {
     "min_vram_gb": 16,
     "name": "16 GB",
-    "recommendation_es": "Ajusta modelo, resolucion y offload segun el workflow; la VRAM no garantiza que cualquier modelo quepa.",
-    "recommendation_en": "Choose model, resolution and offload for your workflow; VRAM alone does not guarantee a model fits."
+    "recommendation_es": "Imagen en FP8 o FP16 y video con GGUF o FP8; ajusta resolución y duración al workflow.",
+    "recommendation_en": "Image in FP8 or FP16 and video with GGUF or FP8; adjust resolution and length to the workflow."
   },
   {
     "min_vram_gb": 24,
     "name": "24 GB",
-    "recommendation_es": "Ajusta modelo, resolucion y offload segun el workflow; la VRAM no garantiza que cualquier modelo quepa.",
-    "recommendation_en": "Choose model, resolution and offload for your workflow; VRAM alone does not guarantee a model fits."
+    "recommendation_es": "Modelos de imagen en FP16 y la mayoría de workflows de video en FP8.",
+    "recommendation_en": "FP16 image models and most video workflows in FP8."
   },
   {
     "min_vram_gb": 32,
     "name": "32 GB",
-    "recommendation_es": "Ajusta modelo, resolucion y offload segun el workflow; la VRAM no garantiza que cualquier modelo quepa.",
-    "recommendation_en": "Choose model, resolution and offload for your workflow; VRAM alone does not guarantee a model fits."
+    "recommendation_es": "Video en alta resolución con FP8 y modelos grandes de imagen en FP16.",
+    "recommendation_en": "High-resolution video in FP8 and large FP16 image models."
   },
   {
     "min_vram_gb": 48,
     "name": "48 GB",
-    "recommendation_es": "Ajusta modelo, resolucion y offload segun el workflow; la VRAM no garantiza que cualquier modelo quepa.",
-    "recommendation_en": "Choose model, resolution and offload for your workflow; VRAM alone does not guarantee a model fits."
+    "recommendation_es": "Modelos grandes en FP16 con margen y lotes de más de una imagen.",
+    "recommendation_en": "Large FP16 models with headroom and batches larger than one."
   },
   {
     "min_vram_gb": 64,
     "name": "64 GB+",
-    "recommendation_es": "Ajusta modelo, resolucion y offload segun el workflow; la VRAM no garantiza que cualquier modelo quepa.",
-    "recommendation_en": "Choose model, resolution and offload for your workflow; VRAM alone does not guarantee a model fits."
+    "recommendation_es": "Modelos completos en FP16 y lotes grandes; la VRAM deja de ser el límite habitual.",
+    "recommendation_en": "Full FP16 models and large batches; VRAM is rarely the limit."
   }
 ]

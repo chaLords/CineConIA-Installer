@@ -21,7 +21,8 @@ def cargar(nombre):
 def nodos():
     data = cargar('recommended_nodes')
     for key, node in data.items():
-        if not re.fullmatch(r'[0-9a-f]{40}', node['version']):
+        # null follows the default branch (our own Cine con IA nodes).
+        if node['version'] is not None and not re.fullmatch(r'[0-9a-f]{40}', node['version']):
             raise ValueError(f'NODE_REVISION_INVALID: {key}')
         if not re.fullmatch(r'https://github\.com/[\w.-]+/[\w.-]+\.git', node['repo']):
             raise ValueError(f'NODE_SOURCE_INVALID: {key}')
@@ -107,9 +108,12 @@ def preparar_git(destino):
                               '--output', str(partial), spec['url']], 'MinGit', timeout=600)
     if not ok:
         raise RuntimeError('GIT_DOWNLOAD_FAILED: ' + '; '.join(detail))
+    # Chunked: hashlib.file_digest needs Python 3.11 and older portables exist.
+    digest = hashlib.sha256()
     with partial.open('rb') as f:
-        digest = hashlib.file_digest(f, 'sha256').hexdigest()
-    if digest != spec['sha256']:
+        for block in iter(lambda: f.read(1024 * 1024), b''):
+            digest.update(block)
+    if digest.hexdigest() != spec['sha256']:
         raise RuntimeError('GIT_HASH_MISMATCH')
     os.replace(partial, archive)
     stage = Path(tempfile.mkdtemp(prefix='git-', dir=directory))
@@ -138,4 +142,18 @@ def autorizar(destino, input_fn=input):
         return True
     import i18n
     print(i18n.t('setup.maintenance_confirm') + '\n' + destino)
-    return input_fn(i18n.t('setup.confirm') + ': ').strip() == 'CONFIRMAR'
+    return input_fn(i18n.t('setup.confirm') + ': ').strip() == i18n.t('setup.confirm_word')
+
+
+def mensaje_error(error):
+    """Translated text for coded errors (CODE or CODE: detail); the code stays visible."""
+    import i18n
+    texto = str(error)
+    m = re.fullmatch(r'([A-Z0-9_]+)(?::\s*(.*))?', texto, flags=re.DOTALL)
+    if m:
+        clave = 'setup.error.' + m.group(1)
+        traducido = i18n.t(clave)
+        if traducido != clave:
+            return (traducido.replace('{detail}', m.group(2) or '')
+                    + f"\n      ({i18n.t('setup.error_code')} {texto})")
+    return texto

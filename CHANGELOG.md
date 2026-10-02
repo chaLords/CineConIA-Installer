@@ -1,4 +1,28 @@
-# 3.0.0-rc.1 — PLAN V2 (rama de pruebas, 2026-09-30)
+# Changelog
+
+## v3.0.0-rc.2 — 2026-10-01 (rama de pruebas)
+
+Correcciones de la revisión de la rc.1. Todavía no es una release estable.
+
+- README: vuelve el de la versión estable, con logo, insignias, botón de descarga, Discord y YouTube, y suma una sección con las novedades de la versión 3.
+- La barra de progreso de v2.7.0 vuelve a verse en descarga, extracción, pip y git. El inicio en PowerShell pasaba la salida de Python y de `progreso.ps1` por una tubería: los dos creían que no había consola, no dibujaban la barra y Python retenía sus mensajes durante minutos. Ahora heredan la consola.
+- El modo recomendado instala lo mismo que las respuestas por defecto de 2.7.0, sin preguntar: Manager clásico, Cine con IA, monitor, nodos de video (KJNodes, VideoHelperSuite, GGUF, SelfLift, escalador H3), extras de interfaz (rgthree, Custom-Scripts) y SageAttention en NVIDIA. Los nodos de la comunidad siguen en el modo avanzado.
+- Los nodos de terceros siguen fijados a un commit, pero quedan sobre su rama: `Actualizar-ComfyUI-y-Nodos.bat` y el Manager pueden actualizarlos (antes `git pull` fallaba con el commit suelto). Cine con IA se instala siempre en su última versión.
+- 7zr.exe se descarga de la release 26.03 de 7-Zip en GitHub, el mismo archivo con el mismo SHA-256. La URL sin versión cambia con cada versión de 7-Zip y habría roto todas las instalaciones.
+- Errores explicados en el idioma del usuario y con la solución (driver, carpeta ocupada, espacio, descarga cortada...). El código sigue visible para soporte.
+- Vuelven los avisos de 2.x: las carpetas dentro de OneDrive y las rutas con tildes o eñes se rechazan explicando el motivo, y el paquete de 2 GB se elimina tras extraer.
+- Carpeta propuesta: `ComfyUI` en el SSD con más espacio libre; Enter la acepta y, si ya existe, se usa `ComfyUI-2`. Una carpeta rechazada deja elegir otra en lugar de cerrar el instalador.
+- La GPU y el driver se comprueban antes de preguntar la carpeta.
+- "Seguir usando mi instalación" ya no pregunta cuál, porque no se modifica ninguna.
+- Driver NVIDIA anterior al 580 en una tarjeta moderna: instala CUDA 12.6 y avisa de que actualizar el driver da la versión con CUDA 13; en el modo avanzado se puede abrir la página de NVIDIA y salir.
+- La comprobación de escritura ya no falla al instalar en la raíz de C: (un usuario estándar puede crear carpetas allí, pero no archivos).
+- Acceso directo **ComfyUI**, como en 2.x; si ya existe uno de otra instalación, **ComfyUI (2)**. El resumen dice cuál se creó.
+- Pasos numerados `[n/14]` como en 2.x: las fases de equipo, descarga y extracción entran al resumen final.
+- La búsqueda de instalaciones entra en las carpetas de OneDrive y solo evita enlaces y junctions reales.
+- "CONFIRM" en inglés; recomendaciones distintas para cada perfil de VRAM.
+- Repositorio: finales de línea LF normalizados (`* text=auto`), como en `main`.
+
+## v3.0.0-rc.1 — 2026-09-30 (rama de pruebas)
 
 - Inicio PowerShell sin Python global: diagnóstico, detección de instalaciones, selector de destino y validaciones antes de descargar.
 - Reutilización sin cambios por defecto; configuración de un portable existente solo con autorización explícita.
@@ -8,10 +32,6 @@
 - Operación real de GPU, arranque y carga de nodos; estado persistente y logs fechados.
 - Accesos directos independientes que preservan otras instalaciones.
 - Pruebas de seguridad y compatibilidad, y validación física NVIDIA documentada.
-
-No se publica una release estable desde esta rama. Se conserva el historial anterior:
-
-# Changelog
 
 ## v2.7.0 — 2026-09-27
 

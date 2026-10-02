@@ -81,9 +81,10 @@ Se clonan desde el repositorio de su autor solo si el usuario lo acepta:
 - comfyui-SelfLift — https://github.com/facok/comfyui-SelfLift — sin licencia declarada en el repositorio
 
 ## 7-Zip
-- Origen: https://www.7-zip.org/
+- Origen: https://www.7-zip.org/ (release oficial en https://github.com/ip7z/7zip)
 - Licencia: LGPL-2.1
-- 7zr.exe se descarga para extraer el portable.
+- 7zr.exe se descarga para extraer el portable, en una version fija con su
+  SHA-256 (config/compatibility_matrix.json).
 
 ## Influencia de ComfyUI-Easy-Install
 
@@ -95,10 +96,14 @@ No se copia su codigo. Esta implementacion mantiene las decisiones principales
 en Python, evita branding de terceros/canal en el escritorio y resuelve extras
 contra el entorno real instalado.
 
-## MinGit (V2 bootstrap)
-- Source: https://github.com/git-for-windows/git
-- License: GNU GPL v2; original license files remain in the downloaded distribution.
-- Downloaded only when Git is absent, extracted inside the new portable. URL and SHA-256 are pinned in config/compatibility_matrix.json.
+## MinGit (Git for Windows)
+- Origen: https://github.com/git-for-windows/git
+- Licencia: GNU GPL v2; los archivos de licencia originales se conservan en la
+  distribucion descargada.
+- Solo se descarga si falta Git, y se extrae dentro de la nueva instalacion.
+  URL y SHA-256 fijados en config/compatibility_matrix.json.
 
-## Versioned downloads
-ComfyUI and node source revisions used by this candidate are recorded in config/*.json. No third-party binary is bundled into the installer ZIP. See docs/VALIDATION.md for the tested hardware scope.
+## Descargas con version fija
+Las versiones de ComfyUI y los commits de los nodos de terceros estan en
+config/*.json. El ZIP del instalador no incluye binarios de terceros. El
+alcance de las pruebas de hardware esta en docs/VALIDATION.md.

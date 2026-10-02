@@ -51,7 +51,7 @@ jobs:
           # --worktree-attributes: usa el .gitattributes actual aunque la etiqueta sea anterior
           git archive --worktree-attributes --format=zip -o CineConIA-Installer.zip "$TAG"
           unzip -l CineConIA-Installer.zip
-          for f in ComfyUI-Setup.bat Instalar-ComfyUI.bat src/instalador.py assets/ComfyUI.ico assets/THIRD_PARTY_NOTICES.md LICENSE; do
+          for f in ComfyUI-Setup.bat ComfyUI-Advanced-Setup.bat Instalar-ComfyUI.bat src/bootstrap.ps1 src/instalador.py src/configuracion.py config/compatibility_matrix.json config/recommended_nodes.json config/hardware_profiles.json assets/ComfyUI.ico assets/THIRD_PARTY_NOTICES.md LICENSE; do
             unzip -l CineConIA-Installer.zip "$f" >/dev/null || { echo "Falta $f en el ZIP"; exit 1; }
           done
           if unzip -l CineConIA-Installer.zip README.md >/dev/null 2>&1; then

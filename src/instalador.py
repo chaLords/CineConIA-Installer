@@ -86,7 +86,7 @@ def preflight_usuario(destino):
     try:
         configuracion.preparar_git(destino)
     except (OSError, RuntimeError, ValueError, subprocess.SubprocessError) as e:
-        print(f"   {R}{e}{X}")
+        print(f"   {R}{configuracion.mensaje_error(e)}{X}")
         pasos.registrar("GIT_PREPARATION_FAILED",str(e))
         return False
     return True
@@ -299,17 +299,26 @@ def _preparar_nodo(destino,py,clave,torch_base=None):
         trabajo=os.path.join(destino,"_cineconia","descargas-nodos")
         os.makedirs(trabajo,exist_ok=True)
         temporal=tempfile.mkdtemp(prefix=clave+"-",dir=trabajo)
-        ok,cola=pasos.correr([git,"clone","--depth","1",nodo["repo"],temporal],f"git clone {nodo['carpetas'][0]}")
+        revision=nodo.get("version")
+        if revision:
+            # Commit history without file contents: the pinned revision stays on
+            # its branch, so Actualizar-ComfyUI-y-Nodos.bat and the Manager can
+            # still fast-forward it later (a detached checkout cannot pull).
+            clonar=[git,"clone","--filter=blob:none","--no-checkout",nodo["repo"],temporal]
+        else:
+            clonar=[git,"clone","--depth","1",nodo["repo"],temporal]
+        ok,cola=pasos.correr(clonar,f"git clone {nodo['carpetas'][0]}")
+        if ok and revision:
+            ok,cola=pasos.correr([git,"-C",temporal,"reset","--hard",revision],f"git checkout {clave}")
+            if not ok:
+                # Revision outside the cloned branches: ask for it explicitly.
+                ok,cola=pasos.correr([git,"-C",temporal,"fetch","origin",revision],f"git fetch {clave}")
+                if ok:
+                    ok,cola=pasos.correr([git,"-C",temporal,"reset","--hard",revision],f"git checkout {clave}")
         if not ok or not os.path.isfile(os.path.join(temporal,"__init__.py")):
             print(f"   {R}{pasos.MARCAS['fallo'][0]} {nodo['carpetas'][0]}{X}")
             for linea in cola[-3:]:
                 print(f"      {G}{linea[:110]}{X}")
-            return False
-        revision=nodo["version"]
-        ok,cola=pasos.correr([git,"-C",temporal,"fetch","--depth","1","origin",revision],f"git fetch {clave}")
-        if ok:
-            ok,cola=pasos.correr([git,"-C",temporal,"checkout","--detach",revision],f"git checkout {clave}")
-        if not ok or not os.path.isfile(os.path.join(temporal,"__init__.py")):
             pasos.registrar("NODE_REVISION_FAILED "+clave,"\n".join(cola))
             return False
         if os.path.exists(ruta):
@@ -373,7 +382,8 @@ def paso_grupo(P,destino,py,grupo,torch_base=None):
     total=len([c for c,n in NODOS.items() if n.get("grupo")==grupo and (not configuracion.recomendado() or n.get("recommended"))])
     fallo=any(ESTADOS_NODOS.get(c)=="fallo" for c,n in NODOS.items() if n.get("grupo")==grupo)
     estado="fallo" if fallo else ("ok" if total and len(instalados)==total else ("fallo" if aceptado else "omitido"))
-    P.cerrar(estado,t("installer.n_of_m",n=len(instalados),m=total))
+    # Un grupo sin nodos en el recomendado se ofrece en la instalacion avanzada.
+    P.cerrar(estado,t("installer.n_of_m",n=len(instalados),m=total) if total else t("installer.advanced_only"))
     return instalados
 
 def git_en_path():
@@ -556,11 +566,9 @@ def main():
     P.cerrar("ok",f"{inf['gpu']} · {inf['backend']}")
 
     P.empezar(t("installer.step_accelerators"))
-    perfiles=[]  # The recommended baseline uses the official PyTorch attention backend.
-    opciones=[
-        (t("installer.auto"),t("installer.auto_desc")),
-        (t("installer.advanced"),t("installer.advanced_desc")),
-    ]
+    # Recommended, as in 2.x: SageAttention on NVIDIA when a wheel matches the
+    # installed PyTorch. Only a real GPU test gives it the desktop shortcut.
+    perfiles=["sage"] if inf["fabricante"]=="nvidia" and not inf.get("gpu_inutilizable") else []
     if not configuracion.recomendado():
         perfiles=elegir_perfiles(inf.get("vram_gb"))
     herramientas=catalogo.herramientas_de(perfiles)
@@ -573,7 +581,7 @@ def main():
     cierre=("omitido",t("installer.not_applicable") if inf["fabricante"]!="nvidia" else t("installer.skipped"))
     if herramientas:
         plan=catalogo.plan(herramientas,inf,f"cp{sys.version_info.major}{sys.version_info.minor}")
-        if mostrar_plan(plan) and preguntar(t("installer.install_compatible"),SI_NO(),1)==1:
+        if mostrar_plan(plan) and (configuracion.recomendado() or preguntar(t("installer.install_compatible"),SI_NO(),1)==1):
             instalados,omitidos,fallidos=ejecutar(plan,py)
             proteger_torch(py,torch_base)
             for nombre,motivo in omitidos+fallidos:
@@ -630,12 +638,13 @@ def main():
     creados,preferido=lanzadores.crear_lanzadores(destino,inf,verificados,manager)
     for _,ruta in creados.items():
         print(f"   {pasos.V}{pasos.MARCAS['ok'][0]}{X} {os.path.basename(ruta)}")
-    if os.environ.get("CIA_NO_SHORTCUT")=="1":
-        ok,detalle=True,"omitted"
+    sin_acceso=os.environ.get("CIA_NO_SHORTCUT")=="1"
+    if sin_acceso:
+        ok,acceso=True,os.path.basename(preferido)
     else:
-        ok,detalle=lanzadores.crear_acceso_escritorio(destino,preferido)
+        ok,acceso=lanzadores.crear_acceso_escritorio(destino,preferido)
     ajustar_interfaz(destino)
-    P.cerrar("ok" if ok else "fallo",preferido if os.environ.get("CIA_NO_SHORTCUT")=="1" else 'ComfyUI - CineConIA V2')
+    P.cerrar("ok" if ok else "fallo",acceso if sin_acceso or not ok else t("installer.desktop_shortcut_named",name=acceso))
 
     # Datos del equipo que quedan de referencia, encima del resumen de pasos.
     print(f"\n   {G}Backend: {inf['backend']}  ·  PyTorch: {inf['torch'].get('torch')}  ·  "
@@ -649,7 +658,7 @@ def main():
     configuracion.guardar_estado(destino,status="needs_attention" if incidencias else "verified",
         nodes=dict(ESTADOS_NODOS),steps=P.hechos,environment=inf,gpu_operation=gpu_ok,startup=arranque_ok)
     entorno_torch.guardar_estado(destino,py)
-    final=t('installer.needs_attention') if incidencias else (preferido if os.environ.get('CIA_NO_SHORTCUT')=='1' else t('installer.ready'))
+    final=t('installer.needs_attention') if incidencias else (preferido if sin_acceso else t('installer.ready_named',name=acceso))
     print(f"\n   {A if incidencias else pasos.V}{final}{X}")
     return 1 if incidencias else 0
 
@@ -657,7 +666,7 @@ if __name__=="__main__":
     try:
         sys.exit(main())
     except (entorno_torch.EntornoNoRecuperado, OSError, RuntimeError, ValueError, KeyboardInterrupt, EOFError) as e:
-        print(f"\n   {R}{e}{X}")
+        print(f"\n   {R}{configuracion.mensaje_error(e) or type(e).__name__}{X}")
         pasos.registrar("INSTALLATION_INTERRUPTED",str(e))
         if len(sys.argv)>1 and os.environ.get("CIA_AUTHORIZED_DESTINATION"):
             try: configuracion.guardar_estado(sys.argv[1],status="interrupted",error=str(e))

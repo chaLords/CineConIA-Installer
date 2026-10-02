@@ -147,8 +147,7 @@ def crear_lanzadores(destino,entorno,verificados,manager=None):
     _escribir(os.path.join(destino,nombres["update_nodes"]),_actualizador(True))
     # Kitchen solo esta medido en CUDA; en AMD/Intel el acceso usa el backend oficial.
     kitchen=creados.get("kitchen") if entorno.get("fabricante")=="nvidia" else None
-    preferido=creados["base"] if configuracion.recomendado() else (creados.get("sage") or kitchen or creados["base"])
-    return creados, preferido
+    return creados, creados.get("sage") or kitchen or creados["base"]
 
 def _copiar_icono(destino):
     """Copia el logo de ComfyUI que viaja con el instalador.
@@ -169,20 +168,25 @@ def crear_acceso_escritorio(destino,lanzador):
     icon=f"$s.IconLocation='{q(icono)},0';" if icono else ""
     script=("$w=New-Object -ComObject WScript.Shell;"
             "$d=[Environment]::GetFolderPath('Desktop');"
-            # Never replace the shortcut belonging to another installation.
-            "$base='ComfyUI - CineConIA V2';$p=Join-Path $d ($base+'.lnk');$n=1;"
+            # Never replace the shortcut belonging to another installation: the
+            # same one is reused, another one gets "ComfyUI (2)".
+            "$base='ComfyUI';$p=Join-Path $d ($base+'.lnk');$n=1;"
             "while(Test-Path -LiteralPath $p){"
             f"$old=$w.CreateShortcut($p);if($old.TargetPath -eq '{q(os.path.abspath(lanzador))}'){{break}};"
             "$n++;$p=Join-Path $d ($base+' ('+$n+').lnk')};"
             "$s=$w.CreateShortcut($p);"
             f"$s.TargetPath='{q(os.path.abspath(lanzador))}';"
             f"$s.WorkingDirectory='{q(os.path.abspath(destino))}';"
-            "$s.Description='ComfyUI';"+icon+"$s.Save()")
+            "$s.Description='ComfyUI';"+icon+"$s.Save();"
+            "[IO.Path]::GetFileNameWithoutExtension($p)")
     try:
         r=subprocess.run(
             ["powershell.exe","-NoProfile","-Command",script],
-            capture_output=True,text=True,timeout=30
+            capture_output=True,text=True,encoding="utf-8",errors="replace",timeout=30
         )
     except (OSError,subprocess.SubprocessError) as e:
         return False,str(e)
-    return (r.returncode==0), (icono if r.returncode==0 else (r.stderr.strip() or "PowerShell error"))
+    if r.returncode!=0:
+        return False,r.stderr.strip() or "PowerShell error"
+    # Name actually created, so the summary tells which shortcut is this one.
+    return True,(r.stdout.strip().splitlines() or ["ComfyUI"])[-1]

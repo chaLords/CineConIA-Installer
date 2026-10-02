@@ -1,3 +1,7 @@
+# Texto con saltos LF en el repositorio, sin importar la configuracion de Git
+# de quien suba los cambios (la rc.1 llego con CRLF y el diff se triplico).
+* text=auto
+
 # cmd.exe falla con call :etiqueta / goto en .bat con saltos LF.
 # Forzar CRLF tambien en el ZIP que descarga GitHub.
 *.bat text eol=crlf

@@ -1,7 +1,7 @@
 {
   "schema_version": 1,
-  "installer_version": "3.0.0-rc.1",
-  "reviewed_at": "2026-09-30",
+  "installer_version": "3.0.0-rc.2",
+  "reviewed_at": "2026-10-01",
   "minimum_free_gb": 20,
   "profiles": {
     "nvidia": {
@@ -65,7 +65,7 @@
   },
   "tools": {
     "7zr": {
-      "url": "https://www.7-zip.org/a/7zr.exe",
+      "url": "https://github.com/ip7z/7zip/releases/download/26.03/7zr.exe",
       "sha256": "ad4c82fadcbdf93c03b4fc440f300509c7d60c5c2f4d183e35d9d70d6957037d"
     },
     "mingit": {

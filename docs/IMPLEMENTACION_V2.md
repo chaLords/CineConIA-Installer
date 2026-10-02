@@ -1,7 +1,27 @@
-# Implementación del PLAN V2 — 3.0.0-rc.1
+# Implementación del PLAN V2 — 3.0.0-rc.2
 
-Fecha: 30 de septiembre de 2026. Base: `main`, commit `74a3ff3` (2.7.0).
-Rama: `feature/instalador-v2-seguro`.
+Fecha: 30 de septiembre de 2026 (rc.1) y 1 de octubre de 2026 (rc.2). Base:
+`main`, commit `74a3ff3` (2.7.0). Rama: `feature/instalador-v2-seguro`.
+
+## Revisión de la rc.1 y correcciones de la rc.2
+
+| Problema en la rc.1 | Corrección en la rc.2 |
+|---|---|
+| El README reemplazaba al de `main` y perdía logo, insignias, botón de descarga, Discord y YouTube | Se parte del README de `main` y se suman las novedades de la versión 3 |
+| `\| Out-Host` redirigía la salida de Python y `progreso.ps1`: sin barra en vivo y mensajes retenidos | `Invoke-Console` lanza los procesos heredando la consola |
+| El recomendado instalaba solo Manager, Cine con IA y VideoHelperSuite, sin SageAttention | Mismo conjunto que las respuestas por defecto de 2.7.0, sin preguntas |
+| Nodos en commit suelto (`checkout --detach`): `git pull --ff-only` del actualizador fallaba | Clon `--filter=blob:none` y `reset --hard <commit>` sobre la rama; Cine con IA sigue su rama |
+| `7zr.exe` con hash fijo en una URL sin versión | Release 26.03 de `ip7z/7zip` en GitHub, mismo SHA-256 |
+| Errores como códigos en inglés | `setup.error.<CÓDIGO>` en español e inglés, con la solución; el código sigue visible |
+| Sin avisos de OneDrive ni de tildes y eñes; paquete de 2 GB sin borrar | `PATH_ONEDRIVE`, `PATH_NON_ASCII`; caché en el disco de destino, eliminada tras extraer |
+| Diálogo de carpeta obligatorio; carpeta ocupada cerraba el instalador | Propuesta en el SSD con más espacio, Enter acepta, nombres `ComfyUI-2`...; un rechazo permite elegir otra |
+| "Usar mi instalación" preguntaba cuál, sin efecto | Solo se pregunta cuál al reconfigurar |
+| Driver anterior al 580: CUDA 12.6 sin aviso | Aviso con la página de NVIDIA; en avanzado, opción de salir para actualizar |
+| La prueba de escritura escribía un archivo en la carpeta padre: falla en `C:\` sin administrador | Se prueba dentro de la carpeta nueva y se borra lo creado |
+| Acceso "ComfyUI - CineConIA V2" y carpeta "-V2" | Acceso **ComfyUI** (o **ComfyUI (2)**), sin marca del canal, como en 2.x |
+| La búsqueda saltaba OneDrive por ser punto de reanálisis | Solo se evitan `Junction` y `SymbolicLink` (`LinkType`) |
+| "CONFIRMAR" también en inglés; perfiles de VRAM repetidos | "CONFIRM" en inglés; una recomendación por perfil |
+| 19 archivos con CRLF en el índice | `* text=auto` y LF normalizado |
 
 El [plan original](PLAN_V2.md) se conserva como contexto histórico. Su indicación de no implementar todavía fue sustituida por la autorización posterior del propietario para construir y probar esta nueva rama. No se autoriza desde esta rama fusionar ni publicar una release estable.
 
@@ -13,7 +33,7 @@ Faltaban detección de instalaciones antes de descargar, selector gráfico para 
 
 Se mantiene Python para configuración y migración. Un bootstrap PowerShell 5.1 sustituye la lógica extensa del BAT, porque Windows ya lo incluye y debe funcionar sin Python global. El BAT solo lo invoca con rutas entre comillas y expansión retardada desactivada. Reescribir todo en PowerShell o crear una aplicación gráfica completa añadiría una segunda implementación de lógica ya probada, sin mejorar este flujo.
 
-La V2 conceptual se numera **3.0.0-rc.1**, porque el proyecto ya publicó 2.7.0. Se implementa una rama candidata, no una sustitución de la release estable.
+La V2 conceptual se numera **3.0.0-rc.1** (y rc.2 tras la revisión), porque el proyecto ya publicó 2.7.0. Se implementa una rama candidata, no una sustitución de la release estable.
 
 ## Cobertura de requisitos
 
@@ -27,8 +47,8 @@ La V2 conceptual se numera **3.0.0-rc.1**, porque el proyecto ya publicó 2.7.0.
 | RF-15 y RF-16 | PyTorch/runtime del paquete oficial fijado; verificación de matriz, protección de versiones y operación FP16 en GPU |
 | RF-17 y RF-18 | Busca instalaciones con y sin modelos antes de instalar; bloquea destinos ocupados, solapamientos y reparse points; consentimiento para configurar un portable existente |
 | RF-19 y RF-20 | Conservar instalación sin cambios o crear una independiente; mantenimiento de portable con confirmación explícita |
-| RF-21 y RF-22 | Selector nativo, cancelación segura, prueba de escritura, tipo de disco y espacio mínimo |
-| RF-23 y RF-24 | Portable fijado, extracción en staging, nodos fijados por commit; recomendado pequeño y avanzado con grupos |
+| RF-21 y RF-22 | Destino propuesto (SSD con más espacio) o selector nativo, cancelación segura, prueba de escritura, tipo de disco, espacio mínimo, OneDrive y caracteres no ASCII |
+| RF-23 y RF-24 | Portable fijado, extracción en staging, nodos de terceros fijados por commit sobre su rama; recomendado igual a los valores por defecto de 2.7.0 y avanzado con grupos |
 | RF-25 y RF-26 | Migrador anterior conservado con simulación, espacio, copia verificada y consentimiento separado para mover |
 | RF-27 | Reutilización mediante YAML respaldado; avanzado permite varias bibliotecas |
 | RF-28 y RF-29 | Progreso existente, transcript de bootstrap, registros fechados y estado JSON |
@@ -36,12 +56,14 @@ La V2 conceptual se numera **3.0.0-rc.1**, porque el proyecto ya publicó 2.7.0.
 
 ## Decisiones de producto
 
-- El modo recomendado instala Manager clásico, Cine con IA y VideoHelperSuite. Los otros nodos y aceleradores continúan en avanzado. Esto evita añadir requisitos pesados sin necesidad al primer arranque.
-- Las versiones base no siguen `latest`: el portable y MinGit tienen URL/hash, y los nodos tienen commit. Las dependencias transitivas de nodos siguen sus requirements, restringiendo el conjunto PyTorch; el resultado instalado se registra con `pip freeze`.
+- El modo recomendado instala, sin preguntar, lo que 2.7.0 instalaba aceptando cada respuesta por defecto: Manager clásico, Cine con IA, monitor, nodos de video, extras de interfaz y SageAttention en NVIDIA (solo recibe el acceso si supera la prueba en GPU). Los workflows del canal necesitan los nodos de video; los nodos de la comunidad, más pesados, siguen en avanzado.
+- Las versiones base no siguen `latest`: el portable, 7-Zip y MinGit tienen URL con versión y hash, y los nodos de terceros tienen commit. Los nodos Cine con IA (`version: null`) siguen su rama: son del propio proyecto y cambian con los workflows del canal. Las dependencias transitivas de nodos siguen sus requirements, restringiendo el conjunto PyTorch; el resultado instalado se registra con `pip freeze`.
+- Un commit fijado no impide actualizar: el nodo queda sobre su rama y los actualizadores avanzan con `git pull --ff-only`.
 - Los perfiles AMD, Intel y NVIDIA antigua conservan soporte de selección y comprobación, con estado candidato hasta probarlos físicamente. No se marca una combinación como validada solo porque exista una descarga.
 - La detección tiene límites de tiempo y profundidad; el modo avanzado incluye selección manual.
 - Reutilizar una instalación manual significa conservarla y usar su lanzador habitual. El instalador no modifica entornos que no reconoce como portable.
-- Los accesos nuevos usan nombre independiente y resuelven colisiones sin reemplazar accesos de otros portables.
+- El acceso se llama **ComfyUI**, como en 2.x; si ese nombre abre otra instalación, se usa **ComfyUI (2)** sin reemplazarlo.
+- El destino se propone en el SSD con más espacio libre para que la instalación recomendada solo pida Enter. Un destino rechazado explica el motivo y permite elegir otro.
 - Las rutas para modelos y outputs pueden estar en discos diferentes. La selección de outputs se conserva en el estado y se incorpora a los lanzadores.
 
 ## Recuperación
