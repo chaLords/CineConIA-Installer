@@ -209,7 +209,9 @@ class BootstrapTests(unittest.TestCase):
     def setUp(self):
         self.tmp=tempfile.TemporaryDirectory()
         self.addCleanup(self.tmp.cleanup)
-        self.folder=Path(self.tmp.name)
+        # Long name: GitHub runners report TEMP as C:\Users\RUNNER~1, while
+        # PowerShell returns C:\Users\runneradmin for the same folder.
+        self.folder=Path(os.path.realpath(self.tmp.name))
 
     def ps(self,code):
         lib=str(ROOT/'src/bootstrap.ps1').replace("'","''")
