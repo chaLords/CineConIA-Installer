@@ -24,7 +24,7 @@ Fecha: 26 de septiembre de 2026.
 
 ## Pruebas automáticas
 
-La suite de 41 pruebas `python -B -m unittest discover -s tests -v` cubre:
+La suite `python -B -m unittest discover -s tests -v` cubre:
 
 - Dependencias fallidas, carpetas incompletas y reejecución del instalador.
 - Restricciones de PyTorch y recuperación fallida tras cambiar de versión.
@@ -36,8 +36,12 @@ La suite de 41 pruebas `python -B -m unittest discover -s tests -v` cubre:
 - Biblioteca recordada fuera de la profundidad de búsqueda, disco no disponible
   y dos ComfyUI enlazados sin duplicar archivos ni perder otras configuraciones.
 - Idiomas, parámetros de traducción y saltos de línea de los BAT.
+- Perfiles beta para Linux NVIDIA y macOS Apple Silicon, simulación sin
+  escrituras, lanzadores POSIX y la ubicación local de la biblioteca de modelos.
 
-GitHub Actions ejecuta la suite en Windows con Python 3.12 y 3.13.
+GitHub Actions ejecuta la suite en Windows con Python 3.12 y 3.13, Ubuntu con
+Python 3.13 y macOS con Python 3.13. Son comprobaciones de código y flujos sin
+GPU: el uso real de CUDA y MPS requiere validación en hardware físico.
 El ZIP de distribución se inspecciona aparte: solo archivos de ejecución,
 icono y licencias; sin README, diagramas, pruebas ni configuración de GitHub.
 
@@ -50,3 +54,6 @@ icono y licencias; sin README, diagramas, pruebas ni configuración de GitHub.
 - Tampoco se ejecutaron los perfiles avanzados FlashAttention e InsightFace.
 - Cargar un paquete no garantiza todos sus workflows, modelos o funciones.
 - Los nodos y los portables se descargan de proyectos externos que pueden cambiar.
+- Linux NVIDIA y macOS Apple Silicon se publican como beta: por ahora incluyen
+  ComfyUI base, biblioteca externa y migración; los nodos y optimizaciones de
+  CineConIA siguen siendo exclusivos de Windows hasta validarlos en cada equipo.

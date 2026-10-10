@@ -1,8 +1,10 @@
-# Arma el ZIP de descarga y lo sube a la Release.
+# Arma los ZIP de descarga y los sube a la Release.
 #
 # El boton del README apunta a
-#   https://github.com/chaLords/CineConIA-Installer/releases/latest/download/CineConIA-Installer.zip
-# y esa direccion siempre entrega el ZIP de la ultima Release.
+#   .../CineConIA-Installer-Windows.zip
+#   .../CineConIA-Installer-Linux.zip
+#   .../CineConIA-Installer-macOS.zip
+# Cada boton del README apunta al ZIP propio de su plataforma.
 #
 # El ZIP sale de "git archive": respeta export-ignore de .gitattributes, asi
 # que lleva solo lo necesario para instalar, y los .bat quedan con CRLF.
@@ -44,19 +46,47 @@ jobs:
           git rev-parse --verify --quiet "refs/tags/$TAG" >/dev/null || { echo "No existe la etiqueta $TAG"; exit 1; }
           echo "tag=$TAG" >> "$GITHUB_OUTPUT"
 
-      - name: Armar CineConIA-Installer.zip
+      - name: Armar ZIP por plataforma
         env:
           TAG: ${{ steps.version.outputs.tag }}
         run: |
-          # --worktree-attributes: usa el .gitattributes actual aunque la etiqueta sea anterior
-          git archive --worktree-attributes --format=zip -o CineConIA-Installer.zip "$TAG"
-          unzip -l CineConIA-Installer.zip
-          for f in ComfyUI-Setup.bat ComfyUI-Advanced-Setup.bat Instalar-ComfyUI.bat src/bootstrap.ps1 src/instalador.py src/configuracion.py config/compatibility_matrix.json config/recommended_nodes.json config/hardware_profiles.json assets/ComfyUI.ico assets/THIRD_PARTY_NOTICES.md LICENSE; do
-            unzip -l CineConIA-Installer.zip "$f" >/dev/null || { echo "Falta $f en el ZIP"; exit 1; }
+          make_zip() {
+            platform="$1"; archive="CineConIA-Installer-$platform.zip"; stage="$(mktemp -d)"
+            git archive --worktree-attributes --format=zip -o "$stage/source.zip" "$TAG"
+            unzip -q "$stage/source.zip" -d "$stage/files"
+            case "$platform" in
+              Windows)
+                rm -f "$stage/files"/Instalar-ComfyUI-Linux.sh "$stage/files"/Instalar-ComfyUI-macOS.sh "$stage/files"/Migrar-Modelos-ComfyUI.sh
+                rm -f "$stage/files"/src/instalador_posix.py "$stage/files"/config/platform_profiles.json
+                ;;
+              Linux)
+                rm -f "$stage/files"/*.bat "$stage/files"/src/bootstrap.ps1 "$stage/files"/src/progreso.ps1 "$stage/files"/src/rutas_largas.py "$stage/files"/assets/ComfyUI.ico
+                ;;
+              macOS)
+                rm -f "$stage/files"/*.bat "$stage/files"/src/bootstrap.ps1 "$stage/files"/src/progreso.ps1 "$stage/files"/src/rutas_largas.py "$stage/files"/assets/ComfyUI.ico
+                ;;
+            esac
+            (cd "$stage/files" && zip -qr "$GITHUB_WORKSPACE/$archive" .)
+            rm -rf "$stage"
+          }
+          make_zip Windows
+          make_zip Linux
+          make_zip macOS
+          cp CineConIA-Installer-Windows.zip CineConIA-Installer.zip
+          for f in ComfyUI-Setup.bat ComfyUI-Advanced-Setup.bat Instalar-ComfyUI.bat src/bootstrap.ps1 src/instalador.py src/configuracion.py config/compatibility_matrix.json assets/ComfyUI.ico LICENSE; do
+            unzip -l CineConIA-Installer-Windows.zip "$f" >/dev/null || { echo "Falta $f en Windows"; exit 1; }
           done
-          if unzip -l CineConIA-Installer.zip README.md >/dev/null 2>&1; then
-            echo "README.md no deberia ir en el ZIP"; exit 1
-          fi
+          for f in Instalar-ComfyUI-Linux.sh Migrar-Modelos-ComfyUI.sh src/instalador_posix.py src/migrar_modelos.py config/platform_profiles.json LICENSE; do
+            unzip -l CineConIA-Installer-Linux.zip "$f" >/dev/null || { echo "Falta $f en Linux"; exit 1; }
+          done
+          for f in Instalar-ComfyUI-macOS.sh Migrar-Modelos-ComfyUI.sh src/instalador_posix.py src/migrar_modelos.py config/platform_profiles.json LICENSE; do
+            unzip -l CineConIA-Installer-macOS.zip "$f" >/dev/null || { echo "Falta $f en macOS"; exit 1; }
+          done
+          for archive in CineConIA-Installer-Windows.zip CineConIA-Installer-Linux.zip CineConIA-Installer-macOS.zip; do
+            if unzip -l "$archive" README.md >/dev/null 2>&1; then
+              echo "$archive no deberia incluir README.md"; exit 1
+            fi
+          done
 
       - name: Subir a la Release
         env:
@@ -64,7 +94,7 @@ jobs:
           TAG: ${{ steps.version.outputs.tag }}
         run: |
           if gh release view "$TAG" >/dev/null 2>&1; then
-            gh release upload "$TAG" CineConIA-Installer.zip --clobber
+            gh release upload "$TAG" CineConIA-Installer.zip CineConIA-Installer-Windows.zip CineConIA-Installer-Linux.zip CineConIA-Installer-macOS.zip --clobber
           else
-            gh release create "$TAG" CineConIA-Installer.zip --title "$TAG" --notes-from-tag
+            gh release create "$TAG" CineConIA-Installer.zip CineConIA-Installer-Windows.zip CineConIA-Installer-Linux.zip CineConIA-Installer-macOS.zip --title "$TAG" --notes-from-tag
           fi

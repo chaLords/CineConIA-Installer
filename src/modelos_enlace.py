@@ -9,6 +9,7 @@ import os
 import re
 import shutil
 import string
+import sys
 from datetime import datetime
 
 CARPETAS=[
@@ -33,7 +34,14 @@ MARCA_FIN="# END CINECONIA MODEL LIBRARY"
 BLOQUE_NOMBRE="cineconia_model_library"
 
 def ruta_registro():
-    base=os.environ.get("LOCALAPPDATA") or os.path.expanduser("~/.local/share")
+    # Cada sistema guarda preferencias locales sin mezclar la biblioteca real
+    # de modelos. Windows conserva la ubicacion historica.
+    if os.environ.get("LOCALAPPDATA"):
+        base=os.environ["LOCALAPPDATA"]
+    elif sys.platform == "darwin":
+        base=os.path.expanduser("~/Library/Application Support")
+    else:
+        base=os.environ.get("XDG_DATA_HOME") or os.path.expanduser("~/.local/share")
     return os.path.join(base,"CineConIA","bibliotecas.json")
 
 def bibliotecas_guardadas():
@@ -88,6 +96,17 @@ def mapa_categorias(models):
 
 def discos_fijos():
     """Unidades locales fijas (C:, D:, ...), sin USB ni unidades de red."""
+    if os.name != "nt":
+        # No se recorre / completo: Home y los puntos de montaje habituales
+        # bastan para proponer una biblioteca sin dejar el equipo ocupado.
+        rutas=[os.path.expanduser("~")]
+        for padre in ("/Volumes","/media","/mnt"):
+            try:
+                rutas.extend(os.path.join(padre,n) for n in os.listdir(padre))
+            except OSError:
+                pass
+        vistas=set()
+        return [r for r in rutas if os.path.isdir(r) and not (r in vistas or vistas.add(r))]
     try:
         import ctypes
         k=ctypes.windll.kernel32
@@ -196,25 +215,28 @@ def validar_biblioteca(models,comfy_root):
     """
     import ctypes
     models=os.path.abspath(models)
-    if not re.match(r"^[A-Za-z]:\\",models):
+    if not os.path.isabs(models):
         raise ValueError("PATH_LOCAL_ABSOLUTE_REQUIRED")
-    if re.search(r"[^\x20-\x7E]",models):
+    if os.name == "nt" and not re.match(r"^[A-Za-z]:\\",models):
+        raise ValueError("PATH_LOCAL_ABSOLUTE_REQUIRED")
+    if os.name == "nt" and re.search(r"[^\x20-\x7E]",models):
         raise ValueError("PATH_NON_ASCII")
-    if len(models)<=3:
+    if (os.name == "nt" and len(models)<=3) or (os.name != "nt" and models==os.path.sep):
         raise ValueError("PATH_DRIVE_ROOT")
     if _solapan(models,os.path.dirname(os.path.abspath(comfy_root))):
         raise ValueError("LIBRARY_INSIDE_COMFYUI")
     nubes=[os.environ.get(v) for v in ("OneDrive","OneDriveConsumer","OneDriveCommercial")]
-    if any(n and _solapan(models,n) for n in nubes) or re.search(r"\\OneDrive( - [^\\]+)?(\\|$)",models,re.I):
+    if os.name == "nt" and (any(n and _solapan(models,n) for n in nubes) or re.search(r"\\OneDrive( - [^\\]+)?(\\|$)",models,re.I)):
         raise ValueError("PATH_ONEDRIVE")
     for protegida in (os.environ.get(v) for v in ("WINDIR","ProgramFiles","ProgramFiles(x86)","ProgramData")):
         if protegida and _solapan(models,protegida):
             raise ValueError("PATH_PROTECTED: "+protegida)
-    try:
-        if ctypes.windll.kernel32.GetDriveTypeW(models[:3])==4:
-            raise ValueError("LIBRARY_NETWORK_DRIVE")
-    except (AttributeError,OSError):
-        pass
+    if os.name == "nt":
+        try:
+            if ctypes.windll.kernel32.GetDriveTypeW(models[:3])==4:
+                raise ValueError("LIBRARY_NETWORK_DRIVE")
+        except (AttributeError,OSError):
+            pass
     try:
         os.makedirs(models,exist_ok=True)
         prueba=os.path.join(models,".cineconia-write-test")

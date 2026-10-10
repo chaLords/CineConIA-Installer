@@ -4,10 +4,20 @@ permissions:
   contents: read
 jobs:
   pruebas:
-    runs-on: windows-latest
+    name: ${{ matrix.os }} · Python ${{ matrix.python-version }}
+    runs-on: ${{ matrix.os }}
     strategy:
+      fail-fast: false
       matrix:
-        python-version: ['3.12', '3.13']
+        include:
+          - os: windows-latest
+            python-version: '3.12'
+          - os: windows-latest
+            python-version: '3.13'
+          - os: ubuntu-latest
+            python-version: '3.13'
+          - os: macos-latest
+            python-version: '3.13'
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5

@@ -296,11 +296,15 @@ class PolicyTests(unittest.TestCase):
     def test_library_validation_rules(self):
         with tempfile.TemporaryDirectory() as folder:
             base=Path(os.path.realpath(folder)); comfy=base/'ComfyUI'/'ComfyUI'; comfy.mkdir(parents=True)
-            cases={str(base/'Peña'/'models'):'PATH_NON_ASCII',
-                   str(base/'ComfyUI'/'models'):'LIBRARY_INSIDE_COMFYUI',
-                   os.path.join(os.environ['WINDIR'],'models'):'PATH_PROTECTED'}
-            with patch.dict(os.environ,{'OneDrive':str(base/'OneDrive')}):
+            cases={str(base/'ComfyUI'/'models'):'LIBRARY_INSIDE_COMFYUI'}
+            changes={}
+            if os.name=='nt':
+                changes['OneDrive']=str(base/'OneDrive')
+                cases[str(base/'Peña'/'models')]='PATH_NON_ASCII'
+                changes['WINDIR']=os.environ.get('WINDIR',str(base/'Windows'))
+                cases[os.path.join(changes['WINDIR'],'models')]='PATH_PROTECTED'
                 cases[str(base/'OneDrive'/'models')]='PATH_ONEDRIVE'
+            with patch.dict(os.environ,changes):
                 for path,code in cases.items():
                     with self.assertRaisesRegex(ValueError,code):
                         modelos_enlace.validar_biblioteca(path,str(comfy))

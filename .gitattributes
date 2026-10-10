@@ -6,6 +6,7 @@
 # Forzar CRLF tambien en el ZIP que descarga GitHub.
 *.bat text eol=crlf
 *.cmd text eol=crlf
+*.sh text eol=lf
 
 # Fuera del ZIP de descarga: solo sirven para el repositorio.
 # Aplica al boton del README (Release) y al "Download ZIP" de GitHub.

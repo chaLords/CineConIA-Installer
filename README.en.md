@@ -5,8 +5,8 @@
 <h1 align="center">Clean ComfyUI Installation</h1>
 
 <p align="center">
-  <strong>Automatic, adaptive installer for Windows</strong><br>
-  NVIDIA · AMD · Intel
+  <strong>Automatic, adaptive installer for ComfyUI</strong><br>
+  Windows · Linux NVIDIA (beta) · macOS Apple Silicon (beta)
 </p>
 
 <p align="center">
@@ -23,9 +23,11 @@
 </p>
 
 <p align="center">
-  <a href="https://github.com/chaLords/CineConIA-Installer/releases/latest/download/CineConIA-Installer.zip"><img alt="Download the installer (.zip)" src="https://img.shields.io/badge/Download-installer%20.zip-2ea44f?style=for-the-badge"></a><br>
+  <a href="https://github.com/chaLords/CineConIA-Installer/releases/latest/download/CineConIA-Installer-Windows.zip"><img alt="Download for Windows" src="https://img.shields.io/badge/Download-Windows-0078D4?style=for-the-badge&logo=windows&logoColor=white"></a>
+  <a href="https://github.com/chaLords/CineConIA-Installer/releases/latest/download/CineConIA-Installer-Linux.zip"><img alt="Download for Linux NVIDIA beta" src="https://img.shields.io/badge/Download-Linux%20NVIDIA%20beta-FCC624?style=for-the-badge&logo=linux&logoColor=black"></a>
+  <a href="https://github.com/chaLords/CineConIA-Installer/releases/latest/download/CineConIA-Installer-macOS.zip"><img alt="Download for macOS Apple Silicon beta" src="https://img.shields.io/badge/Download-macOS%20Apple%20Silicon%20beta-24292F?style=for-the-badge&logo=apple&logoColor=white"></a><br>
   <a href="https://github.com/chaLords/CineConIA-Installer/releases/latest"><img alt="Installer version you download" src="https://img.shields.io/github/v/release/chaLords/CineConIA-Installer?label=version&color=2ea44f"></a><br>
-  <sub>Only what you need to install; the documentation stays here on GitHub.</sub>
+  <sub>Windows is stable. Linux NVIDIA and macOS Apple Silicon are beta; documentation stays here on GitHub.</sub>
 </p>
 
 <p align="center">
@@ -37,6 +39,18 @@
 
 > [!TIP]
 > **💬 Questions or problems with the installation?** Ask the Cine con IA community on Discord (Spanish-speaking): [discord.gg/hXKJ78cEua](https://discord.gg/hXKJ78cEua) · Tutorials on [YouTube](https://www.youtube.com/@cineconia.oficial).
+
+## Platforms
+
+Choose the button for your computer: GitHub does not automatically detect your operating system.
+
+- **Windows:** unzip the download and run **Instalar-ComfyUI.bat**, as before.
+- **Linux NVIDIA (beta):** unzip it and run `bash Instalar-ComfyUI-Linux.sh` from that folder. It requires x86_64 Linux, Python 3 and an installed NVIDIA driver (`nvidia-smi` must work).
+- **macOS Apple Silicon (beta):** unzip it and run `bash Instalar-ComfyUI-macOS.sh`. This is for M1, M2, M3 or M4 Macs; Intel Macs are not supported yet.
+
+Both beta editions create an isolated Python environment, download the tested ComfyUI revision, offer an external model library and generate a file to start ComfyUI. They also include **Migrar-Modelos-ComfyUI.sh**, with the same simulation, SHA-256 verification and safe confirmation before moving models.
+
+In this first beta, Linux and macOS install **base ComfyUI**, the external model library, and the migrator. CineConIA-specific nodes and optimizations remain in the Windows edition until they are validated on real hardware for each platform. The detailed instructions that follow are Windows-specific.
 
 ## What's new in version 3
 

@@ -1,0 +1,23 @@
+{
+  "schema_version": 1,
+  "comfyui": {
+    "repository": "https://github.com/Comfy-Org/ComfyUI.git",
+    "revision": "v0.38.0"
+  },
+  "profiles": {
+    "linux-nvidia": {
+      "platform": "linux",
+      "architectures": ["x86_64", "amd64"],
+      "label": "Linux · NVIDIA CUDA",
+      "required_commands": ["python3", "git", "nvidia-smi"],
+      "torch_arguments": ["torch", "torchvision", "torchaudio", "--extra-index-url", "https://download.pytorch.org/whl/cu130"]
+    },
+    "macos-apple-silicon": {
+      "platform": "darwin",
+      "architectures": ["arm64", "aarch64"],
+      "label": "macOS · Apple Silicon (MPS)",
+      "required_commands": ["python3", "git"],
+      "torch_arguments": ["--pre", "torch", "torchvision"]
+    }
+  }
+}
