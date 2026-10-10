@@ -124,6 +124,11 @@ def crear_lanzadores(destino,entorno,verificados,manager=None):
     # Solo el Manager integrado necesita el flag; con el clasico (nodo) sobra,
     # y ademas lo desactivaria.
     comun="--enable-manager" if manager=="integrado" else ""
+    # ComfyUI fuerza una sola GPU en Windows por defecto. La version portable
+    # que usamos permite optar por todas las CUDA visibles; nunca se agrega a
+    # AMD/Intel ni a una version que no declare el argumento.
+    if entorno.get("fabricante")=="nvidia" and flag_soportado(destino,"--cuda-device"):
+        comun += " --cuda-device all"
     output=configuracion.leer_estado(destino).get('output_directory')
     if output:
         if any(c in output for c in '%!&|<>^"\r\n'):

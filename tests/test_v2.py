@@ -160,6 +160,21 @@ class PolicyTests(unittest.TestCase):
         self.assertIn("$base='ComfyUI'",script)
         self.assertEqual((ok,name),(True,'ComfyUI (2)'))
 
+    def test_nvidia_launcher_enables_all_cuda_devices_only_when_supported(self):
+        with tempfile.TemporaryDirectory() as folder:
+            root=Path(folder)
+            cli=root/'ComfyUI/comfy/cli_args.py'
+            cli.parent.mkdir(parents=True)
+            cli.write_text('parser.add_argument("--cuda-device")',encoding='utf-8')
+            (root/'python_embeded').mkdir()
+            (root/'python_embeded/python.exe').touch()
+            with patch.object(lanzadores,'_modulo_ok',return_value=False):
+                creados,_=lanzadores.crear_lanzadores(str(root),{'fabricante':'nvidia'},set())
+            self.assertIn('--cuda-device all',Path(creados['base']).read_text(encoding='utf-8'))
+            with patch.object(lanzadores,'_modulo_ok',return_value=False):
+                creados,_=lanzadores.crear_lanzadores(str(root),{'fabricante':'amd'},set())
+            self.assertNotIn('--cuda-device all',Path(creados['base']).read_text(encoding='utf-8'))
+
     def test_locale_keys_match_and_placeholders_parse(self):
         es=json.loads((ROOT/'src/locales/es.json').read_text(encoding='utf-8'))
         en=json.loads((ROOT/'src/locales/en.json').read_text(encoding='utf-8'))
