@@ -52,7 +52,7 @@ Las dos versiones beta crean un entorno Python aislado, descargan ComfyUI en la 
 
 En esta primera beta, Linux y macOS instalan **ComfyUI base**, la biblioteca externa y el migrador. Los nodos y optimizaciones específicos de CineConIA se mantienen por ahora en la edición Windows, hasta validarlos en hardware real de cada plataforma. Las instrucciones detalladas que siguen son las de Windows.
 
-## Novedades de la versión 3
+## Novedades de la versión 3.1
 
 - **Casi sin preguntas.** La instalación recomendada ya no pregunta por
   aceleradores, Manager, nodos, Git ni Visual C++: instala lo mismo que antes
@@ -589,7 +589,7 @@ extra_model_paths.yaml actualizadas.
 
 ## Filosofía de compatibilidad
 
-La versión 3 se probó con Windows 11 y RTX 4060 Ti: instalación recomendada
+La edición Windows de la versión 3.0 se probó con Windows 11 y RTX 4060 Ti: instalación recomendada
 completa en 6 minutos, SageAttention verificado en GPU, carga de los 10
 paquetes de nodos y actualización posterior de los nodos fijados. Las pruebas
 de AMD, Intel y NVIDIA anteriores a la serie 16/20 siguen pendientes.

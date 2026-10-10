@@ -52,7 +52,7 @@ Both beta editions create an isolated Python environment, download the tested Co
 
 In this first beta, Linux and macOS install **base ComfyUI**, the external model library, and the migrator. CineConIA-specific nodes and optimizations remain in the Windows edition until they are validated on real hardware for each platform. The detailed instructions that follow are Windows-specific.
 
-## What's new in version 3
+## What's new in version 3.1
 
 - **Almost no questions.** The recommended installation no longer asks about
   accelerators, Manager, nodes, Git or Visual C++: it installs what used to be
@@ -486,7 +486,7 @@ It records sources, destination, migration mode, duplicates, conflicts, errors, 
 
 ## Compatibility philosophy
 
-Version 3 was tested on Windows 11 with an RTX 4060 Ti: a complete recommended
+The Windows edition of version 3.0 was tested on Windows 11 with an RTX 4060 Ti: a complete recommended
 installation in 6 minutes, SageAttention verified on the GPU, all 10 node
 packages loading and a later update of the pinned nodes. Physical AMD, Intel
 and pre-16/20-series NVIDIA tests are still pending.

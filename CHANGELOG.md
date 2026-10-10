@@ -1,5 +1,23 @@
 # Changelog
 
+## v3.1.0 — 2026-10-10
+
+- Windows NVIDIA inicia ComfyUI con `--cuda-device all`, habilitando todas las
+  GPU CUDA compatibles cuando esa versión de ComfyUI admite la opción.
+- Descargas separadas para Windows, Linux NVIDIA (beta) y macOS Apple Silicon
+  (beta), con botones claros en ambos README.
+- Instaladores beta para Linux NVIDIA y macOS Apple Silicon: entorno aislado,
+  ComfyUI base fijado, biblioteca externa, lanzador y migrador de modelos con
+  simulación y comprobación SHA-256.
+- GitHub Actions valida el núcleo común en Windows (Python 3.12 y 3.13),
+  Ubuntu y macOS (Python 3.13).
+- La publicación de una etiqueta `v3.1.0` crea los tres ZIP específicos de
+  plataforma; Windows conserva también el nombre de descarga histórico.
+
+Validación: las cuatro ejecuciones de GitHub Actions terminaron correctamente.
+Linux y macOS siguen como beta: los nodos y optimizaciones propios de CineConIA
+continúan verificados solamente en Windows.
+
 ## v3.0.0 — 2026-10-01
 
 Un instalador nuevo, pensado para que quien instala ComfyUI por primera vez solo tenga que pulsar Enter.
